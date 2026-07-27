@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background: linear-gradient(180deg,#FFF6D8 0%, #FFE3B8 18%, #BFE6FF 50%, #6FC8F0 100%);
+    overflow-x:hidden;min-height:100vh;
+  }
+
+  /* ───── 顶部导航 ───── */
+  .topbar{
+    position:sticky;top:0;left:0;right:0;height:60px;
+    display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;
+    background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 2px 12px rgba(0,80,120,0.1);
+  }
+  .back-btn{
+    display:flex;align-items:center;gap:6px;
+    background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;
+    padding:8px 16px;border-radius:22px;border:none;cursor:pointer;
+    box-shadow:0 4px 10px rgba(255,140,66,0.35);
+    transition:transform .15s;
+  }
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#13718E;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{
+    display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;
+    background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12);
+    cursor:pointer;transition:transform .15s;
+  }
+  .student-pill:hover{transform:translateY(-1px)}
+  .stu-avatar{
+    width:38px;height:38px;border-radius:50%;
+    background:linear-gradient(135deg,#7C5BCC,var(--ocean));color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;
+  }
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  /* ───── 横幅（健康岛入口画面） ───── */
+  .banner{
+    position:relative;height:360px;overflow:hidden;
+    background: linear-gradient(180deg,#FFEEC8 0%, #FFD89A 100%);
+    border-bottom:4px solid #FFB37A;
+  }
+  .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner-text{
+    position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5;
+  }
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.85);color:var(--sea-deep);font-weight:800;font-size:12px;
+    padding:4px 12px;border-radius:14px;margin-top:10px;
+  }
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:var(--sea);box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+
+  /* ───── 主网格 ───── */
+  .wrap{max-width:100%;margin:0 auto;padding:18px 20px 60px;box-sizing:border-box}
+  @media (min-width:1200px){.wrap{max-width:1280px}}
+  .grid{display:grid;grid-template-columns: 1.4fr 1fr;gap:18px;max-width:100%}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+  /* 总务老师 / 班主任视图独享更宽容器 */
+  .wide-wrap{max-width:100%;padding:18px 24px 60px;box-sizing:border-box;margin:0 auto}
+
+  /* 表格通用横向滚动容器 */
+  .scroll-x{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+  .scroll-x::-webkit-scrollbar{height:8px}
+  .scroll-x::-webkit-scrollbar-thumb{background:#DCEBF3;border-radius:4px}
+
+  .card{
+    background:#fff;border-radius:20px;padding:18px;
+    box-shadow:0 6px 20px rgba(0,80,120,0.08);
+    border:1px solid rgba(180,220,240,.6);
+    position:relative;
+  }
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .dl-btn{margin-left:auto;background:linear-gradient(135deg,var(--sea-deep),#147A3F);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:12px;letter-spacing:.5px;padding:7px 14px;cursor:pointer;box-shadow:0 4px 10px rgba(20,122,63,.25);transition:transform .12s}
+  .dl-btn:hover{transform:translateY(-1px)}
+  .dl-btn:disabled{background:#CFD8DD;cursor:not-allowed;box-shadow:none}
+  .card-h .icon{
+    width:42px;height:42px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  }
+  .card-h .icon.orange{background:linear-gradient(135deg,#FFE7B0,#FFB37A)}
+  .card-h .icon.green{background:linear-gradient(135deg,#C7F0C0,#85D279)}
+  .card-h .icon.blue{background:linear-gradient(135deg,#C9EBFB,#7BC8E8)}
+  .card-h .icon.pink{background:linear-gradient(135deg,#FFD3D8,#FF8E9C)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* ───── 周次选择 ───── */
+  .week-picker{
+    display:flex;gap:6px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:12px;
+    border-bottom:1.5px dashed #DCEBF3;
+  }
+  .week-picker::-webkit-scrollbar{height:6px}
+  .week-picker::-webkit-scrollbar-thumb{background:#DCEBF3;border-radius:3px}
+  .week-pill{
+    padding:6px 12px;border-radius:14px;background:#F4FAFD;color:var(--ink-1);
+    font-weight:800;font-size:11.5px;cursor:pointer;flex-shrink:0;
+    border:1.5px solid #DCEBF3;white-space:nowrap;transition:all .15s;
+  }
+  .week-pill:hover{border-color:#FFD86A;color:#C2410C}
+  .week-pill.active{background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;border-color:#FF9F4A;box-shadow:0 3px 8px rgba(255,159,74,.3)}
+
+  /* ───── AB 餐选择（核心） ───── */
+  .meal-pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;max-width:100%}
+  @media (max-width:760px){.meal-pair{grid-template-columns:1fr;gap:14px}}
+  .meal{
+    position:relative;border-radius:22px;padding:0;cursor:pointer;
+    background:linear-gradient(180deg,#FFFDF6,#FFF1D6);
+    border:3px solid #F0CC8A;
+    box-shadow:0 8px 18px rgba(180,120,40,0.15);
+    transition:transform .25s, box-shadow .25s;
+    overflow:hidden;
+  }
+  .meal:hover{transform:translateY(-6px);box-shadow:0 14px 28px rgba(180,120,40,0.25)}
+  .meal.selected{
+    border-color:var(--sea-deep);background:linear-gradient(180deg,#F0FFF1,#D6FBDC);
+    box-shadow:0 14px 28px rgba(34,160,91,0.3);
+  }
+  .meal.selected::after{
+    content:'✓';position:absolute;top:10px;right:10px;
+    width:32px;height:32px;background:var(--sea-deep);color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;
+    animation:pop .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+  .meal-label{
+    position:absolute;top:14px;left:14px;
+    background:#EFA133;color:#fff;font-weight:900;font-size:15px;letter-spacing:1px;
+    padding:4px 14px;border-radius:14px;z-index:2;
+    box-shadow:0 3px 6px rgba(255,140,66,0.4);
+  }
+  .meal.B .meal-label{background:var(--ocean);box-shadow:0 3px 6px rgba(61,183,226,0.4)}
+  .meal-info{padding:46px 18px 18px}
+  .meal-title{font-size:17px;font-weight:900;color:#1F3A4D;margin-bottom:10px;letter-spacing:1px}
+  .meal-dish-list{font-size:13px;color:var(--ink-1);line-height:1.6}
+  .meal-dish-list span{display:inline-flex;align-items:center;gap:4px;margin-right:6px;margin-top:5px;background:#F0F8FC;padding:3px 10px;border-radius:8px;font-size:12px}
+  .meal-nutri{
+    display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;
+  }
+  .nutri-chip{
+    display:flex;flex-direction:column;align-items:center;
+    background:#FFF6D8;color:#7A4F1B;border-radius:10px;
+    padding:6px 10px;min-width:50px;
+  }
+  .nutri-chip .v{font-size:14px;font-weight:900}
+  .nutri-chip .l{font-size:10px;letter-spacing:.5px;margin-top:1px;color:#9B8366}
+
+  .meal-cta{
+    display:flex;justify-content:center;margin-top:18px;
+  }
+  .big-btn{
+    background:linear-gradient(135deg,var(--sea),#15803D);color:#fff;font-weight:900;font-size:15px;letter-spacing:2px;
+    padding:12px 30px;border-radius:24px;border:none;cursor:pointer;
+    box-shadow:0 6px 16px rgba(34,197,94,0.45);
+    transition:transform .15s;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .big-btn:hover{transform:translateY(-2px)}
+  .big-btn:disabled{background:#CFD8DD;color:#fff;box-shadow:none;cursor:not-allowed}
+  .big-btn .ic{font-size:18px}
+
+  /* ───── AI 营养师 ───── */
+  .ai-coach{
+    position:relative;
+    background:linear-gradient(135deg,#E0F4FF 0%, #D6EBFF 100%);
+    border:3px solid #7BC8E8;
+  }
+  .ai-bubble{
+    background:#fff;border-radius:18px;padding:14px 16px;font-size:13.5px;line-height:1.7;color:#1F3A4D;
+    box-shadow:0 4px 12px rgba(0,80,120,0.12);
+    position:relative;margin-top:12px;
+  }
+  .ai-bubble::before{
+    content:'';position:absolute;left:30px;top:-8px;width:14px;height:14px;
+    background:#fff;transform:rotate(45deg);border-radius:3px 0 0 0;
+  }
+  .ai-bubble strong{color:#13718E}
+  .ai-bubble .hl-orange{color:#FF6B6B;font-weight:800}
+  .ai-bubble .hl-green{color:var(--sea-deep);font-weight:800}
+  .ai-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ocean);animation:aiDot 1.2s ease-in-out infinite}
+  @keyframes aiDot{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
+  @keyframes aiFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .coach-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .coach-avatar{
+    width:64px;height:64px;flex-shrink:0;
+    background:linear-gradient(135deg,#FFD86A,#FF9F4A);
+    border-radius:18px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(255,140,66,0.35);
+    position:relative;
+  }
+  .coach-name{font-size:18px;font-weight:900;color:#13718E;letter-spacing:2px}
+  .coach-tag{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(34,197,94,0.15);color:#15803D;font-weight:800;font-size:11px;letter-spacing:1px;
+    padding:3px 10px;border-radius:12px;margin-top:3px;
+  }
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--sea);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+
+  /* 体能 */
+  .fitness-card{position:relative}
+  .fit-summary{padding:10px 0 4px;text-align:center;border-bottom:1.5px dashed #DCEBF3;margin-bottom:14px}
+  .fit-stats{display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-top:14px}
+  .fit-item{
+    display:flex;flex-direction:column;align-items:center;
+    background:#F4FAFD;border-radius:16px;padding:12px 6px;
+    border:2px solid #DCEBF3;text-align:center;
+  }
+  .fit-item .emo{font-size:28px;line-height:1}
+  .fit-item .name{font-size:11px;color:var(--ink-1);margin-top:4px;font-weight:700}
+  .fit-item .star{margin-top:6px;display:flex;gap:2px;color:#FFC23F;font-size:14px}
+  .fit-item .star .off{color:#E0E6EA}
+  .fit-item.warn{background:#FFF3F1;border-color:#FFD0CB}
+  .fit-item.great{background:#F0FBF4;border-color:#BDE8CE}
+
+  /* AB 比较 */
+  .compare{margin-top:14px;font-size:13px;background:#FFF6D8;border-radius:14px;padding:12px 14px;color:#7A4F1B;line-height:1.6}
+  .compare strong{color:#3D2812}
+
+  /* 周菜单一览 */
+  .week-strip{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px;
+  }
+  .week-day{
+    background:#F4FAFD;border:2px solid #DCEBF3;border-radius:14px;padding:10px 4px;text-align:center;
+    cursor:pointer;transition:transform .15s, border-color .2s;
+  }
+  .week-day:hover{transform:translateY(-3px);border-color:#7BC8E8}
+  .week-day.today{background:linear-gradient(180deg,#FFE7B0,#FFD08A);border-color:#FF9F4A}
+  .week-day .d{font-size:14px;font-weight:900;color:#1F3A4D;letter-spacing:1px}
+  .week-day .t{font-size:10px;color:#7BB8DA;font-weight:700;margin-top:2px}
+  .week-day .ico{font-size:22px;margin-top:4px}
+  .week-day.today .t{color:#7A4F1B}
+
+  /* Toast */
+  .toast{
+    position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);
+    background:var(--sea-deep);color:#fff;padding:12px 22px;border-radius:24px;
+    font-weight:800;font-size:14px;letter-spacing:1px;
+    box-shadow:0 10px 26px rgba(34,160,91,0.35);
+    opacity:0;transition:transform .35s, opacity .35s;z-index:200;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+
+<!-- ════════ 视觉升级（字体 + 图标 + 配色系统） ════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style id="beautify">
+:root{
+  --bg-1:#FFFCF5; --bg-2:#F1F8F6; --bg-3:#E4F1F6;
+  --surface:#FFFFFF; --surface-soft:#F5FAFC;
+  --line:#E8F0F3; --line-2:#DBE7ED;
+  --ink:#22485C; --ink-1:#3C5D6E; --ink-2:#6B8A9A; --ink-3:#9FB8C5;
+  --ocean:#1C93B8; --ocean-deep:#13718E; --ocean-soft:#E3F2F8;
+  --amber:#EFA133; --amber-deep:#CE8014; --amber-soft:#FCEED4;
+  --sea:#26AC79;   --sea-deep:#1B895F;   --sea-soft:#DAF2E6;
+  --coral:#F0705B; --coral-deep:#DA513C; --coral-soft:#FCE5E0;
+  --grape:#7E6CD2; --grape-deep:#5F4FB0; --grape-soft:#ECE7FA;
+  --r-xl:22px; --r-lg:18px; --r-md:12px; --r-sm:10px; --r-pill:999px;
+  --sh-xs:0 1px 2px rgba(28,90,120,.05);
+  --sh-sm:0 2px 10px rgba(28,90,120,.06);
+  --sh-md:0 8px 24px rgba(28,90,120,.08), 0 1px 3px rgba(28,90,120,.05);
+  --sh-pop:0 18px 44px rgba(28,90,120,.16);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+html,body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink)}
+body{background:linear-gradient(180deg,var(--bg-1) 0%, var(--bg-2) 46%, var(--bg-3) 100%);background-attachment:fixed}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(1100px 460px at 82% -10%, rgba(239,161,51,.16), transparent 60%)}
+
+/* icons */
+[data-lucide]{display:inline-flex;width:1em;height:1em}
+.lucide{width:1em;height:1em;stroke-width:2.1px;vertical-align:-.14em}
+
+/* topbar */
+.topbar{height:64px;gap:14px;background:rgba(255,253,247,.82);backdrop-filter:blur(14px) saturate(1.1);
+  -webkit-backdrop-filter:blur(14px) saturate(1.1);border-bottom:1px solid var(--line);box-shadow:var(--sh-sm)}
+.back-btn{background:var(--surface);color:#13718E;font-weight:800;font-size:13px;letter-spacing:.5px;
+  padding:9px 16px 9px 13px;border-radius:var(--r-pill);border:1px solid var(--line-2);box-shadow:var(--sh-xs);gap:7px;transition:all .15s var(--ease)}
+.back-btn:hover{transform:translateY(-1px);border-color:var(--ocean);color:var(--ocean);box-shadow:var(--sh-sm)}
+.back-btn .lucide{font-size:16px}
+.crumbs{color:var(--ink);font-weight:800;font-size:15px;letter-spacing:.5px;gap:8px}
+.crumbs .arrow{color:var(--ink-3);font-weight:700}
+.crumbs .lucide{font-size:18px;color:var(--coral);vertical-align:-.2em}
+.student-pill{background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-sm);border-radius:var(--r-pill);padding:5px 8px 5px 6px;gap:8px;transition:box-shadow .15s,transform .15s}
+.student-pill:hover{transform:translateY(-1px);box-shadow:var(--sh-md)}
+.stu-avatar{width:38px;height:38px;background:linear-gradient(135deg,var(--ocean),#46B7D6);font-weight:800;font-size:16px}
+.stu-info .name{font-weight:800;font-size:14px;color:var(--ink)}
+.stu-info .meta{font-size:11px;color:var(--ink-2);letter-spacing:.2px}
+
+/* banner */
+.banner{height:300px;border-bottom:none;background:linear-gradient(180deg,#FFF3D6,#FFE0AC);box-shadow:inset 0 -16px 28px -18px rgba(28,90,120,.18)}
+.banner-text h1{font-size:42px;font-weight:900;color:#5A3A12;letter-spacing:1px;text-shadow:0 2px 0 rgba(255,255,255,.55);display:flex;align-items:center;gap:13px}
+.banner-text h1 .lucide{font-size:38px;color:var(--coral);vertical-align:0}
+.banner-text p{margin-top:9px;color:#8A5A1E;font-weight:700;font-size:14.5px;letter-spacing:.5px}
+.banner-text .tag{background:rgba(255,255,255,.92);color:var(--sea-deep);font-weight:800;font-size:12px;padding:6px 13px;border-radius:var(--r-pill);margin-top:13px;box-shadow:var(--sh-xs);gap:7px}
+.banner-text .tag .dot{background:var(--sea);box-shadow:0 0 0 3px rgba(38,172,121,.2)}
+
+/* layout */
+.wrap{position:relative;z-index:1;padding:24px 20px 76px}
+.wide-wrap{position:relative;z-index:1}
+.grid{gap:20px}
+
+/* card */
+.card{background:var(--surface);border-radius:var(--r-xl);padding:20px;border:1px solid var(--line);box-shadow:var(--sh-md)}
+.card-h{gap:12px;margin-bottom:18px}
+.card-h .icon{width:42px;height:42px;border-radius:13px;font-size:22px}
+.card-h .icon .lucide{font-size:22px}
+.card-h .icon.orange{background:var(--amber-soft);color:var(--amber-deep)}
+.card-h .icon.green{background:var(--sea-soft);color:var(--sea-deep)}
+.card-h .icon.blue{background:var(--ocean-soft);color:#13718E}
+.card-h .icon.pink{background:var(--coral-soft);color:var(--coral-deep)}
+.card-h .icon.grape{background:var(--grape-soft);color:var(--grape-deep)}
+.card-h h2{font-size:19px;font-weight:900;letter-spacing:.4px;color:var(--ink)}
+.card-h .sub{font-size:12px;color:var(--ink-2);font-weight:700;letter-spacing:.2px}
+.dl-btn{background:var(--ocean);border-radius:var(--r-sm);font-weight:800;font-size:12px;padding:8px 14px;box-shadow:var(--sh-xs);gap:6px;transition:all .15s var(--ease)}
+.dl-btn:hover{background:#13718E;transform:translateY(-1px)}
+.dl-btn:disabled{background:#CDD9DF}
+.dl-btn .lucide{font-size:14px}
+
+/* week picker / strip */
+.week-picker{border-bottom:1px dashed var(--line-2);gap:7px}
+.week-pill{background:var(--surface-soft);color:var(--ink-1);border:1px solid var(--line-2);border-radius:var(--r-pill);font-weight:800;font-size:12px;padding:7px 13px}
+.week-pill:hover{border-color:#EFA133;color:var(--amber-deep);background:var(--amber-soft)}
+.week-pill.active{background:var(--ocean);color:#fff;border-color:var(--ocean);box-shadow:0 3px 8px rgba(28,147,184,.3)}
+.week-strip{gap:10px}
+.week-day{background:var(--surface-soft);border:1px solid var(--line-2);border-radius:14px;padding:12px 4px;transition:all .15s var(--ease)}
+.week-day:hover{transform:translateY(-3px);border-color:var(--ocean);box-shadow:var(--sh-sm)}
+.week-day.today{background:var(--amber-soft);border-color:#EFA133}
+.week-day .d{font-size:14px;font-weight:900;color:var(--ink)}
+.week-day .t{font-size:10px;color:var(--ink-2);font-weight:700}
+.week-day .ico{font-size:22px;margin-top:7px;color:var(--ocean)}
+.week-day .ico .lucide{font-size:22px}
+.week-day.today .ico{color:var(--amber-deep)}
+.week-day.today .t{color:var(--amber-deep)}
+
+/* meal pair */
+.meal{border-radius:20px;background:var(--surface);border:2px solid var(--line-2);box-shadow:var(--sh-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease),border-color .22s}
+.meal:hover{transform:translateY(-5px);box-shadow:var(--sh-md);border-color:#EFA133}
+.meal.B:hover{border-color:var(--ocean)}
+.meal.selected{border-color:var(--sea);background:linear-gradient(180deg,#fff,var(--sea-soft));box-shadow:0 12px 28px rgba(38,172,121,.22)}
+.meal.selected::after{content:'✓';background:var(--sea);width:30px;height:30px;font-size:17px;box-shadow:0 4px 10px rgba(38,172,121,.4)}
+.meal-label{background:#EFA133;color:#fff;font-weight:900;font-size:14px;border-radius:var(--r-pill);padding:5px 15px;box-shadow:0 3px 8px rgba(239,161,51,.35);letter-spacing:.5px}
+.meal.B .meal-label{background:var(--ocean);box-shadow:0 3px 8px rgba(28,147,184,.35)}
+.meal-info{padding:52px 18px 18px}
+.meal-title{font-size:17px;font-weight:900;color:var(--ink);margin-bottom:12px;letter-spacing:.2px}
+.meal-dish-list span{background:var(--surface-soft);border:1px solid var(--line);color:var(--ink-1);border-radius:9px;padding:5px 11px;font-size:12px;font-weight:700;gap:5px}
+.meal-dish-list span .lucide{font-size:14px;color:var(--ink-2)}
+.meal-nutri{gap:8px;margin-top:16px}
+.nutri-chip{background:var(--amber-soft);color:var(--amber-deep);border-radius:12px;padding:8px 10px;min-width:54px}
+.meal.B .nutri-chip{background:var(--ocean-soft);color:#13718E}
+.nutri-chip .v{font-size:15px;font-weight:900}
+.nutri-chip .l{font-size:10px;opacity:.72;margin-top:2px;color:inherit}
+
+/* CTA */
+.big-btn{background:var(--sea);font-weight:900;font-size:15px;letter-spacing:1px;padding:13px 30px;border-radius:var(--r-pill);box-shadow:0 6px 16px rgba(38,172,121,.32);gap:9px;transition:all .15s var(--ease)}
+.big-btn:hover{background:var(--sea-deep);transform:translateY(-2px)}
+.big-btn:active{transform:translateY(0)}
+.big-btn:disabled{background:#D6E2E7;box-shadow:none}
+.big-btn .ic{font-size:18px;display:inline-flex}
+.big-btn .ic .lucide{font-size:18px}
+
+/* compare */
+.compare{background:var(--amber-soft);border:1px solid #F2DEB4;border-radius:14px;padding:13px 15px;color:#8A5A1E;font-size:13px;line-height:1.65}
+.compare strong{color:#5A3A12}
+
+/* AI coach */
+.ai-coach{background:linear-gradient(135deg,#EBF6FB,#E1F1F8);border:2px solid #CFE7F1}
+.ai-bubble{border-radius:16px;padding:14px 16px;box-shadow:var(--sh-sm);color:var(--ink);line-height:1.7}
+.ai-bubble strong{color:#13718E}
+.ai-bubble .hl-orange{color:var(--coral-deep);font-weight:800}
+.ai-bubble .hl-green{color:var(--sea-deep);font-weight:800}
+.coach-avatar{width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,#FFD89A,#F2A93B);box-shadow:0 6px 16px rgba(239,161,51,.32)}
+.coach-name{font-size:18px;font-weight:900;color:#13718E;letter-spacing:.4px}
+.coach-tag{background:rgba(38,172,121,.14);color:var(--sea-deep);font-weight:800;font-size:11px;border-radius:var(--r-pill);padding:4px 10px;gap:5px}
+.ai-dot{background:var(--ocean)}
+.pulse{background:var(--sea)}
+
+/* fitness */
+.fit-summary{border-bottom:1px dashed var(--line-2);padding:6px 0 12px}
+.fit-stats{gap:12px}
+.fit-item{background:var(--surface-soft);border:1px solid var(--line-2);border-radius:16px;padding:14px 6px;transition:transform .15s var(--ease),box-shadow .15s}
+.fit-item:hover{transform:translateY(-2px);box-shadow:var(--sh-sm)}
+.fit-item .emo{font-size:28px;color:var(--ocean);line-height:1}
+.fit-item .emo .lucide{font-size:26px}
+.fit-item .name{font-size:11px;color:var(--ink-1);margin-top:8px;font-weight:700}
+.fit-item .star{margin-top:7px;color:#EFA133}
+.fit-item .star .off{color:#E6EEF1}
+.fit-item.warn{background:var(--coral-soft);border-color:#F6D2CB}
+.fit-item.warn .emo{color:var(--coral-deep)}
+.fit-item.great{background:var(--sea-soft);border-color:#BFE6D3}
+.fit-item.great .emo{color:var(--sea-deep)}
+
+/* toast */
+.toast{background:var(--ink);color:#fff;border-radius:var(--r-pill);box-shadow:var(--sh-pop);font-weight:800;padding:13px 22px}
+
+#pmChoices label{white-space:nowrap}
+@keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+<script>
+/* lucide：首次 + 动态 DOM 后自动重绘图标 */
+(function(){
+  function draw(){ try{ if(window.lucide) lucide.createIcons(); }catch(e){} }
+  if(document.readyState!=='loading') draw();
+  document.addEventListener('DOMContentLoaded', draw);
+  window.addEventListener('load', draw);
+  let t; new MutationObserver(function(){ clearTimeout(t); t=setTimeout(draw,60); })
+    .observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+<script src="assets/ai-helper.js"></script>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+</head>
+<body>
+
+<!-- ───── 顶栏 ───── -->
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()"><i data-lucide="chevron-left"></i>回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span><i data-lucide="apple"></i> 健康岛</span>
+  </div>
+  <div class="topbar-right">
+    <a href="/nutrition/" target="_blank" style="display:inline-block;margin-right:12px;padding:7px 16px;border-radius:var(--r-pill);background:#4f8a5f;color:#fff;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;text-decoration:none" title="营养餐智能分配系统">🍱 营养配餐</a>
+    <div class="student-pill">
+      <div class="stu-avatar" id="stuAvatar">林</div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:7px 13px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+      <div class="stu-info">
+        <div class="name" id="stuName">林**</div>
+        <div class="meta" id="stuMeta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── 横幅（满载场景画） ───── -->
+<div class="banner">
+  <img class="banner-img" src="assets/健康岛.png" alt="健康岛">
+  <div class="banner-text">
+    <h1><i data-lucide="apple"></i>健康岛</h1>
+    <p data-text-teacher="挑挑今天想吃什么 · 看看自己的体能值"
+       data-text-parent="看看孩子今天吃了什么 · 关注体测情况"
+    >挑挑今天想吃什么 · 看看自己的体能值</p>
+    <span class="tag"><span class="dot"></span>AI 营养师 · 已为你准备建议</span>
+  </div>
+</div>
+
+<!-- ───── 主内容 ───── -->
+<div class="wrap">
+
+  <!-- ═══════ 家长视图：选餐 + 每周餐食展示 ═══════ -->
+  <div class="card" data-show-for="parent" id="parent-meal-panel" style="margin-bottom:18px">
+    <div class="card-h">
+      <div class="icon orange"><i data-lucide="salad"></i></div>
+      <h2>每两周一次选餐</h2>
+      <div class="sub" id="pmWeekLabel">第 17 周（奇数） + 第 18 周（偶数）</div>
+    </div>
+
+    <input id="pmWeekOdd" type="hidden" value="17">
+    <input id="pmWeekEven" type="hidden" value="18">
+
+    <!-- 菜单图（仅当前两周，各一张） -->
+    <div id="pmMenuImages" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px;max-width:100%"></div>
+
+    <!-- 10 天选择网格 -->
+    <div id="pmChoices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;max-width:100%"></div>
+
+    <div style="margin-top:18px;text-align:right">
+      <button class="big-btn" id="pmSubmit" onclick="submitParentMeals()">
+        <span class="ic">📨</span><span>提交本两周选餐</span>
+      </button>
+    </div>
+
+    <div id="pmStatus" style="margin-top:12px;font-size:13px;font-weight:700;text-align:right;color:#7BB8DA"></div>
+  </div>
+
+  <!-- ═══════ 家长视图：每日餐食详情（提交后显示） ═══════ -->
+  <div data-show-for="parent" id="parent-daily-panel" style="display:none;margin-bottom:18px">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h">
+        <div class="icon orange"><i data-lucide="clipboard-list"></i></div>
+        <h2>本周餐食详情</h2>
+        <div class="sub" id="pdWeekLabel">第 17 周（奇数）</div>
+      </div>
+      <div id="pdDaysOdd"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <div class="icon blue"><i data-lucide="clipboard-list"></i></div>
+        <h2>下周餐食详情</h2>
+        <div class="sub" id="pdWeekLabel2">第 18 周（偶数）</div>
+      </div>
+      <div id="pdDaysEven"></div>
+    </div>
+  </div>
+
+  <!-- ═══════ 家长视图：成长档案（屈光曲线 + 历年体测 + 体检） ═══════ -->
+  <div data-show-for="parent" id="parent-growth-panel" style="margin-bottom:18px">
+
+    <!-- 屈光成长曲线 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h">
+        <div class="icon blue"><i data-lucide="eye"></i></div>
+        <h2>屈光成长曲线</h2>
+        <div class="sub" id="pgVisionSub">历年屈光记录</div>
+      </div>
+      <div id="pgVisionEmpty" style="display:none;padding:18px;text-align:center;color:#7BB8DA;font-weight:700">暂无屈光数据</div>
+      <div id="pgVisionWrap">
+        <div id="pgVisionChart" style="overflow-x:auto;margin-bottom:10px"></div>
+        <div id="pgVisionList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- 历年体测对比 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h">
+        <div class="icon green"><i data-lucide="dumbbell"></i></div>
+        <h2>历年体测对比</h2>
+        <div class="sub" id="pgFitSub">每年一次体测</div>
+      </div>
+      <div id="pgFitEmpty" style="display:none;padding:18px;text-align:center;color:#7BB8DA;font-weight:700">暂无体测数据</div>
+      <div id="pgFitTable" class="scroll-x"></div>
+    </div>
+
+    <!-- 体检 -->
+    <div class="card" style="margin-bottom:14px" id="pgExamCard">
+      <div class="card-h">
+        <div class="icon orange"><i data-lucide="stethoscope"></i></div>
+        <h2>体检记录</h2>
+        <div class="sub" id="pgExamSub">来自宝山医院</div>
+      </div>
+      <div id="pgExamWrap"></div>
+    </div>
+
+    <!-- AI 分析 -->
+    <div class="card" style="margin-bottom:14px;display:none" id="pgAIBox">
+      <div class="card-h">
+        <div class="icon grape"><i data-lucide="sparkles"></i></div>
+        <h2>AI 成长分析</h2>
+        <button id="pgAIBtn" onclick="analyzeGrowthAI()" style="margin-left:auto;background:linear-gradient(135deg,#FF9F4A,#E07B20);color:#fff;font-weight:800;font-size:11px;padding:6px 14px;border:none;border-radius:12px;cursor:pointer">生成分析</button>
+      </div>
+      <div id="pgAIResult" style="font-size:13px;line-height:1.7;color:var(--ink);min-height:30px"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══════ 总务老师视图：菜单录入 + 人数 chip + 各年级 + 班级粒度 ═══════ -->
+  <div data-show-for="teacher,admin" data-show-sub="general" id="general-teacher-panel">
+
+    <!-- ① 菜单录入（单表单，参考 菜单录入.png 风格） -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <div class="icon orange"><i data-lucide="clipboard-list"></i></div>
+        <h2>菜单录入</h2>
+        <div class="sub">总务老师 · 一次录入两周菜单</div>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;font-size:13.5px">
+        <label style="color:var(--ink-1);font-weight:700">学校名称</label>
+        <div style="font-weight:800;color:#1F3A4D">上海市宝山区实验小学</div>
+
+        <label style="color:var(--ink-1);font-weight:700">第一周 周次</label>
+        <input id="gtWeekOdd" type="number" value="13" min="1" max="30" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px;width:120px">
+
+        <label style="color:var(--ink-1);font-weight:700">第一周 日期区间</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="gtDateOddStart" type="date" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px">
+          <span style="color:#7BB8DA;font-weight:700">-</span>
+          <input id="gtDateOddEnd"   type="date" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px">
+        </div>
+
+        <label style="color:var(--ink-1);font-weight:700">第一周菜单</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;cursor:pointer;font-weight:700;color:#1F3A4D">
+            <i data-lucide="paperclip" style="font-size:14px;vertical-align:-2px"></i> 菜单上传
+            <input id="gtImageOdd" type="file" accept="image/*" style="display:none">
+          </label>
+          <span id="gtImageOddName" style="font-size:12px;color:#7BB8DA;font-weight:700">未选择</span>
+        </div>
+
+        <label style="color:var(--ink-1);font-weight:700">第二周 周次</label>
+        <input id="gtWeekEven" type="number" value="14" min="1" max="30" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px;width:120px">
+
+        <label style="color:var(--ink-1);font-weight:700">第二周 日期区间</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="gtDateEvenStart" type="date" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px">
+          <span style="color:#7BB8DA;font-weight:700">-</span>
+          <input id="gtDateEvenEnd"   type="date" style="padding:9px 12px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;font-size:13.5px">
+        </div>
+
+        <label style="color:var(--ink-1);font-weight:700">第二周菜单</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid #DCEBF3;border-radius:8px;background:#fff;cursor:pointer;font-weight:700;color:#1F3A4D">
+            <i data-lucide="paperclip" style="font-size:14px;vertical-align:-2px"></i> 菜单上传
+            <input id="gtImageEven" type="file" accept="image/*" style="display:none">
+          </label>
+          <span id="gtImageEvenName" style="font-size:12px;color:#7BB8DA;font-weight:700">未选择</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button onclick="submitGTMenu()" style="padding:10px 28px;background:linear-gradient(135deg,var(--ocean),#13718E);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;letter-spacing:1px">提交</button>
+        <button onclick="saveGTDraft()" style="padding:10px 28px;background:#fff;color:var(--ink-1);border:1.5px solid #DCEBF3;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;letter-spacing:1px">暂存</button>
+      </div>
+      <div id="gtUploadStatus" style="margin-top:10px;font-size:12.5px;color:#7BB8DA;font-weight:700"></div>
+    </div>
+
+    <!-- ② 各年级人数 chip 行 -->
+    <div class="card" style="margin-bottom:16px">
+      <div id="gtCounts" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px"></div>
+    </div>
+
+    <!-- ③ 各年级 AB 餐汇总（奇 / 偶） -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <div class="icon green"><i data-lucide="bar-chart-3"></i></div>
+        <h2>各年级 AB 餐汇总</h2>
+        <div class="sub" id="gtWeekLabel">第 13 周</div>
+        <button class="dl-btn" onclick="exportSchoolMeal()"><i data-lucide="download"></i> 下载全校选餐 Excel</button>
+      </div>
+      <div class="scroll-x" id="gtGradeStats"></div>
+    </div>
+
+    <!-- ④ 班级粒度明细（tabs：总表 / 各年级） -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <div class="icon grape"><i data-lucide="tags"></i>
+        <h2>班级粒度明细</h2>
+        <div class="sub" id="gtClassParityLabel">奇数周</div>
+      </div>
+      <div id="gtClassTabs" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+      <div class="scroll-x" id="gtClassTable"></div>
+    </div>
+
+    <!-- ⑤ 总务按任意班下载选餐 -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h">
+        <div class="icon orange"><i data-lucide="utensils"></i>
+        <h2>按班下载选餐</h2>
+        <div class="sub">总务可下载任意班的家长选餐</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:6px 0">
+        <label style="font-weight:700;color:var(--ink-1);font-size:13px">年级</label>
+        <input id="gtDlGrade" placeholder="如 三年级" value="三年级" style="padding:8px 12px;border:1.5px solid #DCEBF3;border-radius:8px;width:120px;font-size:13px">
+        <label style="font-weight:700;color:var(--ink-1);font-size:13px">班级</label>
+        <input id="gtDlClass" placeholder="如 1班" value="1班" style="padding:8px 12px;border:1.5px solid #DCEBF3;border-radius:8px;width:100px;font-size:13px">
+        <button class="dl-btn" onclick="exportAnyClass('meal')"><i data-lucide="download"></i> 下载选餐 Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ 班主任视图：本班学生 10 天选餐表 + 屈光/体测 全班统计 ═══════ -->
+  <div data-show-for="teacher,admin" data-show-sub="class" id="class-teacher-panel">
+
+    <!-- 本班选餐 -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon pink"><i data-lucide="clipboard-list"></i></div>
+        <h2 id="ctTitle">本班学生选餐</h2>
+        <div class="sub" id="ctSubtitle">五年级 1 班 · 周次 13 / 14</div>
+        <button class="dl-btn" onclick="exportClass('meal')"><i data-lucide="download"></i> 下载 Excel</button>
+      </div>
+      <div id="ctClassTable" style="overflow-x:auto"></div>
+    </div>
+
+    <!-- 全班屈光分布（仅展示，老师本就有 Excel 源数据） -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon blue"><i data-lucide="eye"></i>
+        <h2>全班屈光分布</h2>
+        <div class="sub" id="ctVisionSub">最近一次普查</div>
+      </div>
+      <div id="ctVisionStats" class="scroll-x"></div>
+    </div>
+
+    <!-- 体测合格率（仅展示） -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon green"><i data-lucide="dumbbell"></i></div>
+        <h2>体测合格率</h2>
+        <div class="sub" id="ctFitSub">本学年</div>
+      </div>
+      <div id="ctFitStats" class="scroll-x"></div>
+    </div>
+  </div>
+
+  <!-- 默认 / 学生自助视图（家长沿用） -->
+  <div class="grid" data-hide-for="parent" data-hide-sub="general,class">
+    <!-- ═══ 左：AB 餐选择 + 周菜单 ═══ -->
+    <div>
+      <!-- 周菜单条 -->
+      <div class="card" style="padding:16px 18px;margin-bottom:16px">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon orange">📅</div>
+          <h2>本周菜单</h2>
+          <div class="sub" id="weekLabel">第 1 周</div>
+        </div>
+        <div class="week-picker" id="weekPicker"></div>
+        <div class="week-strip" id="weekStrip"></div>
+      </div>
+
+      <!-- AB 餐选择 -->
+      <div class="card">
+        <div class="card-h">
+          <div class="icon orange">🍱</div>
+          <h2 id="dayTitle">周一 · 今天选什么？</h2>
+          <div class="sub" id="weekHint">两份任选 · 看营养选</div>
+        </div>
+
+        <div class="meal-pair" id="mealPair"></div>
+
+        <div class="meal-cta">
+          <button class="big-btn" id="confirmBtn" onclick="confirmMeal()" disabled>
+            <span class="ic"><i data-lucide="sparkles"></i></span><span>就要这个！告诉食堂</span>
+          </button>
+        </div>
+
+        <div class="compare" id="compare">
+          <strong><i data-lucide="search" style="font-size:13px;vertical-align:-2px"></i> 小对比：</strong> 选好餐后这里会显示两份的营养差别哦~
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 右：AI 营养师 + 体能 ═══ -->
+    <div>
+      <!-- AI 营养师 -->
+      <div class="card ai-coach">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon blue"><i data-lucide="bot"></i>
+          <h2>AI 营养师</h2>
+          <div class="sub" style="color:var(--sea-deep)"><span class="pulse" style="display:inline-block;margin-right:4px"></span>在线</div>
+        </div>
+        <div style="text-align:center;padding:18px 0 8px">
+          <button id="aiGenBtn" onclick="generateAI()" style="background:linear-gradient(135deg,var(--ocean),#0E6B82);color:#fff;font-weight:900;font-size:20px;letter-spacing:1.5px;padding:18px 40px;border:none;border-radius:var(--r-xl);cursor:pointer;box-shadow:0 10px 28px rgba(28,147,184,.42);transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:12px" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 16px 36px rgba(28,147,184,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 10px 28px rgba(28,147,184,.42)'"><i data-lucide="sparkles" style="font-size:28px"></i>分析今天吃什么</button>
+          <div style="margin-top:10px;font-size:13px;color:var(--ink-2);font-weight:600" id="aiStatus"><span class="pulse" style="display:inline-block;margin-right:6px"></span>已为你准备建议</div>
+        </div>
+        <div class="ai-bubble" id="aiBubble">
+          看看你最近的体测，<span class="hl-orange">上肢力量</span>可以加把劲！今天我推荐你选
+          <strong>B 餐</strong>——铁质 <span class="hl-green">5.6mg</span>、钙质 <span class="hl-green">138mg</span> 都比 A 餐高，
+          鱼类优质蛋白还能帮你长肌肉哦~
+        </div>
+      </div>
+
+      <!-- 体能数据 -->
+      <div class="card fitness-card" style="margin-top:16px">
+        <div class="card-h">
+          <div class="icon green"><i data-lucide="dumbbell"></i></div>
+          <h2>我的体能小本子</h2>
+          <div class="sub">本学期</div>
+        </div>
+        <div class="fit-summary">
+          <div style="font-size:14px;color:var(--ink-1);font-weight:700">综合状态</div>
+          <div style="font-size:30px;font-weight:900;color:var(--sea-deep);letter-spacing:2px;margin-top:2px">良好 <i data-lucide="thumbs-up" style="font-size:24px"></i></div>
+          <div style="font-size:12px;color:#7BB8DA;margin-top:4px">3 项达标 · 3 项待提升</div>
+        </div>
+        <div class="fit-stats" id="fitStats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 数据 -->
+<script>
+/* ───── 模拟数据（学生数据来自 student-roster.js） ───── */
+let curStudentIdx = (window.StudentRoster && StudentRoster.getCurrentIdx) ? StudentRoster.getCurrentIdx() : 0;
+function getCurStudent(){ return StudentRoster.get(curStudentIdx); }
+
+const FIT_SCORE = {great:4, good:3, fair:3, watch:2};
+const FIT_CLASS = {great:'great', good:'', fair:'', watch:'warn'};
+function getFitItems(){
+  const s = getCurStudent();
+  if (!s || !s.fitness) return [];
+  return s.fitness.map(f => ({
+    emo: f.emoji, name: f.name,
+    score: FIT_SCORE[f.status] || 3,
+    status: f.status === 'watch' ? 'warn' : f.status,
+  }));
+}
+
+const WEEK = [
+  {d:'周一', t:'5/12', ico:'🍱'},
+  {d:'周二', t:'5/13', ico:'🍚'},
+  {d:'周三', t:'5/14', ico:'🍝'},
+  {d:'周四', t:'5/15', ico:'🥘'},
+  {d:'周五', t:'5/16', ico:'🍛'},
+];
+
+/* AB 餐数据：从 data.json 的 menu_by_week 加载，支持 20 周 */
+let MEALS = {};
+let ALL_WEEKS = {};
+let WEEKS_LIST = [];
+let currentWeek = 1;
+let currentDay = '周一';
+let selectedMeal = null;
+
+const FALLBACK_MEALS = {
+  '周一':{
+    A:{title:'A 餐 · 杂粮饭套餐', dishes:['🍚 杂粮饭','🥩 糖醋小排','🥚 虾仁炒鸡蛋','🥬 木耳小白菜','🍌 香蕉'], cal:980, protein:53, fat:36, vc:40},
+    B:{title:'B 餐 · 牛肉粒套餐', dishes:['🍚 杂粮饭','🥩 牛肉粒杏鲍菇','🥬 时蔬','🍲 紫菜汤','🍊 橙子'], cal:822, protein:52, fat:17, vc:41}
+  },
+  '周二':{
+    A:{title:'A 餐 · 红烧大排', dishes:['🍚 白米饭','🥩 红烧大排','🥩 回锅肉','🥬 青菜炒香菇'], cal:651, protein:33, fat:38, vc:33},
+    B:{title:'B 餐 · 番茄牛肉', dishes:['🍚 白米饭','🥩 番茄牛肉','🥬 时蔬','🍲 鸡毛菜豆腐汤'], cal:702, protein:48, fat:22, vc:55}
+  },
+  '周三':{
+    A:{title:'A 餐 · 酱鸭腿套餐', dishes:['🍚 杂粮饭','🦆 酱鸭腿','🐟 糟溜鱼片','🥬 青椒炒豆芽'], cal:617, protein:54, fat:24, vc:22},
+    B:{title:'B 餐 · 爱森肉圆', dishes:['🍚 米饭','🥩 爱森肉圆','🥬 时蔬','🍲 紫菜蛋汤'], cal:642, protein:45, fat:35, vc:22}
+  },
+  '周四':{
+    A:{title:'A 餐 · 红烧鸡腿', dishes:['🍚 白米饭','🍗 红烧鸡腿','🥬 蒜蓉菠菜','🍲 胡萝卜玉米汤'], cal:720, protein:42, fat:28, vc:30},
+    B:{title:'B 餐 · 三文鱼套餐', dishes:['🍚 杂粮饭','🐟 香煎三文鱼','🥬 西兰花','🍲 海带豆腐汤'], cal:680, protein:55, fat:20, vc:48}
+  },
+  '周五':{
+    A:{title:'A 餐 · 咖喱鸡饭', dishes:['🍚 咖喱鸡饭','🥬 时蔬','🍌 香蕉'], cal:760, protein:38, fat:30, vc:35},
+    B:{title:'B 餐 · 番茄义面', dishes:['🍝 番茄肉酱意面','🧀 芝士','🥬 沙拉','🍎 苹果'], cal:790, protein:45, fat:24, vc:42}
+  }
+};
+
+function dishEmoji(name){
+  const map = [
+    [/汤/, '🍲'], [/杂粮饭|米饭|^饭|咖喱/, '🍚'], [/面/, '🍝'],
+    [/鸡腿|鸡翅|鸡/, '🍗'], [/鸭/, '🦆'],
+    [/虾/, '🍤'], [/鱼/, '🐟'],
+    [/蛋/, '🥚'], [/豆腐|豆/, '🫘'],
+    [/排|牛肉|肉/, '🥩'],
+    [/西兰花|花菜|菜|莴|笋|苗|蘑菇|杏鲍菇|香菇/, '🥬'],
+    [/香蕉/, '🍌'], [/苹果/, '🍎'], [/橙/, '🍊'], [/水果|果/, '🍇'],
+    [/西点|蛋糕|甜|布丁|酥/, '🧁'],
+  ];
+  for(const [re, emoji] of map) if(re.test(name)) return emoji;
+  return '🍱';
+}
+/* emoji → lucide 图标映射 */
+function dishIcon(name){
+  const map=[[/汤/,'soup'],[/面/,'soup'],[/饱|饡|包子/,'sandwich'],[/饭|米|咖咱|粥/,'utensils'],[/鸡|鸭/,'drumstick'],[/虬|鱼|海/,'fish'],[/蛋/,'egg'],[/豆腐|豆/,'bean'],[/排|牛|猪|肉|圆/,'beef'],[/菜|兰|花|笋|苗|菇|瓜|茄|芜/,'salad'],[/蕉/,'banana'],[/苹果/,'apple'],[/橙|柑|桃/,'citrus'],[/果/,'grape'],[/奶/,'milk'],[/糕|甜|酥|布丁/,'cake-slice']];
+  for(const [re,ic] of map) if(re.test(name)) return ic;
+  return 'utensils';
+}
+function fitIcon(name){
+  const m={'50米跑':'rabbit','坐位体前屈':'move-vertical','跳绳':'activity','肺活量':'wind','耐力跑':'footprints','立定跳远':'move-horizontal'};
+  return m[name]||'dumbbell';
+}
+
+function parseWeek(weekData){
+  if(!weekData) return {};
+  const out = {};
+  for(const [day, slots] of Object.entries(weekData)){
+    if(typeof slots !== 'object') continue;
+    out[day] = {};
+    for(const slot of ['A','B']){
+      const m = (slots && slots[slot]) || {};
+      const dishesObj = m.dishes || {};
+      const names = [];
+      for(const [k, v] of Object.entries(dishesObj)){
+        if(k.includes('品名') && v && typeof v === 'string') names.push(v.trim());
+      }
+      // 主食字段（"主食品名"或"份量(g)"含主食名）
+      // 营养
+      const calStr = (dishesObj['热量'] || '') + '';
+      const cal = parseInt(calStr.replace(/[^\d]/g,''), 10) || 0;
+      const proteinNum = parseFloat(dishesObj['蛋白质']) || 0;
+      const fatNum = parseFloat(dishesObj['脂肪']) || 0;
+      const vcStr = (dishesObj['维生素c'] || dishesObj['维生素C'] || '') + '';
+      const vc = parseInt(vcStr.replace(/[^\d]/g,''), 10) || 0;
+      out[day][slot] = {
+        title: `${slot} 餐 · ${names[0] || '校园餐'}`,
+        dishes: names.length ? names.map(n => `${dishEmoji(n)} ${n}`) : ['🍱 暂无菜单'],
+        cal,
+        protein: Math.round(proteinNum * 100),
+        fat: Math.round(fatNum * 100),
+        vc,
+      };
+    }
+  }
+  return out;
+}
+
+async function loadMenu(){
+  try {
+    const r = await fetch('data.json');
+    if(!r.ok) throw new Error('fetch failed');
+    const d = await r.json();
+    const mw = d.menu_by_week || {};
+    const weeks = Object.keys(mw).map(Number).filter(n => !isNaN(n)).sort((a,b)=>a-b);
+    if(!weeks.length) throw new Error('no weeks');
+    WEEKS_LIST = weeks;
+    ALL_WEEKS = {};
+    for(const w of weeks) ALL_WEEKS[w] = parseWeek(mw[String(w)]);
+    currentWeek = weeks[weeks.length-1];  // 默认最新周
+    MEALS = ALL_WEEKS[currentWeek] || {};
+  } catch(e){
+    console.warn('[menu] fallback to default:', e.message);
+    WEEKS_LIST = [1];
+    ALL_WEEKS = { 1: FALLBACK_MEALS };
+    currentWeek = 1;
+    MEALS = FALLBACK_MEALS;
+  }
+  // 确保 currentDay 在当前周里
+  if(!MEALS[currentDay]){
+    const days = Object.keys(MEALS);
+    if(days.length) currentDay = days.includes('周一') ? '周一' : days[0];
+  }
+}
+
+/* ───── 渲染 ───── */
+function renderWeekPicker(){
+  const wp = document.getElementById('weekPicker');
+  if(!wp) return;
+  wp.innerHTML = WEEKS_LIST.map(w =>
+    `<div class="week-pill ${w===currentWeek?'active':''}" onclick="pickWeek(${w})">第 ${w} 周</div>`
+  ).join('');
+  const wl = document.getElementById('weekLabel');
+  if(wl) wl.textContent = `第 ${currentWeek} 周 · 共 ${WEEKS_LIST.length} 周`;
+}
+
+const DAY_ICONS = {'周一':'utensils','周二':'cooking-pot','周三':'soup','周四':'utensils-crossed','周五':'salad'};
+function renderWeek(){
+  // 只显示当前周里存在的天
+  const days = Object.keys(MEALS).sort((a,b)=>{
+    const order = ['周一','周二','周三','周四','周五','周六','周日'];
+    return order.indexOf(a) - order.indexOf(b);
+  });
+  const html = days.map((d, i)=>`
+    <div class="week-day ${d===currentDay?'today':''}" onclick="pickDay('${d}')">
+      <div class="d">${d}</div>
+      <div class="ico">${DAY_ICONS[d]||'🍱'}</div>
+    </div>
+  `).join('');
+  document.getElementById('weekStrip').innerHTML = html;
+  document.getElementById('dayTitle').textContent = `${currentDay} · 今天选什么？`;
+}
+
+function renderMeals(){
+  const dayData = MEALS[currentDay] || {};
+  const html = ['A','B'].map(k=>{
+    const m = dayData[k] || {title:`${k} 餐`,dishes:['🍱 暂无菜单'],cal:0,protein:0,fat:0,vc:0};
+    return `
+      <div class="meal ${k==='B'?'B':''} ${selectedMeal===k?'selected':''}" onclick="pickMeal('${k}')">
+        <div class="meal-label">${k} 餐</div>
+        <div class="meal-info">
+          <div class="meal-title">${m.title.split('·')[1]||m.title}</div>
+          <div class="meal-dish-list">${m.dishes.map(d=>`<span>${d}</span>`).join('')}</div>
+          <div class="meal-nutri">
+            <div class="nutri-chip"><div class="v">${m.cal||'-'}</div><div class="l">kcal</div></div>
+            <div class="nutri-chip"><div class="v">${m.protein?m.protein+'g':'-'}</div><div class="l">蛋白质</div></div>
+            <div class="nutri-chip"><div class="v">${m.fat?m.fat+'g':'-'}</div><div class="l">脂肪</div></div>
+            <div class="nutri-chip"><div class="v">${m.vc?m.vc+'mg':'-'}</div><div class="l">维C</div></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('mealPair').innerHTML = html;
+  renderCompare();
+}
+
+function renderCompare(){
+  const dayData = MEALS[currentDay] || {};
+  const A = dayData.A, B = dayData.B;
+  if(!A || !B){
+    document.getElementById('compare').innerHTML = '<strong><i data-lucide="search" style="font-size:13px;vertical-align:-2px"></i> 小对比：</strong> 暂无对比数据';
+    return;
+  }
+  let txt = '';
+  if(B.cal && A.cal && Math.abs(B.cal-A.cal)>80){
+    const lo = B.cal<A.cal ? 'B' : 'A';
+    const lc = lo==='B' ? B.cal : A.cal;
+    const hc = lo==='B' ? A.cal : B.cal;
+    txt = `<strong><i data-lucide="bot" style="font-size:13px;vertical-align:-2px"></i> AI 说：</strong> 今天 <strong style="color:${lo==='A'?'#EFA133':'var(--ocean)'}">${lo} 餐</strong> 热量更低（${lc} vs ${hc} kcal），<strong>下午没大运动</strong> 选它更轻松~`;
+  } else if(B.protein && A.protein && B.protein > A.protein){
+    txt = `<strong><i data-lucide="bot" style="font-size:13px;vertical-align:-2px"></i> AI 说：</strong> <strong style="color:var(--ocean)">B 餐</strong> 蛋白质 ${B.protein}g 更高（A 餐 ${A.protein}g），吃了下午体育课更有劲~`;
+  } else if(A.protein > B.protein){
+    txt = `<strong><i data-lucide="bot" style="font-size:13px;vertical-align:-2px"></i> AI 说：</strong> <strong style="color:#EFA133">A 餐</strong> 蛋白质 ${A.protein}g 更高，吃了下午体育课更有劲~`;
+  } else {
+    txt = `<strong><i data-lucide="bot" style="font-size:13px;vertical-align:-2px"></i> AI 说：</strong> 今天两份都不错，跟着心情选就好啦~`;
+  }
+  document.getElementById('compare').innerHTML = txt;
+}
+
+function renderFit(){
+  document.getElementById('fitStats').innerHTML = getFitItems().map(f=>{
+    const stars = Array.from({length:4}).map((_,i)=>
+      `<span class="${i<f.score?'':'off'}">★</span>`).join('');
+    const cls = f.status==='warn' ? 'warn' : f.status==='great' ? 'great' : '';
+    return `
+      <div class="fit-item ${cls}">
+        <div class="emo">${f.emo}</div>
+        <div class="name">${f.name}</div>
+        <div class="star">${stars}</div>
+      </div>`;
+  }).join('');
+}
+
+/* ───── 交互 ───── */
+function pickDay(d){
+  currentDay = d;
+  selectedMeal = null;
+  document.getElementById('confirmBtn').disabled = true;
+  renderWeek(); renderMeals();
+}
+function pickMeal(k){
+  selectedMeal = k;
+  document.getElementById('confirmBtn').disabled = false;
+  renderMeals();
+  // 不再自动调用 AI；由用户点 ✨ 重新生成
+}
+
+function pickWeek(w){
+  if(currentWeek === w) return;
+  currentWeek = w;
+  MEALS = ALL_WEEKS[w] || {};
+  if(!MEALS[currentDay]){
+    const days = Object.keys(MEALS);
+    if(days.length) currentDay = days.includes('周一') ? '周一' : days[0];
+  }
+  selectedMeal = null;
+  document.getElementById('confirmBtn').disabled = true;
+  renderWeekPicker();
+  renderWeek();
+  renderMeals();
+}
+function confirmMeal(){
+  if(!selectedMeal) return;
+  showToast(`已选 ${currentDay} ${selectedMeal} 餐！请到食堂出示二维码 🎉`);
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function goHome(){ location.href='island-homepage.html' }
+
+/* ───── AI 营养师：根据选餐 + 体能弱项变化建议 ───── */
+const AI_TIPS_A = [
+  m => `选 <strong style="color:#EFA133">A 餐</strong> 是个稳妥的选择！主食 <span class="hl-green">${m.cal} kcal</span> 能量充足，蛋白质 <strong>${m.protein}g</strong> 帮你下午有精神。<span class="hl-orange">脂肪 ${m.fat}g</span>，记得多吃菜搭配哦~`,
+  m => `<strong style="color:#EFA133">A 餐</strong>的搭配适合活动量大的同学，特别推荐你下午有体育课的话！<span class="hl-green">${m.cal}kcal</span> 的热量正合适。维C ${m.vc}mg，餐后喝点温水帮助消化~`,
+  m => `今天 <strong style="color:#EFA133">A 餐</strong> 选得不错！${m.dishes[1] || '主菜'}是优质蛋白来源，配上${m.dishes[3] || '蔬菜'}营养更均衡。<span class="hl-orange">小提示</span>：你的上肢力量待提升，可以多吃点鱼虾哦~`,
+];
+const AI_TIPS_B = [
+  m => `<strong style="color:var(--ocean)">B 餐</strong> 是今天的最佳选择！蛋白质 <span class="hl-green">${m.protein}g</span>、热量 ${m.cal}kcal 都很均衡，对正在长身体的你帮助最大~`,
+  m => `选 <strong style="color:var(--ocean)">B 餐</strong> 真聪明！${m.dishes[1] || '主菜'}的蛋白质含量 <strong>${m.protein}g</strong>，配上 <span class="hl-green">${m.vc}mg</span> 维生素 C，吸收效果加倍。建议小口慢嚼吃 20 分钟以上~`,
+  m => `<strong style="color:var(--ocean)">B 餐</strong> 营养更全面！维C <span class="hl-green">${m.vc}mg</span> 有助于免疫力提升，你立定跳远会越来越好的~ 餐后可以晒晒太阳促进吸收。`,
+];
+const AI_TIPS_NONE = [
+  '👋 嗨！点一下 <strong>A 餐</strong> 或 <strong>B 餐</strong>，我帮你分析哪个更适合你今天的状态~',
+  '🤔 今天想吃什么呢？告诉我你的选择，我会根据你的体测情况给你最贴心的营养建议！',
+  '✨ 我看了你最近的体能数据，<span class="hl-orange">上肢力量</span>和<span class="hl-orange">跳绳</span>需要加强，选餐时我会优先推荐高蛋白和高钙的~',
+];
+
+const CANTEEN_SYSTEM = `${AIHelper.SAFETY}
+
+【你的任务】
+根据学生的体测数据、过敏原和今日 AB 餐的营养信息，对 A 餐和 B 餐分别做营养分析，并根据学生当前选择，分析晚上还缺哪些营养、推荐家里晚餐做什么菜补足。如果学生还没选餐，引导他先看营养再选。
+
+【输出格式】
+严格用如下 JSON 返回，不要包代码块、不要任何额外说明：
+{
+  "A餐分析": "<40-60 字，A 餐适合谁、有什么营养亮点>",
+  "B餐分析": "<40-60 字，B 餐适合谁、有什么营养亮点>",
+  "我的建议": "<40-80 字，根据学生体测情况推荐选 A 还是 B；未选时鼓励先看营养>",
+  "晚上还缺": "<30-60 字，根据选定餐 + 体测薄弱项，说明今天晚上还缺什么营养（如蔬菜、钙、维 D 等）>",
+  "晚餐建议": "<2-3 道家常菜推荐，活泼语气，30-60 字，例：今晚让妈妈做 🥬 清炒西兰花、🐟 清蒸鱼，再加一杯 🥛 牛奶~>"
+}`;
+
+function buildCanteenPrompt(){
+  const s = getCurStudent();
+  if (!s) return '';
+  const fitBlock = StudentRoster.fitnessBlock(s);
+  const allergy = (s.allergy || []).join('、') || '无';
+  const A = MEALS[currentDay] && MEALS[currentDay].A;
+  const B = MEALS[currentDay] && MEALS[currentDay].B;
+  const fmtMeal = (m) => m ? `
+- 菜品：${m.dishes.join('、')}
+- 热量 ${m.cal||'-'} kcal · 蛋白质 ${m.protein||'-'}g · 脂肪 ${m.fat||'-'}g · 维生素C ${m.vc||'-'}mg` : '无';
+  const pickedText = selectedMeal ? `学生已选：${selectedMeal} 餐` : '学生还没选餐，请引导他先看营养';
+  return `学生信息：
+${StudentRoster.studentInfoBlock(s)}
+
+体测情况：
+${fitBlock}
+
+过敏原：${allergy}
+兴趣：${s.interests.join('、')}
+
+今日 ${currentDay} 校园菜单：
+
+A 餐${fmtMeal(A)}
+
+B 餐${fmtMeal(B)}
+
+${pickedText}
+
+请按 system 中的 JSON 格式逐字段输出。注意：
+- "A 餐分析""B 餐分析"必须基于上面真实营养数据
+- "晚上还缺"要根据学生体测薄弱项（如跳绳待提升 → 缺钙/蛋白质）和所选餐里没有的营养来推断
+- "晚餐建议"要具体到 2-3 道家常菜，带 emoji，要孩子愿意吃`;
+}
+
+function renderCanteenJson(json){
+  const esc = AIHelper.escapeHtml;
+  const A = MEALS[currentDay] && MEALS[currentDay].A;
+  const B = MEALS[currentDay] && MEALS[currentDay].B;
+  const nutriRow = (m, color) => m ? `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+      <span style="background:${color};color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px">${m.cal||'-'} kcal</span>
+      <span style="background:#F4FAFD;color:var(--ink-1);font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px">蛋白 ${m.protein||'-'}g</span>
+      <span style="background:#F4FAFD;color:var(--ink-1);font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px">脂肪 ${m.fat||'-'}g</span>
+      <span style="background:#F4FAFD;color:var(--ink-1);font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px">维C ${m.vc||'-'}mg</span>
+    </div>` : '';
+  let html = '';
+  if(json['A餐分析'] || A){
+    html += `<div style="margin-top:8px"><strong style="color:#EFA133">🅰️ A 餐：</strong>${esc(json['A餐分析']||'')}${nutriRow(A,'#EFA133')}</div>`;
+  }
+  if(json['B餐分析'] || B){
+    html += `<div style="margin-top:8px"><strong style="color:var(--ocean)">🅱️ B 餐：</strong>${esc(json['B餐分析']||'')}${nutriRow(B,'var(--ocean)')}</div>`;
+  }
+  if(json['我的建议']) html += `<div style="margin-top:10px;padding:8px 10px;background:#FFF6D8;border-radius:10px;color:#7A4F1B"><strong>💡 我的建议：</strong>${esc(json['我的建议'])}</div>`;
+  if(json['晚上还缺']) html += `<div style="margin-top:8px;padding:8px 10px;background:#FFEEDD;border-radius:10px;color:#C2410C"><strong>⚠️ 晚上还缺：</strong>${esc(json['晚上还缺'])}</div>`;
+  if(json['晚餐建议']) html += `<div style="margin-top:8px;padding:8px 10px;background:#E0F8E4;border-radius:10px;color:#15803D"><strong>🏠 晚餐建议：</strong>${esc(json['晚餐建议'])}</div>`;
+  return html;
+}
+
+async function generateAI(){
+  const bubble = document.getElementById('aiBubble');
+  const status = document.getElementById('aiStatus');
+  const btn = document.getElementById('aiGenBtn');
+  if(!bubble) return;
+
+  status.textContent = '思考中…';
+  btn.disabled = true; btn.style.opacity = '.6';
+  bubble.innerHTML = '<span style="display:inline-flex;gap:4px"><span class="ai-dot"></span><span class="ai-dot" style="animation-delay:.2s"></span><span class="ai-dot" style="animation-delay:.4s"></span></span> <span style="color:#7BB8DA;font-weight:700">AI 正在分析你的数据…</span>';
+
+  try {
+    const text = await AIHelper.call(CANTEEN_SYSTEM, buildCanteenPrompt());
+    console.log('[CANTEEN AI raw]', text);
+    const json = AIHelper.parseJson(text);
+    if(!json){
+      const esc = AIHelper.escapeHtml;
+      bubble.innerHTML = `<span style="color:#C2410C">⚠️ AI 返回格式无法解析。<br><br>原文（前 600 字）：<br><pre style="white-space:pre-wrap;background:#FFF6E0;padding:8px;border-radius:8px;font-size:11px;margin-top:6px;color:#5C42A0">${esc(text||'').slice(0,600)}</pre></span>`;
+    } else {
+      bubble.innerHTML = renderCanteenJson(json);
+    }
+    bubble.style.animation = 'none'; bubble.offsetHeight; bubble.style.animation = 'aiFadeIn .4s ease';
+    status.textContent = selectedMeal ? `已为「${selectedMeal} 餐」准备好建议` : '已为你准备建议';
+  } catch(err){
+    console.error(err);
+    let msg = 'AI 调用失败：' + err.message;
+    bubble.innerHTML = `<span style="color:#C2410C">${AIHelper.escapeHtml(msg)}</span>`;
+    status.textContent = '失败';
+  } finally {
+    btn.disabled = false; btn.style.opacity = '1';
+  }
+}
+
+/* ───── 体测项点击展开详情 ───── */
+const FIT_DETAIL = {
+  '50米跑':   {unit:'秒', val:'10.4', good:'9.0 以下', last:'10.8', tip:'坚持跑步小目标，下次再快 0.4 秒~'},
+  '坐位体前屈':{unit:'cm', val:'17.8', good:'20+', last:'15.2', tip:'每天睡前 5 分钟拉伸，柔韧性会大涨！'},
+  '跳绳':     {unit:'个/分钟', val:'95', good:'130+', last:'88', tip:'⚠️ 待提升项目！每天跳 5 组 ×30 个，一周见效~'},
+  '肺活量':   {unit:'ml', val:'1429', good:'1800+', last:'1380', tip:'多游泳 / 跑步，肺活量会越来越大！'},
+  '耐力跑':   {unit:'分钟', val:'5:48', good:'5:00 以下', last:'6:12', tip:'⭐ 优秀！继续保持每周 2 次有氧~'},
+  '立定跳远': {unit:'cm', val:'148', good:'170+', last:'140', tip:'多做深蹲和提踵练习，腿部力量↑'},
+};
+function renderFit(){
+  document.getElementById('fitStats').innerHTML = getFitItems().map(f=>{
+    const stars = Array.from({length:4}).map((_,i)=>
+      `<span class="${i<f.score?'':'off'}">★</span>`).join('');
+    const cls = f.status==='warn' ? 'warn' : f.status==='great' ? 'great' : '';
+    return `
+      <div class="fit-item ${cls}" onclick="showFitDetail('${f.name}')" style="cursor:pointer">
+        <div class="emo">${f.emo}</div>
+        <div class="name">${f.name}</div>
+        <div class="star">${stars}</div>
+      </div>`;
+  }).join('');
+}
+function showFitDetail(name){
+  const d = FIT_DETAIL[name];
+  if(!d) return;
+  showModal(`
+    <div style="text-align:center;padding:8px 0">
+      <div style="font-size:48px;line-height:1">${getFitItems().find(f=>f.name===name)?.emo||'💪'}</div>
+      <div style="font-size:22px;font-weight:900;color:#1F3A4D;margin-top:8px;letter-spacing:2px">${name}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
+      <div style="background:#F4FAFD;border:2px solid #DCEBF3;border-radius:14px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:#7BB8DA;font-weight:700">本次成绩</div>
+        <div style="font-size:22px;font-weight:900;color:#1F3A4D;margin-top:4px">${d.val}</div>
+        <div style="font-size:10px;color:#9B8366">${d.unit}</div>
+      </div>
+      <div style="background:#FFF6F2;border:2px solid #FFCFAB;border-radius:14px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:#C2410C;font-weight:700">上次成绩</div>
+        <div style="font-size:22px;font-weight:900;color:#C2410C;margin-top:4px">${d.last}</div>
+        <div style="font-size:10px;color:#9B8366">${d.unit}</div>
+      </div>
+      <div style="background:#F0FBF4;border:2px solid #BDE8CE;border-radius:14px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:#15803D;font-weight:700">优秀线</div>
+        <div style="font-size:22px;font-weight:900;color:#15803D;margin-top:4px">${d.good}</div>
+        <div style="font-size:10px;color:#9B8366">${d.unit}</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#E0F4FF,#D6EBFF);border:2px solid #7BC8E8;border-radius:14px;padding:14px;margin-top:14px;font-size:13.5px;line-height:1.7;color:#13718E">
+      <strong>🤖 AI 建议：</strong>${d.tip}
+    </div>
+  `);
+}
+
+/* ───── 学生切换器（顶栏点头像） ───── */
+function applyStudent(idx){
+  if(window.UserAuth && UserAuth.isTeacher && UserAuth.isTeacher()){ UserAuth.refreshPill(); return; }
+  curStudentIdx = idx;
+  const s = getCurStudent();
+  if(!s){ if(window.UserAuth) UserAuth.refreshPill(); return; }
+  document.getElementById('stuAvatar').textContent = s.avatar;
+  document.getElementById('stuName').textContent = s.displayName;
+  document.getElementById('stuMeta').textContent = `${s.grade} · ${s.class}`;
+  document.getElementById('stuAvatar').style.background = `linear-gradient(135deg,${s.color},var(--ocean))`;
+  showToast(`已切换到 ${s.displayName}`);
+  renderFit();
+  // AI 建议不再自动生成；由用户点 ✨ 触发
+}
+// 兼容旧调用（onclick="toggleStudent()" 仍存在于 HTML 中，做空操作不出错）
+function toggleStudent(){}
+
+/* ───── 通用 modal ───── */
+function showModal(html){
+  let veil = document.getElementById('detailVeil');
+  if(!veil){
+    veil = document.createElement('div');
+    veil.id = 'detailVeil';
+    veil.style.cssText = 'position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+    veil.onclick = (e)=>{ if(e.target===veil) veil.remove(); };
+    document.body.appendChild(veil);
+  } else { veil.innerHTML=''; }
+  const m = document.createElement('div');
+  m.style.cssText = 'background:#fff;border-radius:24px;width:480px;max-width:100%;padding:24px;box-shadow:0 24px 60px rgba(0,30,60,.3);animation:popIn .35s cubic-bezier(.34,1.56,.64,1);position:relative';
+  m.innerHTML = html + '<div style="margin-top:16px;text-align:right"><button onclick="document.getElementById(\'detailVeil\').remove()" style="background:#F4FAFD;color:var(--ink-1);font-weight:800;font-size:13px;padding:9px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button></div>';
+  veil.appendChild(m);
+}
+
+/* ═══════════════════════ 家长成长档案（简化版：直接数据 + AI分析） ═══════════════════════ */
+/* ── 卡片模板缓存与恢复 ── */
+let _pgTemplate = null;
+function _pgSaveTemplate(){
+  const panel = document.getElementById('parent-growth-panel');
+  if(!panel || _pgTemplate) return;
+  const clone = panel.cloneNode(true);
+  const aiBox = clone.querySelector('#pgAIBox');
+  if(aiBox) aiBox.remove();
+  _pgTemplate = clone.innerHTML;
+}
+function _pgRestoreCards(){
+  if(!_pgTemplate) return;
+  const panel = document.getElementById('parent-growth-panel');
+  if(!panel) return;
+  // 检查 pgVisionChart（子元素）而非 pgVisionWrap（容器可能在但子元素被清空）
+  if(!document.getElementById('pgVisionChart')){
+    panel.innerHTML = _pgTemplate + '<div id="pgAIBox"></div>';
+  }
+}
+
+async function loadParentGrowth(){
+  const panel = document.getElementById('parent-growth-panel');
+  if(!panel) return;
+  panel.style.display = '';  // 强制显示
+
+  // 获取学生标识（多途径兜底）
+  let idc, kidName;
+  // 1) 从 sessionStorage 读
+  idc = sessionStorage.getItem('bs_bound_id_card');
+  kidName = sessionStorage.getItem('bs_kid_name');
+  // 2) 从 UserAuth 内存状态补充（DingTalk 登录时只设到内存）
+  if(window.UserAuth){
+    if(!idc) idc = UserAuth.getBoundIdCard && UserAuth.getBoundIdCard();
+    if(!kidName) kidName = UserAuth.getKidName && UserAuth.getKidName();
+    if(!kidName){
+      const b = UserAuth.getBoundStudent && UserAuth.getBoundStudent();
+      if(b && b.displayName) kidName = b.displayName;
+    }
+  }
+  // 3) URL 参数
+  const qs = new URLSearchParams(location.search);
+  if(!kidName) kidName = qs.get('kidName');
+  if(!idc) idc = qs.get('kid');
+  // 4) 如果还没有，从 UserAuth role 推断（需要重新登录才能拿到 boundIdCard）
+  if(!idc && !kidName){
+    const role = sessionStorage.getItem('bs_role');
+    if(role === 'parent'){
+      idc = qs.get('kid');  // demo mode fallback
+    }
+  }
+
+  const url = idc ? '/api/students/' + encodeURIComponent(idc) + '?role=parent&kid=' + encodeURIComponent(idc)
+             : kidName ? '/api/students/name/' + encodeURIComponent(kidName) : null;
+  if(!url){ panel.innerHTML = '<div style="padding:18px;color:#C2410C">⚠️ 无法识别学生</div>'; return; }
+
+  // 首次调用时保存卡片模板（必须在修改 DOM 之前）
+  _pgSaveTemplate();
+
+  // 子元素内显示加载态（不替换容器，不破坏子元素结构）
+  ['pgVisionChart','pgVisionList','pgFitTable','pgExamWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div style="padding:18px;text-align:center;color:#7BB8DA;font-weight:700">⏳ 加载中…</div>';
+  });
+  try {
+    const r = await fetch(url);
+    if(!r.ok){ _pgRestoreCards(); panel.innerHTML = `<div style="padding:18px;color:#C2410C">加载失败 HTTP ${r.status}</div>`; return; }
+    const stu = await r.json();
+    renderGrowthSimple(stu);
+  } catch(e){ _pgRestoreCards(); panel.innerHTML = `<div style="padding:18px;color:#C2410C">加载失败：${e.message}</div>`; }
+}
+
+function renderGrowthSimple(stu){
+  const panel = document.getElementById('parent-growth-panel');
+  if(!panel) return;
+
+  const vision = stu.vision || [];
+  const fitness = stu.fitness || [];
+  const physical = stu.physical_exams || [];
+
+  // 调用独立渲染函数，写入卡片容器（保留 .card 包装 + Lucide 图标）
+  renderVisionGrowth(vision);
+  renderFitnessHistory(fitness);
+  renderPhysicalExams(physical);
+
+  // 显示 AI 分析卡片
+  const aiBox = document.getElementById('pgAIBox');
+  if(aiBox) aiBox.style.display = '';
+  const aiResult = document.getElementById('pgAIResult');
+  if(aiResult) aiResult.innerHTML = '';
+  const aiBtn = document.getElementById('pgAIBtn');
+  if(aiBtn){ aiBtn.disabled = false; aiBtn.style.opacity = '1'; }
+
+  // 存下数据供 AI 分析使用
+  window._growthData = { vision, fitness, physical, name: stu.name };
+}
+
+async function analyzeGrowthAI(){
+  const box = document.getElementById('pgAIResult');
+  const btn = document.getElementById('pgAIBtn');
+  if(!box || !window._growthData) return;
+  box.innerHTML = '<span style="display:inline-flex;gap:4px"><span class="ai-dot"></span><span class="ai-dot" style="animation-delay:.2s"></span><span class="ai-dot" style="animation-delay:.4s"></span></span> <span style="color:#7BB8DA">AI 分析中…</span>';
+  btn.disabled = true; btn.style.opacity = '.6';
+
+  const g = window._growthData;
+  const summary = [
+    `学生：${g.name}`,
+    '',
+    '【屈光】',
+    ...g.vision.map(v => `${v.test_date} 右眼${v.right_naked_acuity} 左眼${v.left_naked_acuity} 球镜R${v.right_sph}L${v.left_sph}`),
+    '',
+    '【体测】',
+    ...g.fitness.map(f => `${f.test_year}年 身高${f.height}cm 体重${f.weight}kg BMI${f.bmi}(${f.bmi_level||'?'}) 肺活量${f.vital_capacity}(${f.vital_level||'?'}) 50米${f.run_50m}s(${f.run_50m_level||'?'}) 体前屈${f.sit_reach}cm(${f.sit_reach_level||'?'}) 跳绳${f.jump_rope}(${f.jump_rope_level||'?'})`),
+    '',
+    '【体检】',
+    ...g.physical.map(p => `${p.exam_year}年 身高${p.height}cm 体重${p.weight}kg BMI${p.bmi}`),
+  ].join('\n');
+
+  try {
+    const prompt = `你是一位小学健康顾问。请根据以下学生的屈光、体测和体检数据，做一个300字以内的成长分析：
+
+1. 视力趋势分析（是否稳定、有变化）
+2. 体能发展的优劣势（哪些项目进步了、哪些需要加强）
+3. 根据BMI和身高体重，给出饮食和运动建议
+4. 总体健康评价（用😊/⚠️/💪 等emoji表达）
+
+${summary}`;
+
+    if(window.AIHelper && AIHelper.call){
+      const text = await AIHelper.call(
+        '你是一位专业的小学健康顾问，分析学生的成长数据。用家长友好的语气，简洁清晰。',
+        prompt
+      );
+      box.innerHTML = AIHelper.escapeHtml ? AIHelper.escapeHtml(text).replace(/\n/g,'<br>') : text.replace(/\n/g,'<br>');
+    } else {
+      box.innerHTML = summary.replace(/\n/g,'<br>').replace(/【/g,'<b>【').replace(/】/g,'】</b>');
+    }
+  } catch(e){
+    box.innerHTML = `<span style="color:#C2410C">AI 分析失败：${e.message}</span>`;
+  }
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function renderVisionGrowth(rows){
+  const wrap = document.getElementById('pgVisionWrap');
+  const empty = document.getElementById('pgVisionEmpty');
+  if(!rows.length){ wrap.style.display='none'; empty.style.display='block'; return; }
+  wrap.style.display=''; empty.style.display='none';
+  document.getElementById('pgVisionSub').textContent = `共 ${rows.length} 次记录`;
+
+  // SVG 折线图：x = 时间, y = 裸眼视力 (3.5 ~ 5.3)
+  // 响应式：viewBox 保持比例，CSS width:100% 撑满卡片
+  const w = Math.max(700, rows.length * 110), h = 220, pad = {l:42, r:18, t:18, b:36};
+  const xs = rows.map((_,i) => pad.l + i * ((w - pad.l - pad.r) / Math.max(1, rows.length - 1)));
+  const yMin = 3.5, yMax = 5.3;
+  const y = v => v == null ? null : pad.t + (yMax - v) / (yMax - yMin) * (h - pad.t - pad.b);
+
+  const path = (key) => rows.map((r, i) => {
+    const v = r[key];
+    if(v == null) return '';
+    return (i === 0 ? 'M' : 'L') + xs[i].toFixed(1) + ',' + y(v).toFixed(1);
+  }).filter(Boolean).join(' ');
+
+  const grid = [3.5,4.0,4.5,5.0,5.3].map(v => `
+    <line x1="${pad.l}" x2="${w-pad.r}" y1="${y(v)}" y2="${y(v)}" stroke="#DCEBF3" stroke-dasharray="3,4"/>
+    <text x="${pad.l-6}" y="${y(v)+4}" text-anchor="end" fill="#7BB8DA" font-size="11" font-weight="700">${v.toFixed(1)}</text>
+  `).join('');
+
+  const xLabels = rows.map((r,i) => `
+    <text x="${xs[i]}" y="${h-pad.b+16}" text-anchor="middle" fill="var(--ink-1)" font-size="10.5" font-weight="700">${(r.test_date||'').slice(2,10).replace('-','/')}</text>
+    <text x="${xs[i]}" y="${h-pad.b+30}" text-anchor="middle" fill="#A6C5D9" font-size="10" font-weight="700">${r.grade_name||''}</text>
+  `).join('');
+
+  const dots = (key, col) => rows.map((r,i)=> {
+    if(r[key] == null) return '';
+    return `<circle cx="${xs[i]}" cy="${y(r[key])}" r="4" fill="${col}" stroke="#fff" stroke-width="2"/>`;
+  }).join('');
+
+  document.getElementById('pgVisionChart').innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;background:#F7FBFE;border-radius:14px">
+      ${grid}
+      <path d="${path('right_naked_acuity')}" fill="none" stroke="#E94B6A" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="${path('left_naked_acuity')}" fill="none" stroke="var(--ocean)" stroke-width="2.4" stroke-linecap="round"/>
+      ${dots('right_naked_acuity','#E94B6A')}
+      ${dots('left_naked_acuity','var(--ocean)')}
+      ${xLabels}
+      <g transform="translate(${pad.l+8},${pad.t+4})">
+        <rect x="0" y="0" width="170" height="22" rx="11" fill="#fff" stroke="#DCEBF3"/>
+        <circle cx="14" cy="11" r="4" fill="#E94B6A"/><text x="24" y="15" fill="#1F3A4D" font-size="11" font-weight="800">右眼裸眼</text>
+        <circle cx="92" cy="11" r="4" fill="var(--ocean)"/><text x="102" y="15" fill="#1F3A4D" font-size="11" font-weight="800">左眼裸眼</text>
+      </g>
+    </svg>
+  `;
+
+  // 详细列表
+  document.getElementById('pgVisionList').innerHTML = rows.map(r => {
+    const advice = r.doctor_advice || '';
+    const adviceColor = advice.startsWith('1') ? 'var(--sea-deep)' : (advice.startsWith('2') ? 'var(--ocean)' : (advice ? '#E08A00' : '#7BB8DA'));
+    return `
+      <div style="background:#F7FBFE;border-radius:12px;padding:12px;border-left:3px solid ${adviceColor}">
+        <div style="font-weight:900;color:#1F3A4D;font-size:13px">${r.test_date||''} <span style="color:#7BB8DA;font-size:11px">${r.grade_name||''}</span></div>
+        <div style="margin-top:6px;font-size:12px;color:var(--ink-1)">戴镜：<b style="color:#1F3A4D">${r.glasses_type||'-'}</b></div>
+        <div style="margin-top:4px;font-size:12px">裸眼 R/L: <b style="color:#E94B6A">${r.right_naked_acuity ?? '-'}</b> / <b style="color:var(--ocean)">${r.left_naked_acuity ?? '-'}</b></div>
+        <div style="margin-top:2px;font-size:12px">球镜 R/L: ${r.right_sph ?? '-'} / ${r.left_sph ?? '-'}</div>
+        ${advice ? `<div style="margin-top:6px;font-size:11.5px;color:${adviceColor};font-weight:700;line-height:1.4">${advice}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFitnessHistory(rows){
+  const tbl = document.getElementById('pgFitTable');
+  const empty = document.getElementById('pgFitEmpty');
+  if(!rows.length){ tbl.style.display='none'; empty.style.display='block'; return; }
+  tbl.style.display=''; empty.style.display='none';
+  document.getElementById('pgFitSub').textContent = `共 ${rows.length} 年`;
+  const levelColor = lv => ({优秀:'var(--sea-deep)', 良好:'var(--ocean)', 及格:'#E08A00', 不及格:'#E94B6A'}[lv] || '#7BB8DA');
+  const fmt = (v, suffix='') => v == null ? '<span style="color:#CFD8DD">-</span>' : `${v}${suffix}`;
+  tbl.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#F7FBFE;color:var(--ink-1);font-weight:800">
+        <th style="padding:10px 8px;text-align:left">年份</th>
+        <th style="padding:10px 8px">身高</th>
+        <th style="padding:10px 8px">体重</th>
+        <th style="padding:10px 8px">BMI</th>
+        <th style="padding:10px 8px">肺活量</th>
+        <th style="padding:10px 8px">50米跑</th>
+        <th style="padding:10px 8px">坐位体前屈</th>
+        <th style="padding:10px 8px">跳绳</th>
+        <th style="padding:10px 8px">总分</th>
+        <th style="padding:10px 8px">等级</th>
+      </tr></thead>
+      <tbody>${rows.map(r => `
+        <tr style="border-top:1px solid #EAF2F6">
+          <td style="padding:10px 8px;font-weight:800;color:#1F3A4D">${r.test_year}</td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.height,'cm')}</td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.weight,'kg')}</td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.bmi)} <span style="color:#7BB8DA;font-size:11px">${r.bmi_level||''}</span></td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.vital_capacity)} <span style="color:${levelColor(r.vital_level)};font-size:11px;font-weight:800">${r.vital_level||''}</span></td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.run_50m,'s')} <span style="color:${levelColor(r.run_50m_level)};font-size:11px;font-weight:800">${r.run_50m_level||''}</span></td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.sit_reach,'cm')} <span style="color:${levelColor(r.sit_reach_level)};font-size:11px;font-weight:800">${r.sit_reach_level||''}</span></td>
+          <td style="padding:10px 8px;text-align:center">${fmt(r.jump_rope)} <span style="color:${levelColor(r.jump_rope_level)};font-size:11px;font-weight:800">${r.jump_rope_level||''}</span></td>
+          <td style="padding:10px 8px;text-align:center;font-weight:900;color:#1F3A4D">${fmt(r.total_score)}</td>
+          <td style="padding:10px 8px;text-align:center"><span style="background:${levelColor(r.total_level)}22;color:${levelColor(r.total_level)};padding:3px 10px;border-radius:10px;font-weight:800;font-size:12px">${r.total_level||'-'}</span></td>
+        </tr>`).join('')}</tbody>
+    </table>
+  `;
+}
+
+function renderPhysicalExams(rows){
+  const card = document.getElementById('pgExamCard');
+  const wrap = document.getElementById('pgExamWrap');
+  if(!rows.length){ card.style.display='none'; return; }
+  card.style.display='';
+  document.getElementById('pgExamSub').textContent = rows[0].hospital || '医院体检';
+  wrap.innerHTML = rows.map(r => `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;background:#FFF8EC;border-radius:12px;padding:14px">
+      <div><div style="color:#7BB8DA;font-size:11px;font-weight:700">年份</div><div style="font-size:18px;font-weight:900;color:#1F3A4D">${r.exam_year}</div></div>
+      <div><div style="color:#7BB8DA;font-size:11px;font-weight:700">身高</div><div style="font-size:18px;font-weight:900;color:#1F3A4D">${r.height ?? '-'}<span style="font-size:11px;color:#7BB8DA;margin-left:2px">cm</span></div></div>
+      <div><div style="color:#7BB8DA;font-size:11px;font-weight:700">体重</div><div style="font-size:18px;font-weight:900;color:#1F3A4D">${r.weight ?? '-'}<span style="font-size:11px;color:#7BB8DA;margin-left:2px">kg</span></div></div>
+      <div><div style="color:#7BB8DA;font-size:11px;font-weight:700">BMI</div><div style="font-size:18px;font-weight:900;color:#1F3A4D">${r.bmi ?? '-'}</div></div>
+    </div>
+  `).join('');
+}
+
+/* ───── 启动 ───── */
+(async()=>{
+  await loadMenu();
+  renderWeekPicker();
+  renderWeek();
+  renderMeals();
+  renderFit();
+  // 家长：加载成长档案（多路兜底）
+  const tryLoadGrowth = () => {
+    if(window.UserAuth && UserAuth.isParent && UserAuth.isParent()){
+      loadParentGrowth();
+      return true;
+    }
+    return false;
+  };
+  // 1) 等 UserAuth 就位
+  if(window.UserAuth){ UserAuth.ready(()=> tryLoadGrowth()); }
+  // 2) URL 里有 role=parent 的直接兜底（可能 UserAuth 还没 ready）
+  if(new URLSearchParams(location.search).get('role') === 'parent'){
+    setTimeout(()=> tryLoadGrowth(), 500);
+    setTimeout(()=> tryLoadGrowth(), 1500);
+  }
+  // 3) 强制刷新 DOM：确保 parent-show 元素可见
+  if(window.UserAuth && typeof UserAuth.refreshPill === 'function'){
+    UserAuth.ready(()=>{
+      document.querySelectorAll('[data-show-for]').forEach(el=>{
+        if(el.dataset.showFor === 'parent') el.style.display = '';
+      });
+      document.querySelectorAll('[data-show-for="teacher,admin"]').forEach(el=>{
+        el.style.display = 'none';
+      });
+    });
+  }
+  // 初始化时给一个静态提示，不自动调 AI
+  const bubble = document.getElementById('aiBubble');
+  if(bubble) bubble.innerHTML = '🤔 点右上角 <strong>✨ 重新生成</strong> 让我帮你看看今天该吃啥~';
+})();
+StudentRoster.attachPicker(document.querySelector('.student-pill'), {
+  initialIdx: curStudentIdx,
+  onChange: (idx)=> applyStudent(idx)
+});
+// 进入页面后同步顶栏 pill + 体测到持久化的当前学生
+applyStudent(curStudentIdx);
+
+/* ═══════════════════════ 家长 10 天选餐 ═══════════════════════ */
+const DAY_LABELS = ['周一','周二','周三','周四','周五'];
+
+let _pmExisting = {odd:{}, even:{}};   // { odd:{1:'A',2:'B'...}, even:{...} }
+let _pmReadOnly = false;
+
+async function renderParentMealPicker(){
+  const wkOdd = 17;
+  const wkEven = 18;
+  document.getElementById('pmWeekOdd').value = wkOdd;
+  document.getElementById('pmWeekEven').value = wkEven;
+  document.getElementById('pmWeekLabel').textContent = `第 ${wkOdd} 周（奇数） + 第 ${wkEven} 周（偶数）`;
+
+  // 拉取菜单图（每周只一张，按 parity 找）
+  fetchMenuImages(wkOdd, wkEven);
+
+  // 先查"已选过"
+  await loadExistingChoices(wkOdd, wkEven);
+
+  // 构建 10 天选择网格
+  const buildCol = (parity, week) => {
+    const titleBg = parity === 'odd' ? '#FFD86A,#FF9F4A' : '#7BC8E8,var(--ocean)';
+    const tag = parity === 'odd' ? '奇数周' : '偶数周';
+    return `
+      <div style="background:#F4FAFD;border-radius:14px;padding:14px">
+        <div style="background:linear-gradient(135deg,${titleBg});color:#fff;font-weight:900;padding:6px 12px;border-radius:10px;display:inline-block;margin-bottom:10px">${tag} · 第 ${week} 周</div>
+        ${DAY_LABELS.map((d,i)=>{
+          const prev = _pmExisting[parity][i+1];
+          const aSel = prev === 'A' ? 'checked' : '';
+          const bSel = prev === 'B' ? 'checked' : '';
+          const lock = _pmReadOnly ? 'disabled' : '';
+          const tag2 = prev ? `<span style="color:var(--sea-deep);font-weight:800;font-size:11px;margin-left:6px">✓ 已选 ${prev}餐</span>` : '';
+          return `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed #DCEBF3">
+              <span style="flex:1;font-size:13px;font-weight:700;color:#1F3A4D">${d}${tag2}</span>
+              <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
+                <input type="radio" name="pm_${parity}_${i+1}" value="A" ${aSel} ${lock} style="accent-color:#EFA133"> A 餐
+              </label>
+              <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
+                <input type="radio" name="pm_${parity}_${i+1}" value="B" ${bSel} ${lock} style="accent-color:var(--ocean)"> B 餐
+              </label>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  };
+  document.getElementById('pmChoices').innerHTML = buildCol('odd', wkOdd) + buildCol('even', wkEven);
+
+  // 已提交 → 锁住选择，展示每日餐食详情
+  const btn = document.getElementById('pmSubmit');
+  if(_pmReadOnly){
+    btn.style.display = 'none';
+    const status = document.getElementById('pmStatus');
+    if(status){ status.textContent = '✅ 已提交教务处，不可修改'; status.style.color = 'var(--sea-deep)'; }
+    // 展示每日餐食
+    renderDailyMeals();
+  } else {
+    btn.style.display = '';
+    btn.innerHTML = '<span class="ic">📨</span><span>提交本两周选餐</span>';
+    btn.onclick = submitParentMeals;
+  }
+}
+
+async function loadExistingChoices(wkOdd, wkEven){
+  _pmExisting = {odd:{}, even:{}};
+  _pmReadOnly = false;
+  const kid = UserAuth.getKidName && UserAuth.getKidName()
+    || (UserAuth.getBoundStudent && UserAuth.getBoundStudent() || {}).displayName
+    || new URLSearchParams(location.search).get('kidName');
+  if(!kid){ console.warn('[loadExistingChoices] no kid name'); return; }
+  try {
+    const r = await fetch('/api/meal-choices/student/' + encodeURIComponent('name:' + kid));
+    if(!r.ok) return;
+    const data = await r.json();
+    for(const c of (data.choices || [])){
+      if(c.parity === 'odd' && c.week_number === wkOdd){
+        _pmExisting.odd[c.weekday] = c.choice;
+      } else if(c.parity === 'even' && c.week_number === wkEven){
+        _pmExisting.even[c.weekday] = c.choice;
+      }
+    }
+    const total = Object.keys(_pmExisting.odd).length + Object.keys(_pmExisting.even).length;
+    _pmReadOnly = total >= 10;   // 全部 10 天都有 → 锁住
+    // 已有选餐记录 → 展示每日餐食详情
+    if(total > 0 && _pmReadOnly){
+      document.getElementById('pmSubmit').style.display = 'none';
+      document.getElementById('pmChoices').style.display = 'none';
+      document.getElementById('pmMenuImages').style.display = 'none';
+      renderDailyMeals();
+    }
+  } catch(e){ console.warn('[loadExistingChoices]', e.message); }
+}
+
+async function fetchMenuImages(wkOdd, wkEven){
+  const box = document.getElementById('pmMenuImages');
+  box.innerHTML = '';
+  for(const [parity, wk, bg] of [['odd',wkOdd,'#FFD86A'],['even',wkEven,'#7BC8E8']]){
+    try {
+      const r = await fetch(`/api/menus?week=${wk}`);
+      const data = await r.json();
+      const m = (data.menus || []).find(x => x.parity === parity);
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#fff;border:1.5px solid #DCEBF3;border-radius:12px;padding:10px;text-align:center';
+      div.innerHTML = `
+        <div style="font-weight:800;font-size:12px;color:#1F3A4D;margin-bottom:6px">
+          ${parity==='odd'?'奇数周':'偶数周'} · 第 ${wk} 周
+        </div>
+        ${m && m.image_path
+          ? `<img src="${m.image_path}" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;cursor:zoom-in" onclick="window.open('${m.image_path}')">`
+          : `<div style="padding:30px;color:#7BB8DA;font-size:12px;background:repeating-linear-gradient(45deg,#F4FAFD,#F4FAFD 8px,#fff 8px,#fff 16px);border-radius:8px">📋 总务老师还没上传菜单图</div>`}
+      `;
+      box.appendChild(div);
+    } catch(e){ console.warn(e); }
+  }
+}
+
+async function submitParentMeals(){
+  const status = document.getElementById('pmStatus');
+  const wkOdd = parseInt(document.getElementById('pmWeekOdd').value, 10);
+  const wkEven = parseInt(document.getElementById('pmWeekEven').value, 10);
+  const choices = { odd:{}, even:{} };
+  let total = 0;
+  for(const parity of ['odd','even']){
+    for(let d=1; d<=5; d++){
+      const sel = document.querySelector(`input[name="pm_${parity}_${d}"]:checked`);
+      if(sel){ choices[parity][d] = sel.value; total++; }
+      else { choices[parity][d] = 'A'; total++; }  // 默认 A 餐
+    }
+  }
+  status.textContent = '⏳ 正在提交…';
+  status.style.color = '#7BB8DA';
+  try {
+    const bound = window.UserAuth && UserAuth.getBoundStudent();
+    const kidName = window.UserAuth && UserAuth.getKidName && UserAuth.getKidName();
+    const body = {
+      studentIdCard: bound && (bound.idCard || bound.id_card) || null,
+      studentName: kidName || (bound && bound.displayName) || 'DEMO',
+      week_odd: wkOdd,
+      week_even: wkEven,
+      choices,
+    };
+    const r = await fetch('/api/meal-choices', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if(r.ok){
+      status.textContent = `✅ 已提交教务处 · W${wkOdd}奇/W${wkEven}偶`;
+      status.style.color = 'var(--sea-deep)';
+      _pmReadOnly = true;
+      _pmExisting = choices;
+      // 隐藏选餐UI，展示每日餐食详情
+      document.getElementById('pmSubmit').style.display = 'none';
+      document.getElementById('pmChoices').style.display = 'none';
+      document.getElementById('pmMenuImages').style.display = 'none';
+      renderDailyMeals();
+    } else {
+      status.textContent = '❌ ' + (data.error || '提交失败');
+      status.style.color = '#C2410C';
+    }
+  } catch(e){
+    status.textContent = '❌ ' + e.message;
+    status.style.color = '#C2410C';
+  }
+}
+
+/* ───── 展示每日餐食详情（提交后显示） ───── */
+async function renderDailyMeals(){
+  const panel = document.getElementById('parent-daily-panel');
+  if(!panel) return;
+  panel.style.display = '';
+
+  const wkOdd = 17, wkEven = 18;
+  const $ = id=>document.getElementById(id);
+  if($('pdWeekLabel')) $('pdWeekLabel').textContent = `第 ${wkOdd} 周（奇数）`;
+  if($('pdWeekLabel2')) $('pdWeekLabel2').textContent = `第 ${wkEven} 周（偶数）`;
+
+  // 存储每日数据供 AI 使用
+  window._dailyMealData = {};
+
+  const renderDayCard = (parity, wk, dayIdx, dayLabel) => {
+    const choice = (_pmExisting[parity] || {})[dayIdx+1] || 'A';
+    const fb = (FALLBACK_MEALS[dayLabel] || {})[choice] || { title: `${choice} 餐`, dishes: ['🍱 菜单待更新'], cal: 0, protein: 0, fat: 0, vc: 0 };
+    const color = choice === 'A' ? '#EFA133' : 'var(--ocean)';
+    const key = `${parity}_${dayIdx+1}`;
+    window._dailyMealData[key] = { parity, wk, dayLabel, choice, ...fb };
+    return `
+      <div style="background:#F7FBFE;border-radius:14px;padding:14px;margin-bottom:10px;border-left:4px solid ${color}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-weight:900;font-size:14px;color:#1F3A4D">${dayLabel}</span>
+          <span style="background:${color};color:#fff;font-size:10px;font-weight:800;padding:2px 10px;border-radius:10px">${choice} 餐</span>
+          <button onclick="analyzeDayDinner('${key}')" style="margin-left:auto;background:linear-gradient(135deg,#FF9F4A,#E07B20);color:#fff;font-weight:700;font-size:10px;padding:4px 12px;border:none;border-radius:10px;cursor:pointer">🤖 分析晚餐吃什么</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          ${(fb.dishes||[]).map(d=>`<span style="background:#fff;border:1px solid #DCEBF3;border-radius:8px;padding:4px 10px;font-size:12px;color:#1F3A4D">${d}</span>`).join('')}
+        </div>
+        ${fb.cal?'<div style="display:flex;gap:12px;font-size:11px;color:var(--ink-1);flex-wrap:wrap"><span>🔥 '+fb.cal+'kcal</span>'+(fb.protein?'<span>💪 蛋白质 '+fb.protein+'g</span>':'')+(fb.fat?'<span>🧈 脂肪 '+fb.fat+'g</span>':'')+(fb.vc?'<span>🍊 维C '+fb.vc+'mg</span>':'')+'</div>':''}
+        <div id="dinner_${key}" style="margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink-1);display:none"></div>
+      </div>
+    `;
+  };
+
+  let odd='', even='';
+  for(let i=0; i<5; i++){
+    odd += renderDayCard('odd', wkOdd, i, DAY_LABELS[i]);
+    even += renderDayCard('even', wkEven, i, DAY_LABELS[i]);
+  }
+  if($('pdDaysOdd')) $('pdDaysOdd').innerHTML = odd;
+  if($('pdDaysEven')) $('pdDaysEven').innerHTML = even;
+}
+
+/* ───── 单日营养分析 + 晚餐建议 ───── */
+async function analyzeDayDinner(key){
+  const box = document.getElementById('dinner_'+key);
+  if(!box || !window._dailyMealData || !window._dailyMealData[key]) return;
+  box.style.display = 'block';
+  box.innerHTML = '<span style="color:#7BB8DA">⏳ AI 分析中…</span>';
+
+  const m = window._dailyMealData[key];
+  const kidName = sessionStorage.getItem('bs_kid_name') || '孩子';
+  const desc = `${m.dayLabel} · ${m.choice}餐 · 第${m.wk}周 ${m.parity==='odd'?'奇数':'偶数'}周
+菜品：${(m.dishes||[]).join('、')}
+营养素：热量${m.cal||'?'}kcal, 蛋白质${m.protein||'?'}g, 脂肪${m.fat||'?'}g, 维C${m.vc||'?'}mg`;
+
+  try {
+    if(window.AIHelper && AIHelper.call){
+      const prompt = `学生${kidName}今天的学校午餐是：
+${desc}
+
+请你作为家庭营养顾问，用60-100字给家长一个今晚做饭建议，包括：
+1. 午餐营养缺口（缺什么）
+2. 推荐2-3道家常晚餐菜
+3. 用家长友好的语气`;
+      const text = await AIHelper.call('你是家庭营养顾问，给家长提供晚餐建议。简洁实用，60-100字。', prompt);
+      box.innerHTML = AIHelper.escapeHtml ? AIHelper.escapeHtml(text).replace(/\n/g,'<br>') : text.replace(/\n/g,'<br>');
+    } else {
+      // 无 AI 时给出静态建议
+      const tips = generateStaticDinnerTip(m);
+      box.innerHTML = tips;
+    }
+  } catch(e){
+    box.innerHTML = `<span style="color:#C2410C">分析失败：${e.message}</span>`;
+  }
+}
+
+function generateStaticDinnerTip(m){
+  const tips = [];
+  if(m.protein < 40) tips.push('蛋白偏低 → 🥚 蒸蛋羹 / 🐟 清蒸鱼');
+  if(m.vc < 30) tips.push('维C不足 → 🥬 清炒西兰花 / 🍅 番茄炒蛋');
+  if(m.cal < 700) tips.push('热量偏低 → 🍚 杂粮饭加量 / 🥜 坚果一小把');
+  tips.push('🥛 睡前一杯牛奶补钙');
+  return `<span style="color:#1F3A4D">🍳 <b>今晚建议：</b></span><br>${tips.map(t=>'• '+t).join('<br>')}`;
+}
+
+/* ───── 家长 AI 晚餐推荐 ───── */
+async function generateParentDinnerAI(){
+  const content = document.getElementById('pmDinnerContent');
+  const status = document.getElementById('pmDinnerStatus');
+  const btn = document.getElementById('pmDinnerBtn');
+  if(!content || !btn) return;
+
+  status.textContent = '⏳ AI 正在分析…';
+  btn.disabled = true; btn.style.opacity = '.6';
+
+  // 收集当前选餐信息
+  const wkOdd = document.getElementById('pmWeekOdd')?.value || '17';
+  const wkEven = document.getElementById('pmWeekEven')?.value || '18';
+  let picks = [];
+  for(const parity of ['odd','even']){
+    for(let d=1; d<=5; d++){
+      const sel = document.querySelector(`input[name="pm_${parity}_${d}"]:checked`);
+      picks.push({
+        week: parity==='odd' ? wkOdd : wkEven,
+        parity, day: d,
+        choice: sel ? sel.value : 'A'
+      });
+    }
+  }
+
+  const bound = window.UserAuth && UserAuth.getBoundStudent();
+  const kidName = (bound && bound.displayName) || '学生';
+  const pickStr = picks.map(p => `W${p.week} ${p.parity} D${p.day}=${p.choice}`).join(', ');
+  const aCount = picks.filter(p => p.choice === 'A').length;
+  const bCount = picks.filter(p => p.choice === 'B').length;
+
+  const prompt = `${AIHelper.SAFETY}
+学生姓名：${kidName}
+选餐情况：共10天，A餐${aCount}天，B餐${bCount}天（${pickStr}）
+
+请根据这个学生的选餐偏好，分析他的饮食倾向，并给出 2-3 条家里晚餐的建议。
+要求：
+- 活泼亲切，像营养师姐姐在说话
+- 如果A餐偏多，说明孩子喜欢传统中餐；B餐偏多是西式/创新口味
+- 晚餐建议要根据所选餐中可能缺的营养来补
+- 带 emoji，控制在100-150字
+
+输出JSON：
+{"分析":"<饮食倾向分析>", "晚餐建议":"<2-3道家常菜+理由>"}`;
+
+  try {
+    const text = await AIHelper.call(prompt, prompt);
+    console.log('[parent dinner AI]', text);
+    const json = AIHelper.parseJson(text);
+    const esc = AIHelper.escapeHtml;
+    if(json && json['晚餐建议']){
+      content.innerHTML = `
+        <div style="margin-bottom:10px"><strong>📊 饮食分析：</strong>${esc(json['分析']||'')}</div>
+        <div style="background:#E0F8E4;padding:12px;border-radius:12px"><strong>🏠 晚餐建议：</strong>${esc(json['晚餐建议'])}</div>
+      `;
+      status.textContent = '✅ 已生成';
+    } else {
+      content.innerHTML = `<div style="color:#C2410C">⚠️ AI 返回格式异常，请重试</div>`;
+      status.textContent = '失败';
+    }
+  } catch(err){
+    console.error(err);
+    content.innerHTML = `<div style="color:#C2410C">❌ ${AIHelper.escapeHtml(err.message)}</div>`;
+    status.textContent = '失败';
+  } finally {
+    btn.disabled = false; btn.style.opacity = '1';
+    btn.textContent = '🔄 再问一次';
+  }
+}
+
+/* ═══════════════════════ 总务老师：上传菜单 + 全校统计 ═══════════════════════ */
+async function _doUpload(parity){
+  const week = parseInt(document.getElementById(parity==='odd' ? 'gtWeekOdd' : 'gtWeekEven').value, 10);
+  const dateStart = document.getElementById('gtDate'+(parity==='odd'?'Odd':'Even')+'Start').value;
+  const dateEnd = document.getElementById('gtDate'+(parity==='odd'?'Odd':'Even')+'End').value;
+  const fileInput = document.getElementById('gtImage'+(parity==='odd'?'Odd':'Even'));
+  const f = fileInput.files[0];
+  if(!f) return {ok:true, skipped:true, parity};   // 没选图就跳过这一周
+  const fd = new FormData();
+  fd.append('image', f); fd.append('week', week); fd.append('parity', parity);
+  fd.append('dateStart', dateStart); fd.append('dateEnd', dateEnd);
+  const r = await fetch('/api/menus/upload', {method:'POST', body: fd});
+  const data = await r.json();
+  return {ok:r.ok, parity, week, msg: r.ok ? null : (data.error||'失败')};
+}
+
+async function submitGTMenu(){
+  const status = document.getElementById('gtUploadStatus');
+  status.textContent = '⏳ 正在提交…'; status.style.color = '#7BB8DA';
+  const results = [];
+  for(const p of ['odd','even']){
+    try { results.push(await _doUpload(p)); }
+    catch(e){ results.push({ok:false, parity:p, msg:e.message}); }
+  }
+  const errors = results.filter(r => !r.ok);
+  const okWeeks = results.filter(r => r.ok && !r.skipped).map(r => `${r.parity==='odd'?'奇':'偶'}${r.week}周`);
+  if(errors.length){
+    status.textContent = '❌ ' + errors.map(e => e.msg).join(' / ');
+    status.style.color = '#C2410C';
+  } else if(okWeeks.length){
+    status.textContent = `✅ 已保存 ${okWeeks.join('、')}`;
+    status.style.color = 'var(--sea-deep)';
+    document.getElementById('gtImageOdd').value='';
+    document.getElementById('gtImageEven').value='';
+    document.getElementById('gtImageOddName').textContent='未选择';
+    document.getElementById('gtImageEvenName').textContent='未选择';
+    loadGradeStats(); loadClassSummary();
+  } else {
+    status.textContent = '⚠️ 没有可上传的图片，请先选择菜单图';
+    status.style.color = '#C2410C';
+  }
+}
+
+function saveGTDraft(){
+  const draft = {
+    weekOdd: document.getElementById('gtWeekOdd').value,
+    weekEven: document.getElementById('gtWeekEven').value,
+    dateOddStart: document.getElementById('gtDateOddStart').value,
+    dateOddEnd: document.getElementById('gtDateOddEnd').value,
+    dateEvenStart: document.getElementById('gtDateEvenStart').value,
+    dateEvenEnd: document.getElementById('gtDateEvenEnd').value,
+  };
+  localStorage.setItem('bs_menu_draft', JSON.stringify(draft));
+  const status = document.getElementById('gtUploadStatus');
+  status.textContent = '💾 已暂存到本地（图片需要重新选）';
+  status.style.color = '#7BB8DA';
+}
+
+function _restoreGTDraft(){
+  try {
+    const d = JSON.parse(localStorage.getItem('bs_menu_draft') || 'null');
+    if(!d) return;
+    for(const k of Object.keys(d)){
+      const map = {weekOdd:'gtWeekOdd', weekEven:'gtWeekEven', dateOddStart:'gtDateOddStart', dateOddEnd:'gtDateOddEnd', dateEvenStart:'gtDateEvenStart', dateEvenEnd:'gtDateEvenEnd'};
+      const el = document.getElementById(map[k]);
+      if(el && d[k]) el.value = d[k];
+    }
+  } catch(e){}
+}
+
+/* 各年级人数 chip */
+async function loadGradeCounts(){
+  try {
+    const r = await fetch('/api/grade-counts');
+    const data = await r.json();
+    const items = data.grades || [];
+    const total = data.total || 0;
+    const chips = items.map(g => `
+      <div style="background:#fff;border:1.5px solid #DCEBF3;border-radius:14px;padding:12px;text-align:left">
+        <div style="font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px">${g.grade}</div>
+        <div style="font-size:11px;color:#9BB8CC;margin-top:2px">人数</div>
+        <div style="font-size:24px;font-weight:900;color:#1F3A4D;margin-top:4px">${g.count}</div>
+      </div>
+    `).join('') + `
+      <div style="background:linear-gradient(135deg,var(--ocean),#13718E);color:#fff;border-radius:14px;padding:12px;text-align:left">
+        <div style="font-size:12px;font-weight:700;letter-spacing:1px;opacity:.9">全校</div>
+        <div style="font-size:11px;opacity:.85;margin-top:2px">总人数</div>
+        <div style="font-size:24px;font-weight:900;margin-top:4px">${total}</div>
+      </div>`;
+    document.getElementById('gtCounts').innerHTML = chips;
+  } catch(e){ console.warn(e); }
+}
+
+/* 班级粒度 tabs + 表 */
+let _gtClassTab = 'all';
+async function loadClassSummary(){
+  const week = parseInt(document.getElementById('gtWeekOdd').value, 10) || 13;
+  document.getElementById('gtClassParityLabel').textContent = `第 ${week} 周`;
+  try {
+    let url = `/api/meal-stats/class-summary?week=${week}&parity=odd`;
+    if(_gtClassTab !== 'all') url += '&grade=' + encodeURIComponent(_gtClassTab);
+    const r = await fetch(url);
+    const data = await r.json();
+    const rows = data.rows || [];
+    // 渲染 tabs
+    const grades = ['all','一年级','二年级','三年级','四年级','五年级','六年级'];
+    document.getElementById('gtClassTabs').innerHTML = grades.map(g =>
+      `<button onclick="_gtClassTab='${g}';loadClassSummary()" style="padding:7px 14px;border-radius:10px;border:1.5px solid ${g===_gtClassTab?'var(--ocean)':'#DCEBF3'};background:${g===_gtClassTab?'var(--ocean)':'#fff'};color:${g===_gtClassTab?'#fff':'var(--ink-1)'};font-weight:800;font-size:12px;cursor:pointer">${g==='all'?'奇数周-总表':g}</button>`
+    ).join('');
+    if(!rows.length){
+      document.getElementById('gtClassTable').innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700">该周尚无选餐数据</div>';
+      return;
+    }
+    const head = `<thead style="background:#F4FAFD"><tr>
+      <th style="padding:8px 10px;text-align:left">周次奇数</th>
+      <th style="padding:8px 10px">年级</th>
+      <th style="padding:8px 10px">班级</th>
+      ${DAY_LABELS.map(d=>`<th style="padding:6px 8px;background:#FFE7B0;color:#7A4F1B">${d}A</th><th style="padding:6px 8px;background:#C9EBFB;color:#13718E">${d}B</th>`).join('')}
+    </tr></thead>`;
+    const body = rows.map(r => `<tr style="border-top:1px solid #E0EBF0">
+      <td style="padding:8px 10px;color:var(--ink-1)">${r.week}周</td>
+      <td style="padding:8px 10px;font-weight:700">${r.grade}</td>
+      <td style="padding:8px 10px;font-weight:700;color:#13718E">${r['class']}</td>
+      ${[1,2,3,4,5].map(d=>`<td style="padding:6px 8px;text-align:center;color:#C2410C;font-weight:700">${r[d+'A']||0}</td><td style="padding:6px 8px;text-align:center;color:#13718E;font-weight:700">${r[d+'B']||0}</td>`).join('')}
+    </tr>`).join('');
+    document.getElementById('gtClassTable').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px">${head}<tbody>${body}</tbody></table>`;
+  } catch(e){
+    document.getElementById('gtClassTable').innerHTML = `<div style="padding:20px;color:#C2410C">加载失败：${e.message}</div>`;
+  }
+}
+
+async function loadGradeStats(){
+  const week = parseInt(document.getElementById('gtWeekOdd').value, 10) || 13;
+  document.getElementById('gtWeekLabel').textContent = `第 ${week} 周`;
+  try {
+    const r = await fetch(`/api/meal-stats/grade?week=${week}`);
+    const data = await r.json();
+    const rows = data.rows || [];
+    if(!rows.length){
+      document.getElementById('gtGradeStats').innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700">暂无该周选餐数据</div>';
+      return;
+    }
+    const oddRows = rows.filter(r=>r.parity==='odd');
+    const evenRows = rows.filter(r=>r.parity==='even');
+    const buildTable = (rs, title) => {
+      if(!rs.length) return '';
+      return `
+        <div style="margin-top:14px"><strong>${title}</strong></div>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px">
+          <thead style="background:#F4FAFD">
+            <tr>
+              <th style="padding:8px;text-align:left">年级</th>
+              ${DAY_LABELS.map(d=>`<th colspan="2" style="padding:8px">${d}</th>`).join('')}
+            </tr>
+            <tr>
+              <th></th>
+              ${DAY_LABELS.map(_=>`<th style="padding:6px;background:#FFE7B0;color:#7A4F1B">A</th><th style="padding:6px;background:#C9EBFB;color:#13718E">B</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rs.map(r=>`
+              <tr style="border-top:1px solid #E0EBF0">
+                <td style="padding:8px;font-weight:800;color:#1F3A4D">${r.gradeName||'-'}</td>
+                ${[1,2,3,4,5].map(d=>`<td style="padding:8px;text-align:center;font-weight:700;color:#C2410C">${r[d+'A']||0}</td><td style="padding:8px;text-align:center;font-weight:700;color:#13718E">${r[d+'B']||0}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    };
+    document.getElementById('gtGradeStats').innerHTML = buildTable(oddRows, '奇数周') + buildTable(evenRows, '偶数周');
+  } catch(e){
+    document.getElementById('gtGradeStats').innerHTML = `<div style="padding:20px;color:#C2410C">加载失败：${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════ Excel 导出 ═══════════════════════ */
+function _dl(url){
+  // 用隐藏 anchor 触发下载（带文件名 / Content-Disposition）
+  const a = document.createElement('a');
+  a.href = url; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function exportClass(kind){
+  // 班主任：本班选餐下载（屈光/体测属于老师上传源 → 不在此下载）
+  if(kind !== 'meal') return;
+  const grade = (UserAuth.getBoundGrade && UserAuth.getBoundGrade()) || '';
+  const klass = (UserAuth.getBoundClass && UserAuth.getBoundClass()) || '';
+  if(!grade || !klass){ showToast('账号缺少班级绑定'); return; }
+  const wo = parseInt(document.getElementById('pmWeekOdd')?.value, 10) || 13;
+  const we = parseInt(document.getElementById('pmWeekEven')?.value, 10) || 14;
+  _dl(`/api/export/class-meal.xlsx?role=teacher&sub=class&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}&week_odd=${wo}&week_even=${we}`);
+  showToast('下载中…');
+}
+function exportSchoolMeal(){
+  const wk = parseInt(document.getElementById('gtWeekOdd')?.value, 10);
+  const q = wk ? `&week=${wk}` : '';
+  _dl(`/api/export/school-meal.xlsx?role=teacher&sub=general${q}`);
+  showToast('下载中…');
+}
+function exportAnyClass(kind){
+  if(kind !== 'meal') return;
+  const grade = (document.getElementById('gtDlGrade')?.value || '').trim();
+  const klass = (document.getElementById('gtDlClass')?.value || '').trim();
+  if(!grade || !klass){ showToast('请填年级和班级'); return; }
+  _dl(`/api/export/class-meal.xlsx?role=teacher&sub=general&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+  showToast('下载中…');
+}
+
+/* ═══════════════════════ 班主任：本班学生 10 天 ═══════════════════════ */
+async function loadClassTable(){
+  if(!window.UserAuth || !UserAuth.isClassTeacher()) return;
+  const grade = UserAuth.getBoundGrade() || '五年级';
+  const klass = UserAuth.getBoundClass() || '1班';
+  document.getElementById('ctSubtitle').textContent = `${grade} ${klass} · 共 10 天`;
+  try {
+    const r = await fetch(`/api/meal-stats/class?grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+    const data = await r.json();
+    const students = data.students || [];
+    if(!students.length){
+      document.getElementById('ctClassTable').innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700">本班暂无学生选餐数据</div>';
+      return;
+    }
+    const cell = (v) => v==='A'
+      ? '<span style="background:#FFE7B0;color:#7A4F1B;padding:2px 8px;border-radius:6px;font-weight:800">A</span>'
+      : v==='B'
+        ? '<span style="background:#C9EBFB;color:#13718E;padding:2px 8px;border-radius:6px;font-weight:800">B</span>'
+        : '<span style="color:#CFD8DD">—</span>';
+    document.getElementById('ctClassTable').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead style="background:#F4FAFD">
+          <tr>
+            <th style="padding:8px;text-align:left">学生</th>
+            <th colspan="5" style="padding:8px;background:#FFE7B0;color:#7A4F1B">奇数周</th>
+            <th colspan="5" style="padding:8px;background:#C9EBFB;color:#13718E">偶数周</th>
+          </tr>
+          <tr>
+            <th></th>
+            ${DAY_LABELS.map(d=>`<th style="padding:6px">${d}</th>`).join('')}
+            ${DAY_LABELS.map(d=>`<th style="padding:6px">${d}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${students.map(s=>`
+            <tr style="border-top:1px solid #E0EBF0">
+              <td style="padding:8px;font-weight:800;color:#1F3A4D">${s.displayName||'-'}</td>
+              ${[1,2,3,4,5].map(d=>`<td style="padding:6px;text-align:center">${cell(s['odd_'+d])}</td>`).join('')}
+              ${[1,2,3,4,5].map(d=>`<td style="padding:6px;text-align:center">${cell(s['even_'+d])}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e){
+    document.getElementById('ctClassTable').innerHTML = `<div style="padding:20px;color:#C2410C">加载失败：${e.message}</div>`;
+  }
+}
+
+/* 启动：根据角色加载不同面板 */
+if(window.UserAuth){
+  UserAuth.ready(()=>{
+    if(UserAuth.isParent()){
+      loadParentGrowth();
+      renderParentMealPicker();
+    } else if(UserAuth.isGeneralTeacher()){
+      _restoreGTDraft();
+      loadGradeCounts();
+      loadGradeStats();
+      loadClassSummary();
+      document.getElementById('gtWeekOdd').addEventListener('change', ()=>{ loadGradeStats(); loadClassSummary(); });
+      // 图片选择文件名提示
+      document.getElementById('gtImageOdd').addEventListener('change', e=>{ document.getElementById('gtImageOddName').textContent = e.target.files[0]?.name || '未选择'; });
+      document.getElementById('gtImageEven').addEventListener('change', e=>{ document.getElementById('gtImageEvenName').textContent = e.target.files[0]?.name || '未选择'; });
+    } else if(UserAuth.isClassTeacher()){
+      loadClassTable();
+      loadClassVisionStats();
+      loadClassFitnessStats();
+    }
+  });
+}
+
+/* ═══════════════════════ 班主任：全班屈光分布 ═══════════════════════ */
+async function loadClassVisionStats(){
+  const grade = UserAuth.getBoundGrade() || '三年级';
+  const klass = UserAuth.getBoundClass() || '1班';
+  try {
+    const r = await fetch(`/api/class/vision-stats?role=teacher&sub=class&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    document.getElementById('ctVisionSub').textContent = `${grade} ${klass} · 共 ${data.total} 人`;
+    const CAT_COLOR = {正常:'var(--sea-deep)', 高危:'#FFC65A', 近视:'#E94B6A', 戴镜:'var(--ocean)', 弱视:'#7C5BCC', 未测:'#CFD8DD'};
+    // 分布条 + 学生列表
+    const buckets = data.buckets || [];
+    const total = data.total || 1;
+    const barHTML = buckets.filter(b=>b.count>0).map(b=>`
+      <div style="background:${CAT_COLOR[b.cat]};color:#fff;font-weight:800;padding:6px 10px;font-size:12px;text-align:center;flex:${b.count}" title="${b.cat} ${b.count} 人 (${(b.count*100/total).toFixed(0)}%)">${b.cat} ${b.count}</div>
+    `).join('');
+    const cardsHTML = buckets.map(b => `
+      <div style="background:#F7FBFE;border-radius:10px;padding:10px 12px;text-align:center;min-width:80px">
+        <div style="color:${CAT_COLOR[b.cat]};font-size:22px;font-weight:900">${b.count}</div>
+        <div style="color:var(--ink-1);font-size:11px;font-weight:700;margin-top:2px">${b.cat}</div>
+        <div style="color:#7BB8DA;font-size:10px;margin-top:2px">${(b.count*100/total).toFixed(0)}%</div>
+      </div>
+    `).join('');
+    const studentsHTML = (data.students || []).map(s => {
+      const naked = s.right_naked_acuity != null ? `${s.right_naked_acuity}/${s.left_naked_acuity}` : '<span style="color:#CFD8DD">-</span>';
+      const sph = s.right_sph != null ? `${s.right_sph}/${s.left_sph}` : '<span style="color:#CFD8DD">-</span>';
+      return `
+        <tr style="border-top:1px solid #EAF2F6">
+          <td style="padding:8px;font-weight:700">${s.name}</td>
+          <td style="padding:8px;text-align:center;font-weight:700">${naked}</td>
+          <td style="padding:8px;text-align:center">${sph}</td>
+          <td style="padding:8px;text-align:center;color:var(--ink-1)">${s.glasses_type || '-'}</td>
+          <td style="padding:8px;text-align:center"><span style="background:${CAT_COLOR[s.category]}22;color:${CAT_COLOR[s.category]};padding:3px 10px;border-radius:8px;font-weight:800;font-size:11px">${s.category}</span></td>
+        </tr>
+      `;
+    }).join('');
+    document.getElementById('ctVisionStats').innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${cardsHTML}</div>
+      <div style="display:flex;border-radius:10px;overflow:hidden;margin-bottom:14px;background:#F4FAFD">${barHTML}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead style="background:#F4FAFD;color:var(--ink-1);font-weight:800">
+          <tr>
+            <th style="padding:8px;text-align:left">学生</th>
+            <th style="padding:8px">裸眼 R/L</th>
+            <th style="padding:8px">球镜 R/L</th>
+            <th style="padding:8px">戴镜方式</th>
+            <th style="padding:8px">分类</th>
+          </tr>
+        </thead>
+        <tbody>${studentsHTML}</tbody>
+      </table>
+    `;
+  } catch(e){
+    document.getElementById('ctVisionStats').innerHTML = `<div style="padding:20px;color:#C2410C">加载失败：${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════ 班主任：体测合格率 ═══════════════════════ */
+async function loadClassFitnessStats(){
+  const grade = UserAuth.getBoundGrade() || '三年级';
+  const klass = UserAuth.getBoundClass() || '1班';
+  try {
+    const r = await fetch(`/api/class/fitness-stats?role=teacher&sub=class&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    document.getElementById('ctFitSub').textContent = `${grade} ${klass} · ${data.test_year || '?'} 学年 · 共 ${data.total} 人`;
+    const LV_COLOR = {优秀:'var(--sea-deep)', 良好:'var(--ocean)', 及格:'#E08A00', 不及格:'#E94B6A', 未测:'#CFD8DD'};
+    const total = data.total || 1;
+    const itemsHTML = (data.items || []).map(item => {
+      const segs = data.levels.map(lv => {
+        const c = item.levels[lv] || 0;
+        if(c === 0) return '';
+        return `<div style="background:${LV_COLOR[lv]};color:#fff;font-weight:800;padding:6px 8px;font-size:11px;text-align:center;flex:${c}" title="${lv} ${c} 人">${c}</div>`;
+      }).join('');
+      // 合格率：优秀+良好+及格 / 总人数
+      const pass = (item.levels.优秀||0) + (item.levels.良好||0) + (item.levels.及格||0);
+      const passRate = total > 0 ? Math.round(pass * 100 / total) : 0;
+      const excellent = (item.levels.优秀||0) + (item.levels.良好||0);
+      const excRate = total > 0 ? Math.round(excellent * 100 / total) : 0;
+      return `
+        <div style="background:#F7FBFE;border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <div style="font-weight:900;color:#1F3A4D;font-size:13.5px;min-width:110px">${item.label}</div>
+            <div style="font-size:11px;color:#7BB8DA;font-weight:700">合格 ${passRate}% · 优良 ${excRate}%</div>
+          </div>
+          <div style="display:flex;border-radius:8px;overflow:hidden;background:#EAF2F6">${segs}</div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('ctFitStats').innerHTML = itemsHTML;
+  } catch(e){
+    document.getElementById('ctFitStats').innerHTML = `<div style="padding:20px;color:#C2410C">加载失败：${e.message}</div>`;
+  }
+}
+</script>
+<script>/* 家长模式强制刷新：确保 data-show-for 在 UserAuth 异步完成后生效 */
+(function(){
+  const urlRole = new URLSearchParams(location.search).get('role');
+  const cachedRole = sessionStorage.getItem('bs_role');
+  if(urlRole === 'parent' || cachedRole === 'parent'){
+    var force = function(){
+      document.querySelectorAll('[data-show-for="parent"]').forEach(function(el){ el.style.display = ''; });
+      document.querySelectorAll('[data-show-for="teacher,admin"]').forEach(function(el){ el.style.display = 'none'; });
+      document.querySelectorAll('[data-hide-for="parent"]').forEach(function(el){ el.style.display = 'none'; });
+    };
+    var initParent = function(){
+      // 直接调新 loadParentGrowth()，不依赖 UserAuth.isParent
+      if(typeof loadParentGrowth === 'function') loadParentGrowth();
+      if(typeof renderParentMealPicker === 'function') renderParentMealPicker();
+    };
+    force();
+    setTimeout(force, 200);
+    setTimeout(function(){ force(); initParent(); }, 600);
+    setTimeout(function(){ force(); initParent(); }, 1200);
+    setTimeout(function(){ force(); initParent(); }, 2500);
+  }
+})();
+</script>
+</body>
+</html>

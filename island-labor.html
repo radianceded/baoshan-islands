@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>劳动岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background: linear-gradient(180deg,#FFF8E1 0%, #FFE0B2 15%, #FFCC80 40%, #AED581 70%, #7CB342 100%);
+    overflow-x:hidden;min-height:100vh;
+  }
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FF8A65,#FF7043);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,112,67,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#FF8A65,#9CCC65);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  .banner{position:relative;height:280px;overflow:hidden;background: linear-gradient(135deg,#FFE0B2,#FFCC80,#AED581);border-bottom:4px solid #FF8A65}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#E65100;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#9CCC65;box-shadow:0 0 0 3px rgba(156,204,101,.25)}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+
+  /* 统计卡片 */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  @media (max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:520px){.stats-row{grid-template-columns:1fr}}
+  .stat-card{
+    background:#fff;border-radius:20px;padding:20px;text-align:center;
+    border:2px solid #E0EBF0;box-shadow:0 6px 20px rgba(0,80,120,0.08);
+    transition:transform .2s;
+  }
+  .stat-card:hover{transform:translateY(-3px)}
+  .stat-card .e{font-size:36px;line-height:1}
+  .stat-card .v{font-size:28px;font-weight:900;color:#1F3A4D;margin-top:6px}
+  .stat-card .l{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:4px;letter-spacing:1px}
+  .stat-card.accent{border-color:#FF8A65;background:linear-gradient(180deg,#FFF3E0,#FFE0B2)}
+  .stat-card.accent .v{color:#E65100}
+
+  /* 活动列表 */
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,80,120,0.08);border:1px solid rgba(255,138,101,0.3);margin-bottom:20px}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .card-h .icon.orange{background:linear-gradient(135deg,#FFE0B2,#FF8A65)}
+  .card-h .icon.green{background:linear-gradient(135deg,#DCEDC8,#9CCC65)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* 筛选 */
+  .cat-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .cat-tab{padding:10px 16px;border-radius:14px;background:#F4FAFD;border:2px solid #E0EBF0;color:#5C7A8C;font-weight:800;font-size:13px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+  .cat-tab:hover{transform:translateY(-2px);border-color:#FF8A65}
+  .cat-tab.active{background:linear-gradient(135deg,#FF8A65,#FF7043);color:#fff;border-color:#FF7043;box-shadow:0 6px 14px rgba(255,112,67,.4)}
+
+  /* 活动卡片 */
+  .activity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  @media (max-width:768px){.activity-grid{grid-template-columns:1fr}}
+  .activity-card{
+    background:#fff;border:2px solid #E0EBF0;border-radius:18px;padding:18px;
+    cursor:pointer;transition:all .25s;position:relative;overflow:hidden;
+  }
+  .activity-card:hover{transform:translateY(-4px);border-color:#FF8A65;box-shadow:0 8px 20px rgba(255,138,101,.2)}
+  .activity-card .top-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+  .activity-card .act-icon{
+    width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    font-size:24px;flex-shrink:0;
+  }
+  .activity-card .act-icon.planting{background:linear-gradient(135deg,#DCEDC8,#9CCC65)}
+  .activity-card .act-icon.cleaning{background:linear-gradient(135deg,#BBDEFB,#64B5F6)}
+  .activity-card .act-icon.crafting{background:linear-gradient(135deg,#FFE0B2,#FFB74D)}
+  .activity-card .act-icon.cooking{background:linear-gradient(135deg,#FFCDD2,#E57373)}
+  .activity-card .act-icon.other{background:linear-gradient(135deg,#E1BEE7,#BA68C8)}
+  .activity-card .act-info{flex:1;min-width:0}
+  .activity-card .act-name{font-size:15px;font-weight:900;color:#1F3A4D;letter-spacing:.5px}
+  .activity-card .act-date{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:3px}
+  .activity-card .act-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .activity-card .act-tag{
+    font-size:10px;padding:3px 10px;border-radius:8px;font-weight:700;
+    background:#F0F8FC;color:#5C7A8C;
+  }
+  .activity-card .act-tag.hot{background:#FFF3E0;color:#E65100}
+  .activity-card .act-tag.new{background:#E8F5E9;color:#2E7D32}
+  .activity-card .expand-indicator{text-align:center;margin-top:10px;font-size:20px;color:#CFD8DD;transition:transform .3s}
+  .activity-card.expanded .expand-indicator{transform:rotate(180deg)}
+  .activity-card .detail{display:none;margin-top:14px;padding-top:14px;border-top:1.5px dashed #E0EBF0;font-size:13px;color:#5C7A8C;line-height:1.7}
+  .activity-card.expanded .detail{display:block}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#E65100;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(230,81,0,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>🧡 劳动岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar" id="stuAvatar">林</div>
+      <div class="stu-info">
+        <div class="name" id="stuName">林**</div>
+        <div class="meta" id="stuMeta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth&&UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+  </div>
+</div>
+
+<div class="banner">
+  <div class="banner-text">
+    <h1>🧡 劳动岛</h1>
+    <p>动手实践 · 体验劳动的快乐</p>
+    <span class="tag"><span class="dot"></span>种植 · 清洁 · 手工 · 烹饪</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 统计 -->
+  <div class="stats-row">
+    <div class="stat-card accent">
+      <div class="e">🌟</div>
+      <div class="v" id="totalCount">0</div>
+      <div class="l">总活动数</div>
+    </div>
+    <div class="stat-card">
+      <div class="e">✅</div>
+      <div class="v" id="doneCount">0</div>
+      <div class="l">已完成</div>
+    </div>
+    <div class="stat-card">
+      <div class="e">⏳</div>
+      <div class="v" id="pendingACTCount">0</div>
+      <div class="l">进行中</div>
+    </div>
+    <div class="stat-card">
+      <div class="e">⭐</div>
+      <div class="v" id="starCount">0</div>
+      <div class="l">获得劳动星</div>
+    </div>
+  </div>
+
+  <!-- 活动列表 -->
+  <div class="card">
+    <div class="card-h">
+      <div class="icon orange">🧹</div>
+      <h2>劳动实践</h2>
+      <div class="sub" id="actCount">0 个活动</div>
+    </div>
+
+    <div class="cat-tabs" id="catTabs">
+      <button class="cat-tab active" onclick="switchCat('all')">🌟 全部</button>
+      <button class="cat-tab" onclick="switchCat('planting')">🌱 种植养护</button>
+      <button class="cat-tab" onclick="switchCat('cleaning')">🧹 清洁整理</button>
+      <button class="cat-tab" onclick="switchCat('crafting')">✂️ 手工制作</button>
+      <button class="cat-tab" onclick="switchCat('cooking')">🍳 烹饪烘焙</button>
+    </div>
+
+    <div class="activity-grid" id="activityGrid">
+      <div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700;grid-column:1/-1">加载中…</div>
+    </div>
+  </div>
+
+  <!-- 我的劳动记录 -->
+  <div class="card" style="background:linear-gradient(135deg,#FFF8E1,#FFE0B2);border:3px solid #FF8A65">
+    <div class="card-h">
+      <div class="icon green">📋</div>
+      <h2>我的劳动记录</h2>
+      <div class="sub" id="myRecordCount" style="color:#E65100">0 条</div>
+    </div>
+    <div id="myRecords" style="padding:14px">
+      <div style="text-align:center;color:#7BB8DA;font-weight:700;padding:20px">正在加载…</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 工具 ============
+function getToken(){ return (window.UserAuth&&UserAuth.getToken)?UserAuth.getToken():sessionStorage.getItem('bs_session_token')||''; }
+function getIdCard(){
+  if(window.UserAuth&&UserAuth.getIdCard) return UserAuth.getIdCard();
+  if(window.UserAuth&&UserAuth.getCurrentIdCard) return UserAuth.getCurrentIdCard();
+  return 'demo_001';
+}
+async function api(path, opts={}){
+  const token = getToken();
+  const headers = opts.headers||{};
+  if(token) headers['Authorization'] = 'Bearer '+token;
+  const res = await fetch(location.origin+path,{...opts,headers});
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+function goHome(){ location.href='island-homepage.html'; }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ============ 筛选 ============
+let currentCat = 'all';
+let allActivities = [];
+
+const CATS = [
+  {key:'all', name:'全部', ic:'🌟'},
+  {key:'planting', name:'种植养护', ic:'🌱'},
+  {key:'cleaning', name:'清洁整理', ic:'🧹'},
+  {key:'crafting', name:'手工制作', ic:'✂️'},
+  {key:'cooking', name:'烹饪烘焙', ic:'🍳'},
+];
+
+function switchCat(cat){
+  currentCat = cat;
+  document.querySelectorAll('#catTabs .cat-tab').forEach(b=>{
+    b.classList.toggle('active', b.textContent.includes(cat==='all'?'全部':CATS.find(c=>c.key===cat)?.name||''));
+  });
+  renderActivities();
+}
+
+// ============ 加载活动 ============
+async function loadActivities(){
+  try{
+    const data = await api('/api/activities');
+    allActivities = data.activities||data.rows||data||[];
+    if(!Array.isArray(allActivities)) allActivities=[];
+    updateStats();
+    renderActivities();
+  }catch(e){
+    // 兜底：展示示例数据
+    allActivities = [
+      {id:1,name:'班级菜园种植',category:'planting',date:'2026-06-15',status:'active',tags:['🌱 种植','👥 小组'],desc:'每位同学认领一株植物，负责日常浇水、施肥、除草，记录生长日记。'},
+      {id:2,name:'教室大扫除',category:'cleaning',date:'2026-06-20',status:'upcoming',tags:['🧹 清洁','🏫 全校'],desc:'以班级为单位进行教室彻底清洁，包括地面、窗户、桌椅整理。'},
+      {id:3,name:'手工折纸课堂',category:'crafting',date:'2026-06-18',status:'active',tags:['✂️ 手工','🎨 创意'],desc:'学习基础折纸技巧，完成至少两件手工作品，优秀作品将在橱窗展示。'},
+      {id:4,name:'小小厨师体验',category:'cooking',date:'2026-07-01',status:'upcoming',tags:['🍳 烹饪','👨‍👩‍👧 亲子'],desc:'在老师和家长指导下，学习制作简单的点心或早餐，培养动手能力和生活技能。'},
+      {id:5,name:'校园绿化维护',category:'planting',date:'2026-06-10',status:'done',tags:['🌱 种植','🏫 户外'],desc:'参与校园花坛的除草、松土和浇水，了解不同植物的养护知识。'},
+      {id:6,name:'废旧物品改造',category:'crafting',date:'2026-06-25',status:'active',tags:['♻️ 环保','🎨 创意'],desc:'利用废旧材料进行创意改造，制作实用或装饰性物品，践行环保理念。'},
+    ];
+    updateStats();
+    renderActivities();
+  }
+}
+
+function updateStats(){
+  document.getElementById('totalCount').textContent = allActivities.length;
+  document.getElementById('doneCount').textContent = allActivities.filter(a=>a.status==='done').length;
+  document.getElementById('pendingACTCount').textContent = allActivities.filter(a=>a.status==='active'||a.status==='upcoming').length;
+  document.getElementById('starCount').textContent = allActivities.filter(a=>a.status==='done').length * 2;
+  document.getElementById('actCount').textContent = allActivities.length+' 个活动';
+}
+
+function renderActivities(){
+  const filtered = currentCat==='all'?allActivities:allActivities.filter(a=>a.category===currentCat);
+  const grid = document.getElementById('activityGrid');
+  const iconClass = {planting:'planting',cleaning:'cleaning',crafting:'crafting',cooking:'cooking',other:'other'};
+  const catIcon = {planting:'🌱',cleaning:'🧹',crafting:'✂️',cooking:'🍳',other:'🧤'};
+
+  if(!filtered.length){
+    grid.innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700;grid-column:1/-1">📭 暂无该类型的劳动活动</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(a=>{
+    const statusLabel = a.status==='done'?'✅ 已完成':a.status==='active'?'🟢 进行中':'⏳ 即将开始';
+    const statusStyle = a.status==='done'?'color:#2E7D32;background:#E8F5E9':a.status==='active'?'color:#E65100;background:#FFF3E0':'color:#1565C0;background:#E3F2FD';
+    return `
+    <div class="activity-card" onclick="this.classList.toggle('expanded')">
+      <div class="top-row">
+        <div class="act-icon ${iconClass[a.category]||'other'}">${catIcon[a.category]||'🧤'}</div>
+        <div class="act-info">
+          <div class="act-name">${a.name||'劳动活动'}</div>
+          <div class="act-date">📅 ${(a.date||'').slice(0,10)} · <span style="${statusStyle};padding:2px 8px;border-radius:6px;font-size:10px">${statusLabel}</span></div>
+          <div class="act-tags">${(a.tags||[]).map(t=>`<span class="act-tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+      <div class="expand-indicator">▼</div>
+      <div class="detail">${a.desc||a.description||'暂无详细描述'}</div>
+    </div>`;
+  }).join('');
+
+  // 我的记录
+  renderMyRecords(filtered.filter(a=>a.status==='done'));
+}
+
+function renderMyRecords(doneActivities){
+  const el = document.getElementById('myRecords');
+  document.getElementById('myRecordCount').textContent = doneActivities.length+' 条';
+  if(!doneActivities.length){
+    el.innerHTML = '<div style="text-align:center;color:#7BB8DA;font-weight:700;padding:14px">还没有完成的劳动记录，快来参与吧！🌱</div>';
+    return;
+  }
+  el.innerHTML = doneActivities.map(a=>`
+    <div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;border:1.5px solid #FFCC80">
+      <span style="font-size:28px">✅</span>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:14px;color:#1F3A4D">${a.name}</div>
+        <div style="font-size:11px;color:#7BB8DA;font-weight:600">完成于 ${(a.date||'').slice(0,10)}</div>
+      </div>
+      <span style="font-size:18px">⭐</span>
+    </div>
+  `).join('');
+}
+
+// ============ 初始化 ============
+(function init(){
+  loadActivities();
+  if(window.UserAuth){ UserAuth.ready(()=>{
+    const info = UserAuth.getCurrentStudentInfo&&UserAuth.getCurrentStudentInfo();
+    if(!info) return;
+    document.getElementById('stuAvatar').textContent=(info.displayName||'生').charAt(0);
+    document.getElementById('stuName').textContent=info.displayName||'***';
+    document.getElementById('stuMeta').textContent=(info.grade||'')+' · '+(info.class||'');
+  });}
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "_note": "Copy this file to campus_config.json and fill values only on the deployment server.",
+  "benbu": {
+    "name": "campus-a",
+    "school_name": "School A",
+    "corpId": "replace-with-corp-id",
+    "appKey": "replace-with-app-key",
+    "appSecret": "replace-with-app-secret",
+    "agentId": ""
+  },
+  "baolin": {
+    "name": "campus-b",
+    "school_name": "School B",
+    "corpId": "replace-with-corp-id",
+    "appKey": "replace-with-app-key",
+    "appSecret": "replace-with-app-secret",
+    "agentId": ""
+  },
+  "luojing": {
+    "name": "campus-c",
+    "school_name": "School C",
+    "corpId": "replace-with-corp-id",
+    "appKey": "replace-with-app-key",
+    "appSecret": "replace-with-app-secret",
+    "agentId": ""
+  }
+}

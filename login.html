@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · 宝山学习群岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% 100%, rgba(8,32,55,0.32), transparent 62%),
+      radial-gradient(75% 45% at 88% 14%, rgba(255,212,150,0.38), transparent 65%),
+      linear-gradient(180deg,#E8C18A 0%, #C0D7E5 50%, #4A85AD 100%);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .login-card{
+    background:#fff;border-radius:28px;width:480px;max-width:100%;
+    padding:36px 32px;box-shadow:0 40px 80px rgba(0,30,60,.35);
+  }
+  .logo-row{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .logo-row .badge{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFE9A6,#D5762A);font-size:28px}
+  .logo-row .title{font-size:18px;font-weight:900;color:#1F3A4D;letter-spacing:2px}
+  .logo-row .sub{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px;letter-spacing:.5px}
+  h1{font-size:24px;font-weight:900;color:#1F3A4D;letter-spacing:3px;margin-bottom:6px}
+  .greeting{font-size:13px;color:#7BB8DA;font-weight:700;margin-bottom:22px;letter-spacing:1px}
+  .form-row{margin-bottom:14px}
+  .form-row label{display:block;font-size:12px;color:#5C7A8C;font-weight:800;margin-bottom:6px;letter-spacing:1px}
+  .form-row input{
+    width:100%;padding:13px 16px;border:2px solid #DCEBF3;border-radius:14px;
+    font-size:15px;color:#1F3A4D;outline:none;background:#F4FAFD;font-family:inherit;transition:all .15s;
+  }
+  .form-row input:focus{border-color:#5BC8E8;background:#fff}
+  .login-btn{
+    width:100%;padding:14px;background:linear-gradient(135deg,#5BC8E8,#0E5E80);
+    color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:900;
+    letter-spacing:3px;cursor:pointer;margin-top:8px;transition:transform .15s;
+    box-shadow:0 8px 20px rgba(14,94,128,.35);
+  }
+  .login-btn:hover{transform:translateY(-2px)}
+  .login-btn:disabled{background:#CFD8DD;cursor:not-allowed;box-shadow:none}
+  .err{
+    margin-top:10px;padding:9px 14px;background:#FFE0E0;color:#C2410C;
+    border-radius:10px;font-size:12.5px;font-weight:700;display:none;
+  }
+  .err.show{display:block}
+  .demo-hint{
+    margin-top:22px;padding-top:18px;border-top:1.5px dashed #DCEBF3;
+  }
+  .demo-hint .title{font-size:11px;color:#5C7A8C;font-weight:800;letter-spacing:1.5px;margin-bottom:8px}
+  .demo-list{display:flex;flex-wrap:wrap;gap:6px}
+  .demo-chip{
+    background:#F4FAFD;border:1.5px solid #DCEBF3;border-radius:12px;
+    padding:5px 10px;font-size:11px;color:#5C7A8C;font-weight:700;cursor:pointer;
+    transition:all .12s;
+  }
+  .demo-chip:hover{border-color:#5BC8E8;color:#0E5E80;background:#E0F2FF}
+  .demo-chip.teacher{background:#FFF6E5;border-color:#FFD86A;color:#C2410C}
+  .demo-chip.parent{background:#FFE6EB;border-color:#FF8E9C;color:#E94B6A}
+  .pwd-hint{font-size:11px;color:#7BB8DA;margin-top:8px;font-weight:600}
+</style>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="logo-row">
+    <div class="badge">🏝️</div>
+    <div>
+      <div class="title">宝山学习群岛</div>
+      <div class="sub">Baoshan Learning Islands</div>
+    </div>
+  </div>
+
+  <h1>登录</h1>
+  <div class="greeting">老师 / 家长 请输入您的账号密码</div>
+
+  <form id="loginForm" onsubmit="return doLogin(event)">
+    <div class="form-row">
+      <label>账号</label>
+      <input id="username" type="text" autocomplete="username" placeholder="如 parent_lin / teacher_general" required>
+    </div>
+    <div class="form-row">
+      <label>密码</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••" required>
+    </div>
+    <button class="login-btn" id="submitBtn" type="submit">登 录</button>
+    <div class="err" id="errBox"></div>
+  </form>
+
+
+<script>
+
+async function doLogin(e){
+  e.preventDefault();
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('errBox');
+  const btn = document.getElementById('submitBtn');
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+  try {
+    const r = await fetch('/api/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const data = await r.json();
+    if(!r.ok || !data.success){
+      err.textContent = data.error || '登录失败';
+      err.classList.add('show');
+      btn.disabled = false; btn.textContent = '登 录';
+      return false;
+    }
+    // 把登录信息写入 sessionStorage（与 UserAuth 字段约定一致）
+    const user = data.user;
+    sessionStorage.setItem('bs_role', user.role);
+    if(user.sub_role) sessionStorage.setItem('bs_sub_role', user.sub_role);
+    if(user.bound_grade) sessionStorage.setItem('bs_bound_grade', user.bound_grade);
+    if(user.bound_class) sessionStorage.setItem('bs_bound_class', user.bound_class);
+    if(user.kid_name) sessionStorage.setItem('bs_kid_name', user.kid_name);
+    if(user.boundIdCard) sessionStorage.setItem('bs_bound_id_card', user.boundIdCard);
+    if(user.bound_id_card) sessionStorage.setItem('bs_bound_id_card', user.bound_id_card);
+    if(user.demo_idx != null) sessionStorage.setItem('bs_bound_idx', String(user.demo_idx));
+    if(user.displayName) sessionStorage.setItem('bs_user_nick', user.displayName);
+
+    // 家长：把绑定学生的真实档案预拉一次，缓存到 sessionStorage
+    if(user.role === 'parent' && (user.boundIdCard || user.bound_id_card)){
+      const card = user.boundIdCard || user.bound_id_card;
+      try {
+        const sr = await fetch('/api/students/' + encodeURIComponent(card) + '?role=parent&kid=' + encodeURIComponent(card));
+        if(sr.ok){
+          const stu = await sr.json();
+          sessionStorage.setItem('bs_bound_student_json', JSON.stringify(stu));
+          if(stu.name && !user.kid_name){
+            sessionStorage.setItem('bs_kid_name', stu.name);
+          }
+        }
+      } catch(e){ /* 后端不可达时静默跳过，岛屿仍可走 fallback */ }
+    }
+    location.href = 'island-homepage.html';
+    return false;
+  } catch(ex){
+    err.textContent = '网络错误：' + ex.message;
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = '登 录';
+    return false;
+  }
+}
+
+// 已登录 → 直接进首页
+if(sessionStorage.getItem('bs_role')){
+  location.replace('island-homepage.html');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>儿童营养餐智能分配系统 - 登录</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="login-container">
+  <div class="login-box">
+    <h1>🍱 营养餐智能分配</h1>
+    <p class="subtitle">⚠️ 演示系统 — 非医学标准，仅供测试</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" class="form-control" id="username" placeholder="admin / teacher / nutritionist">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" class="form-control" id="password" placeholder="演示环境任意密码">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;">登录</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-size:0.8em;color:#999;">
+      演示角色：admin（全部权限）| teacher（教师）| nutritionist（营养师）
+    </p>
+  </div>
+</div>
+
+<script>
+  document.getElementById('loginForm').onsubmit = function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    if (!username) return alert('请输入用户名');
+    // 演示环境：简单存储角色
+    localStorage.setItem('nutrition_user', username);
+    localStorage.setItem('nutrition_role', username.includes('admin') ? 'admin' :
+                                        username.includes('teacher') ? 'teacher' :
+                                        username.includes('nutrition') ? 'nutritionist' : 'teacher');
+    window.location.href = 'children.html';
+  };
+</script>
+</body>
+</html>

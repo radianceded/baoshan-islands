@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审计日志 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="card">
+    <div class="card-header">
+      <h2>🔐 操作审计日志</h2>
+      <span class="text-sm" style="color:var(--text-secondary)">所有操作均被记录，敏感字段已脱敏</span>
+    </div>
+
+    <div class="alert alert-info text-sm">
+      🔒 隐私保护：日志中不包含完整身体数据（身高/体重/BMI已脱敏为 **）。
+      日志记录所有 CRUD、导入导出和推荐执行操作。
+    </div>
+
+    <div class="filter-bar">
+      <select class="form-control" id="filterType" onchange="loadLogs()">
+        <option value="">全部类型</option>
+        <option value="child">儿童管理</option>
+        <option value="meal_plan">套餐管理</option>
+        <option value="rule">规则配置</option>
+        <option value="recommend">推荐操作</option>
+      </select>
+      <select class="form-control" id="filterAction" onchange="loadLogs()">
+        <option value="">全部操作</option>
+        <option value="CREATE">创建</option>
+        <option value="READ">查看</option>
+        <option value="UPDATE">更新</option>
+        <option value="DELETE">删除</option>
+        <option value="EXPORT">导出</option>
+        <option value="EXECUTE">执行</option>
+      </select>
+      <input type="text" class="form-control" id="filterOperator" placeholder="操作者..." oninput="debouncedLoad()">
+    </div>
+
+    <div class="table-wrap" id="logTable">
+      <div class="loading"><span class="spinner"></span> 加载中...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  let currentPage = 1;
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  const actionLabels = { 'CREATE':'创建','READ':'查看','UPDATE':'更新','DELETE':'删除','EXPORT':'导出','EXECUTE':'执行' };
+  const typeLabels = { 'child':'儿童','meal_plan':'套餐','rule':'规则','recommend':'推荐' };
+
+  loadLogs();
+  const debouncedLoad = debounce(() => { currentPage = 1; loadLogs(); }, 400);
+
+  async function loadLogs() {
+    const type = document.getElementById('filterType').value;
+    const action = document.getElementById('filterAction').value;
+    const operator = document.getElementById('filterOperator').value;
+    const params = new URLSearchParams({ page: currentPage, page_size: 50 });
+    if (type) params.set('target_type', type);
+    if (action) params.set('action', action);
+    if (operator) params.set('operator', operator);
+
+    const data = await apiFetch(`/audit-logs?${params.toString()}`);
+    if (!data) return;
+
+    document.getElementById('logTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>时间</th><th>操作</th><th>类型</th><th>目标ID</th>
+          <th>操作者</th><th>摘要</th><th>IP</th>
+        </tr></thead>
+        <tbody>${data.items.map(log => {
+          const actionBadge = log.action === 'DELETE' ? 'badge-danger' : log.action === 'UPDATE' ? 'badge-warning' : log.action === 'CREATE' ? 'badge-success' : log.action === 'EXPORT' ? 'badge-warning' : log.action === 'EXECUTE' ? 'badge-info' : 'badge-neutral';
+          return `
+          <tr>
+            <td><small>${formatDateTime(log.created_at)}</small></td>
+            <td><span class="badge ${actionBadge}">${actionLabels[log.action] || log.action}</span></td>
+            <td><span class="badge badge-info">${typeLabels[log.target_type] || log.target_type}</span></td>
+            <td><code>${escHtml(log.target_id||'-')}</code></td>
+            <td>${escHtml(log.operator)}</td>
+            <td><small>${escHtml(log.summary||'-')}</small></td>
+            <td><small>${escHtml(log.ip_address||'-')}</small></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="7" class="text-center">暂无审计日志</td></tr>'}</tbody>
+      </table>`;
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadLogs(); });
+  }
+</script>
+</body>
+</html>

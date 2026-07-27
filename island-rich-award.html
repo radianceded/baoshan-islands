@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>满载版成就岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#FFF8E5 0%, #FFE0B0 100%);color:#1F3A4D;padding:30px 20px 60px;min-height:100vh}
+  .head{max-width:1400px;margin:0 auto 20px}
+  .head h1{font-size:30px;font-weight:900;letter-spacing:3px;color:#3D2812}
+  .head p{margin-top:8px;font-size:14px;color:#7A4F1B;line-height:1.7}
+  .stage{max-width:1400px;margin:0 auto;background:linear-gradient(180deg,#FFEBC0 0%, #FFD080 25%, #BFE6FF 55%, #6FC8F0 90%, #2E8FBE 100%);border-radius:24px;overflow:hidden;box-shadow:0 16px 50px rgba(60,40,20,0.18);position:relative}
+  .stage svg{width:100%;display:block}
+  .legend{position:absolute;left:20px;top:20px;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-radius:16px;padding:14px 16px;font-size:12px;line-height:1.7;box-shadow:0 6px 18px rgba(0,40,80,0.18);max-width:240px}
+  .legend h3{font-size:14px;font-weight:900;color:#0E5E80;margin-bottom:8px;letter-spacing:1px}
+  .legend ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:4px}
+  .legend li{background:#F4FAFD;border:1px solid #DCEBF3;border-radius:8px;padding:2px 7px;font-size:11px;color:#0E5E80;font-weight:700}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>🏆 满载版「成就岛」</h1>
+  <p>三层颁奖台 + 名人堂建筑 + 凯旋门 + 金色绶带 + 雕像 + 烟花 + 喇叭手 + 金牌墙 + 多个领奖小孩…… <strong>30+ 元素</strong></p>
+</div>
+<div class="stage">
+  <div class="legend">
+    <h3>🔍 这座岛上有……</h3>
+    <ul>
+      <li>名人堂建筑（金顶）</li><li>三层颁奖台</li><li>凯旋门</li>
+      <li>大金奖杯</li><li>奖牌墙</li><li>雕像 ×2</li>
+      <li>金色绶带</li><li>烟花 ×3</li><li>喇叭手</li>
+      <li>领奖小孩 ×3</li><li>金牌挂饰</li><li>大星星 ×4</li>
+      <li>红毯</li><li>火炬 ×2</li><li>彩旗</li>
+      <li>奖杯架</li><li>气球</li><li>蝴蝶</li>
+      <li>沙滩贝壳</li><li>帆船</li>
+    </ul>
+  </div>
+
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFF8C8"/><stop offset="60%" stop-color="#FFC23F"/><stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FD2F1"/><stop offset="100%" stop-color="#3FA8D8"/></linearGradient>
+      <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DDB6A"/><stop offset="100%" stop-color="#5FA830"/></linearGradient>
+      <linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0B2"/><stop offset="100%" stop-color="#E0A878"/></linearGradient>
+      <linearGradient id="goldG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFE672"/>
+        <stop offset="50%" stop-color="#FFC23F"/>
+        <stop offset="100%" stop-color="#A06B12"/>
+      </linearGradient>
+      <linearGradient id="silverG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#F0F0F0"/>
+        <stop offset="100%" stop-color="#8C8C8C"/>
+      </linearGradient>
+      <linearGradient id="bronzeG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E0945C"/>
+        <stop offset="100%" stop-color="#7A4F1B"/>
+      </linearGradient>
+      <linearGradient id="redCarpet" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E0182A"/>
+        <stop offset="100%" stop-color="#9C1018"/>
+      </linearGradient>
+      <linearGradient id="wallStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFF6DD"/><stop offset="100%" stop-color="#E8C896"/></linearGradient>
+
+      <symbol id="star" viewBox="0 0 16 16">
+        <path d="M8 1 L10 6 L15 6 L11 9 L13 14 L8 11 L3 14 L5 9 L1 6 L6 6 Z" fill="#FFD86A" stroke="#3D2812" stroke-width="1.2"/>
+      </symbol>
+      <symbol id="firework" viewBox="0 0 40 40">
+        <g stroke="#FFD86A" stroke-width="2" stroke-linecap="round">
+          <line x1="20" y1="20" x2="20" y2="6"/><line x1="20" y1="20" x2="20" y2="34"/>
+          <line x1="20" y1="20" x2="6" y2="20"/><line x1="20" y1="20" x2="34" y2="20"/>
+          <line x1="20" y1="20" x2="10" y2="10"/><line x1="20" y1="20" x2="30" y2="30"/>
+          <line x1="20" y1="20" x2="10" y2="30"/><line x1="20" y1="20" x2="30" y2="10"/>
+        </g>
+        <circle cx="20" cy="6" r="2" fill="#FF6B6B"/><circle cx="20" cy="34" r="2" fill="#5BC8E8"/>
+        <circle cx="6" cy="20" r="2" fill="#A893E8"/><circle cx="34" cy="20" r="2" fill="#76C342"/>
+        <circle cx="10" cy="10" r="2" fill="#FFD86A"/><circle cx="30" cy="30" r="2" fill="#FF8C42"/>
+      </symbol>
+      <symbol id="medal" viewBox="0 0 24 36">
+        <path d="M8 0 L4 8 L8 14 M16 0 L20 8 L16 14" stroke="#E0182A" stroke-width="2.5" fill="none"/>
+        <circle cx="12" cy="22" r="10" fill="url(#goldG)" stroke="#3D2812" stroke-width="1.8"/>
+        <text x="12" y="26" text-anchor="middle" font-weight="900" font-size="11" fill="#fff">★</text>
+      </symbol>
+      <symbol id="balloon" viewBox="0 0 16 24">
+        <ellipse cx="8" cy="9" rx="6" ry="8" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <polygon points="8,17 6,20 10,20" fill="#FF6B6B" stroke="#3D2812" stroke-width="1"/>
+        <line x1="8" y1="20" x2="8" y2="24" stroke="#3D2812" stroke-width=".8"/>
+      </symbol>
+      <symbol id="butterfly" viewBox="0 0 24 16">
+        <ellipse cx="8" cy="8" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <ellipse cx="16" cy="8" rx="6" ry="7" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="12" y1="3" x2="12" y2="13" stroke="#3D2812" stroke-width="2"/>
+      </symbol>
+
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="0" dy="2" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="6" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- 太阳 -->
+    <circle cx="1380" cy="140" r="120" fill="url(#sun)" opacity=".85"/>
+    <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+      <circle cx="1380" cy="140" r="50" fill="#FFD645"/>
+      <g stroke-linecap="round">
+        <line x1="1380" y1="60" x2="1380" y2="78"/><line x1="1380" y1="202" x2="1380" y2="220"/>
+        <line x1="1300" y1="140" x2="1318" y2="140"/><line x1="1442" y1="140" x2="1460" y2="140"/>
+        <animateTransform attributeName="transform" type="rotate" from="0 1380 140" to="360 1380 140" dur="40s" repeatCount="indefinite"/>
+      </g>
+      <circle cx="1366" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <circle cx="1394" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <path d="M1366 152 Q1380 162 1394 152" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- 云 -->
+    <g fill="#fff" stroke="#3D2812" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M120 130 Q120 110 145 112 Q150 95 175 102 Q200 95 200 120 Q220 122 215 138 Q180 142 145 138 Q120 142 120 130 Z"/>
+    </g>
+
+    <!-- 烟花 -->
+    <use href="#firework" x="240" y="60" width="80" height="80">
+      <animate attributeName="opacity" values="1;.3;1" dur="2s" repeatCount="indefinite"/>
+    </use>
+    <use href="#firework" x="640" y="40" width="70" height="70">
+      <animate attributeName="opacity" values=".3;1;.3" dur="2.4s" repeatCount="indefinite"/>
+    </use>
+    <use href="#firework" x="980" y="80" width="76" height="76">
+      <animate attributeName="opacity" values="1;.3;1" dur="2.6s" repeatCount="indefinite" begin="-1.3s"/>
+    </use>
+
+    <!-- 大星星 ×4 -->
+    <use href="#star" x="380" y="180" width="34" height="34">
+      <animateTransform attributeName="transform" type="rotate" from="0 397 197" to="360 397 197" dur="14s" repeatCount="indefinite"/>
+    </use>
+    <use href="#star" x="780" y="160" width="30" height="30">
+      <animateTransform attributeName="transform" type="rotate" from="0 795 175" to="-360 795 175" dur="18s" repeatCount="indefinite"/>
+    </use>
+    <use href="#star" x="1140" y="200" width="32" height="32">
+      <animateTransform attributeName="transform" type="rotate" from="0 1156 216" to="360 1156 216" dur="16s" repeatCount="indefinite"/>
+    </use>
+    <use href="#star" x="540" y="280" width="26" height="26">
+      <animateTransform attributeName="transform" type="rotate" from="0 553 293" to="-360 553 293" dur="12s" repeatCount="indefinite"/>
+    </use>
+
+    <!-- 飘动绶带 -->
+    <g stroke-width="6" fill="none" opacity=".85">
+      <path d="M0 360 Q200 340 400 380 Q600 360 800 400 Q1000 380 1200 420 Q1400 400 1600 440" stroke="url(#goldG)"/>
+      <path d="M0 380 Q200 360 400 400 Q600 380 800 420 Q1000 400 1200 440 Q1400 420 1600 460" stroke="#E0182A"/>
+    </g>
+
+    <!-- 远山 -->
+    <g opacity=".55">
+      <path d="M0 480 Q200 420 400 460 Q600 480 800 430 Q1000 410 1200 460 Q1400 480 1600 440 L1600 540 L0 540 Z" fill="#7BB8DA"/>
+    </g>
+
+    <!-- 海 -->
+    <rect x="0" y="540" width="1600" height="460" fill="url(#seaG)"/>
+    <g stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round">
+      <path d="M80 700 Q120 690 160 700"/><path d="M280 770 Q320 760 360 770"/>
+      <path d="M540 720 Q580 710 620 720"/><path d="M1080 760 Q1120 750 1160 760"/>
+      <path d="M1340 700 Q1380 690 1420 700"/>
+    </g>
+
+    <!-- 帆船 -->
+    <g transform="translate(140 770)">
+      <ellipse cx="0" cy="0" rx="50" ry="6" fill="#000" opacity=".18"/>
+      <path d="M-46 -4 L46 -4 Q52 8 38 16 L-38 16 Q-52 8 -46 -4 Z" fill="#E0182A" stroke="#3D2812" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="0" y2="-60" stroke="#7A4F1B" stroke-width="3"/>
+      <path d="M0 -58 L26 -42 L0 -28 Z" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+      <path d="M0 -58 L-26 -42 L0 -28 Z" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+      <animateTransform attributeName="transform" type="translate" values="140 770;144 774;140 770" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 主岛 ═══ -->
+    <ellipse cx="800" cy="940" rx="700" ry="40" fill="#000" opacity=".22"/>
+    <path d="M120 880 Q200 940 800 940 Q1400 940 1480 880 Q1400 860 800 858 Q200 860 120 880 Z" fill="url(#sandG)" stroke="#3D2812" stroke-width="3"/>
+    <path d="M180 870 Q280 700 800 690 Q1320 700 1420 870 Q1380 880 800 880 Q220 880 180 870 Z" fill="url(#grassG)" stroke="#3D2812" stroke-width="3"/>
+
+    <!-- 沙滩贝壳 -->
+    <g transform="translate(220 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#FFD3D8" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(1380 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- 红毯 -->
+    <path d="M280 880 L1320 850 L1320 880 L280 905 Z" fill="url(#redCarpet)" stroke="#3D2812" stroke-width="2.5"/>
+    <line x1="280" y1="892" x2="1320" y2="868" stroke="#FFD86A" stroke-width="2" stroke-dasharray="8 6"/>
+
+    <!-- ═══ 1. 名人堂建筑（中心，最大，金顶圆穹） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(540 410)">
+        <!-- 台阶 -->
+        <rect x="-30" y="320" width="280" height="14" fill="#C8B080" stroke="#3D2812" stroke-width="2"/>
+        <rect x="-15" y="306" width="250" height="14" fill="#D8C090" stroke="#3D2812" stroke-width="2"/>
+        <rect x="0" y="292" width="220" height="14" fill="#E8D0A0" stroke="#3D2812" stroke-width="2"/>
+        <!-- 主体 -->
+        <rect x="20" y="120" width="180" height="172" fill="url(#wallStone)" stroke="#3D2812" stroke-width="3"/>
+        <!-- 6 根罗马柱 -->
+        <g stroke="#3D2812" stroke-width="2">
+          <rect x="26" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <rect x="56" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <rect x="86" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <rect x="120" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <rect x="150" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <rect x="180" y="160" width="14" height="132" fill="#FFF6DD"/>
+          <ellipse cx="33" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="63" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="93" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="127" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="157" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="187" cy="160" rx="9" ry="3" fill="#E8C896"/>
+        </g>
+        <!-- 金色穹顶 -->
+        <path d="M14 122 Q14 30 110 30 Q206 30 206 122 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="3"/>
+        <!-- 穹顶细节 -->
+        <line x1="50" y1="40" x2="170" y2="40" stroke="#3D2812" stroke-width="1.5" opacity=".4"/>
+        <ellipse cx="110" cy="60" rx="60" ry="20" fill="#FFF8C8" opacity=".5"/>
+        <!-- 金色顶尖 -->
+        <line x1="110" y1="30" x2="110" y2="-10" stroke="#3D2812" stroke-width="3"/>
+        <use href="#star" x="100" y="-26" width="20" height="20"/>
+        <!-- 中央拱门 -->
+        <path d="M88 292 L88 200 Q88 174 110 174 Q132 174 132 200 L132 292 Z" fill="#5A3712" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="110" y1="174" x2="110" y2="292" stroke="#3D2812" stroke-width="1.2"/>
+        <!-- 招牌 -->
+        <rect x="50" y="140" width="120" height="18" fill="#E0182A" stroke="#3D2812" stroke-width="2.5" rx="3"/>
+        <text x="110" y="153" text-anchor="middle" font-weight="900" font-size="13" fill="#FFD86A" font-family="'PingFang SC',sans-serif">名人堂</text>
+        <!-- 圆窗 -->
+        <circle cx="46" cy="220" r="11" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="35" y1="220" x2="57" y2="220" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="46" y1="209" x2="46" y2="231" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="174" cy="220" r="11" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="163" y1="220" x2="185" y2="220" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="174" y1="209" x2="174" y2="231" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 2. 凯旋门（红毯入口，左前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(280 770)">
+        <rect x="-50" y="0" width="14" height="100" fill="url(#wallStone)" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="36" y="0" width="14" height="100" fill="url(#wallStone)" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M-58 0 Q-58 -50 -22 -50 L22 -50 Q58 -50 58 0 L50 0 Q50 -42 22 -42 L-22 -42 Q-50 -42 -50 0 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="3"/>
+        <!-- 顶部装饰 -->
+        <use href="#star" x="-10" y="-66" width="20" height="20"/>
+        <!-- 招牌嵌入 -->
+        <rect x="-30" y="-32" width="60" height="14" fill="#E0182A" stroke="#3D2812" stroke-width="2" rx="2"/>
+        <text x="0" y="-22" text-anchor="middle" font-weight="900" font-size="9" fill="#FFD86A" font-family="'PingFang SC',sans-serif">荣耀通道</text>
+      </g>
+    </g>
+
+    <!-- ═══ 3. 三层颁奖台（红毯尽头，右前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1120 800)">
+        <!-- 第一名（中间最高） -->
+        <rect x="-25" y="-30" width="50" height="78" fill="url(#goldG)" stroke="#3D2812" stroke-width="2.5"/>
+        <text x="0" y="6" text-anchor="middle" font-weight="900" font-size="20" fill="#fff" font-family="'PingFang SC',sans-serif">1</text>
+        <!-- 第二名（左） -->
+        <rect x="-75" y="0" width="50" height="48" fill="url(#silverG)" stroke="#3D2812" stroke-width="2.5"/>
+        <text x="-50" y="34" text-anchor="middle" font-weight="900" font-size="18" fill="#fff" font-family="'PingFang SC',sans-serif">2</text>
+        <!-- 第三名（右） -->
+        <rect x="25" y="14" width="50" height="34" fill="url(#bronzeG)" stroke="#3D2812" stroke-width="2.5"/>
+        <text x="50" y="38" text-anchor="middle" font-weight="900" font-size="16" fill="#fff" font-family="'PingFang SC',sans-serif">3</text>
+        <!-- 站在颁奖台上的小孩 -->
+        <!-- 第一名 -->
+        <g transform="translate(0 -54)">
+          <ellipse cx="0" cy="-2" rx="8" ry="11" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+          <circle cx="0" cy="-15" r="7" fill="#FFD8B0" stroke="#3D2812" stroke-width="2"/>
+          <path d="M-7 -15 Q0 -25 7 -15 L7 -19 Q0 -29 -7 -19 Z" fill="#3D2812"/>
+          <circle cx="-2.5" cy="-15" r="1.2" fill="#3D2812"/>
+          <circle cx="2.5" cy="-15" r="1.2" fill="#3D2812"/>
+          <path d="M-2 -10 Q0 -7 2 -10" stroke="#3D2812" stroke-width="1.2" fill="none"/>
+          <!-- 王冠 -->
+          <polygon points="-7,-22 -3,-28 0,-22 3,-28 7,-22" fill="url(#goldG)" stroke="#3D2812" stroke-width="1.5"/>
+          <!-- 举着奖杯 -->
+          <line x1="9" y1="-4" x2="14" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round"/>
+          <g transform="translate(14 -16)">
+            <path d="M-4 0 L4 0 L3 7 Q0 10 -3 7 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="1.5"/>
+            <line x1="0" y1="7" x2="0" y2="11" stroke="#3D2812" stroke-width="1"/>
+            <rect x="-2" y="11" width="4" height="2" fill="#3D2812"/>
+          </g>
+          <!-- 金牌 -->
+          <use href="#medal" x="-6" y="-2" width="12" height="20"/>
+        </g>
+        <!-- 第二名 -->
+        <g transform="translate(-50 -22)">
+          <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+          <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+          <path d="M-6 -11 Q-8 -22 0 -22 Q8 -22 6 -11" fill="#7A4F1B"/>
+          <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+          <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+          <path d="M-2 -8 Q0 -6 2 -8" stroke="#3D2812" stroke-width="1" fill="none"/>
+          <!-- 银牌 -->
+          <g transform="translate(-3 -2) scale(0.85)">
+            <circle cx="3" cy="6" r="6" fill="url(#silverG)" stroke="#3D2812" stroke-width="1.5"/>
+            <text x="3" y="9" text-anchor="middle" font-weight="900" font-size="6" fill="#3D2812">2</text>
+            <line x1="-1" y1="0" x2="3" y2="2" stroke="#3FA34D" stroke-width="1"/>
+            <line x1="7" y1="0" x2="3" y2="2" stroke="#3FA34D" stroke-width="1"/>
+          </g>
+        </g>
+        <!-- 第三名 -->
+        <g transform="translate(50 -10)">
+          <ellipse cx="0" cy="-2" rx="7" ry="9" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+          <circle cx="0" cy="-12" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+          <path d="M-6 -12 Q0 -20 6 -12 L6 -16 Q0 -23 -6 -16 Z" fill="#3D2812"/>
+          <circle cx="-2" cy="-12" r="1" fill="#3D2812"/>
+          <circle cx="2" cy="-12" r="1" fill="#3D2812"/>
+          <path d="M-2 -8 Q0 -6 2 -8" stroke="#3D2812" stroke-width="1" fill="none"/>
+          <!-- 铜牌 -->
+          <g transform="translate(-3 -2) scale(0.85)">
+            <circle cx="3" cy="6" r="6" fill="url(#bronzeG)" stroke="#3D2812" stroke-width="1.5"/>
+            <text x="3" y="9" text-anchor="middle" font-weight="900" font-size="6" fill="#fff">3</text>
+          </g>
+        </g>
+        <!-- 烟花在颁奖台上方 -->
+        <use href="#firework" x="-30" y="-100" width="60" height="60">
+          <animate attributeName="opacity" values="1;.4;1" dur="2s" repeatCount="indefinite"/>
+        </use>
+      </g>
+    </g>
+
+    <!-- ═══ 4. 大奖杯雕塑（左前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(440 800)">
+        <rect x="-32" y="40" width="64" height="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="-22" y="26" width="44" height="14" fill="#D4B07C" stroke="#3D2812" stroke-width="2"/>
+        <!-- 奖杯本体 -->
+        <path d="M-22 -10 L22 -10 L20 28 Q0 40 -20 28 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="3"/>
+        <!-- 把手 -->
+        <path d="M-30 -6 Q-42 0 -30 16 L-22 14 L-22 -10 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M30 -6 Q42 0 30 16 L22 14 L22 -10 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="2.5"/>
+        <text x="0" y="14" text-anchor="middle" font-size="22" fill="#fff" font-weight="900">★</text>
+        <!-- 闪光 -->
+        <use href="#star" x="-46" y="-42" width="20" height="20">
+          <animateTransform attributeName="transform" type="rotate" from="0 -36 -32" to="360 -36 -32" dur="6s" repeatCount="indefinite"/>
+        </use>
+        <use href="#star" x="32" y="-44" width="18" height="18">
+          <animateTransform attributeName="transform" type="rotate" from="0 41 -35" to="-360 41 -35" dur="7s" repeatCount="indefinite"/>
+        </use>
+      </g>
+    </g>
+
+    <!-- ═══ 5. 雕像 ×2（左右两侧） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(380 730)">
+        <rect x="-20" y="80" width="40" height="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 学者雕像 -->
+        <ellipse cx="0" cy="60" rx="14" ry="20" fill="#D8D0C0" stroke="#3D2812" stroke-width="2"/>
+        <circle cx="0" cy="34" r="12" fill="#D8D0C0" stroke="#3D2812" stroke-width="2"/>
+        <!-- 学士帽 -->
+        <rect x="-14" y="22" width="28" height="4" fill="#3D2812"/>
+        <polygon points="-16,18 16,18 14,22 -14,22" fill="#3D2812"/>
+        <!-- 拿书 -->
+        <rect x="-10" y="50" width="14" height="10" fill="#D8D0C0" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="-3" y1="50" x2="-3" y2="60" stroke="#3D2812"/>
+      </g>
+      <g transform="translate(720 730)">
+        <rect x="-20" y="80" width="40" height="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 运动员雕像 -->
+        <ellipse cx="0" cy="60" rx="14" ry="20" fill="#D8D0C0" stroke="#3D2812" stroke-width="2"/>
+        <circle cx="0" cy="34" r="12" fill="#D8D0C0" stroke="#3D2812" stroke-width="2"/>
+        <!-- 举奖杯 -->
+        <line x1="-14" y1="50" x2="-22" y2="32" stroke="#D8D0C0" stroke-width="4" stroke-linecap="round"/>
+        <path d="M-26 28 L-18 28 L-19 36 Q-22 40 -25 36 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 6. 奖牌墙（凯旋门左后） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(220 720)">
+        <rect x="0" y="0" width="60" height="80" fill="url(#wallStone)" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="0" y="0" width="60" height="14" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+        <text x="30" y="11" text-anchor="middle" font-weight="900" font-size="9" fill="#3D2812">奖牌墙</text>
+        <!-- 9 个奖牌 -->
+        <use href="#medal" x="6" y="18" width="14" height="22"/>
+        <use href="#medal" x="22" y="18" width="14" height="22"/>
+        <use href="#medal" x="40" y="18" width="14" height="22"/>
+        <use href="#medal" x="6" y="44" width="14" height="22"/>
+        <use href="#medal" x="22" y="44" width="14" height="22"/>
+        <use href="#medal" x="40" y="44" width="14" height="22"/>
+      </g>
+    </g>
+
+    <!-- ═══ 7. 喇叭手（雕像旁） ═══ -->
+    <g transform="translate(540 850)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="8" ry="11" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-15" r="7" fill="#FFD8B0" stroke="#3D2812" stroke-width="2"/>
+      <path d="M-7 -15 Q0 -25 7 -15 L7 -19 Q0 -29 -7 -19 Z" fill="#3D2812"/>
+      <circle cx="-2.5" cy="-15" r="1.2" fill="#3D2812"/>
+      <circle cx="2.5" cy="-15" r="1.2" fill="#3D2812"/>
+      <!-- 鼓气的腮 -->
+      <circle cx="-7" cy="-9" r="3" fill="#FFB3B3"/>
+      <circle cx="7" cy="-9" r="3" fill="#FFB3B3"/>
+      <!-- 喇叭 -->
+      <line x1="6" y1="-12" x2="20" y2="-12" stroke="#FFD86A" stroke-width="6" stroke-linecap="round"/>
+      <path d="M20 -16 L34 -20 L34 -4 L20 -8 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="2"/>
+      <!-- 音符 -->
+      <text x="40" y="-22" font-size="14" fill="#A893E8" font-weight="900">♪</text>
+      <text x="48" y="-32" font-size="12" fill="#5BC8E8" font-weight="900">♫</text>
+    </g>
+
+    <!-- ═══ 8. 火炬 ×2（凯旋门两侧） ═══ -->
+    <g transform="translate(220 850)" filter="url(#soft)">
+      <rect x="-3" y="0" width="6" height="30" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+      <ellipse cx="0" cy="0" rx="6" ry="3" fill="#A06B3C" stroke="#3D2812" stroke-width="1.5"/>
+      <!-- 火 -->
+      <path d="M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5">
+        <animate attributeName="d" dur="1s" repeatCount="indefinite"
+          values="M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z;
+                  M-5 -2 Q-3 -18 0 -12 Q3 -18 5 -2 Q3 -10 0 -4 Q-3 -10 -5 -2 Z;
+                  M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z"/>
+      </path>
+      <path d="M-3 -4 Q-1 -12 0 -8 Q1 -12 3 -4 Z" fill="#FFD86A"/>
+    </g>
+    <g transform="translate(340 850)" filter="url(#soft)">
+      <rect x="-3" y="0" width="6" height="30" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+      <ellipse cx="0" cy="0" rx="6" ry="3" fill="#A06B3C" stroke="#3D2812" stroke-width="1.5"/>
+      <path d="M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5">
+        <animate attributeName="d" dur="1.2s" repeatCount="indefinite"
+          values="M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z;
+                  M-5 -2 Q-3 -18 0 -12 Q3 -18 5 -2 Q3 -10 0 -4 Q-3 -10 -5 -2 Z;
+                  M-5 -2 Q-3 -16 0 -10 Q3 -16 5 -2 Q3 -8 0 -4 Q-3 -8 -5 -2 Z"/>
+      </path>
+      <path d="M-3 -4 Q-1 -12 0 -8 Q1 -12 3 -4 Z" fill="#FFD86A"/>
+    </g>
+
+    <!-- ═══ 9. 奖杯架（名人堂前左） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(880 820)">
+        <!-- 木架 -->
+        <rect x="-30" y="0" width="60" height="36" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+        <line x1="-30" y1="14" x2="30" y2="14" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="-30" y1="26" x2="30" y2="26" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 4 个小奖杯 -->
+        <g transform="translate(-18 4)">
+          <path d="M-3 0 L3 0 L2 6 Q0 8 -2 6 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="1"/>
+          <line x1="0" y1="6" x2="0" y2="9" stroke="#3D2812" stroke-width=".8"/>
+          <rect x="-2" y="9" width="4" height="2" fill="#3D2812"/>
+        </g>
+        <g transform="translate(-6 4)">
+          <path d="M-3 0 L3 0 L2 6 Q0 8 -2 6 Z" fill="url(#silverG)" stroke="#3D2812" stroke-width="1"/>
+          <line x1="0" y1="6" x2="0" y2="9" stroke="#3D2812" stroke-width=".8"/>
+          <rect x="-2" y="9" width="4" height="2" fill="#3D2812"/>
+        </g>
+        <g transform="translate(6 4)">
+          <path d="M-3 0 L3 0 L2 6 Q0 8 -2 6 Z" fill="url(#bronzeG)" stroke="#3D2812" stroke-width="1"/>
+        </g>
+        <g transform="translate(18 4)">
+          <path d="M-3 0 L3 0 L2 6 Q0 8 -2 6 Z" fill="url(#goldG)" stroke="#3D2812" stroke-width="1"/>
+        </g>
+        <!-- 第二层奖牌 -->
+        <use href="#medal" x="-22" y="14" width="10" height="14"/>
+        <use href="#medal" x="-8" y="14" width="10" height="14"/>
+        <use href="#medal" x="6" y="14" width="10" height="14"/>
+        <use href="#medal" x="20" y="14" width="10" height="14"/>
+      </g>
+    </g>
+
+    <!-- ═══ 10. 气球串（名人堂左右） ═══ -->
+    <g transform="translate(820 540)">
+      <use href="#balloon" x="0" y="0" width="20" height="30"/>
+      <use href="#balloon" x="14" y="-6" width="20" height="30"/>
+      <use href="#balloon" x="-12" y="-4" width="20" height="30"/>
+      <line x1="10" y1="30" x2="10" y2="80" stroke="#3D2812" stroke-width="1"/>
+      <animateTransform attributeName="transform" type="translate" values="820 540;824 532;820 540" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 11. 彩旗 ═══ -->
+    <g>
+      <line x1="540" y1="650" x2="780" y2="630" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="555,660 565,678 575,662" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="595,656 605,674 615,658" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="635,652 645,670 655,654" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="675,648 685,666 695,650" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="715,644 725,662 735,646" fill="#76C342" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- 蝴蝶 -->
+    <use href="#butterfly" x="0" y="0" width="22" height="15">
+      <animateMotion dur="14s" repeatCount="indefinite" path="M280 760 Q500 700 700 760 Q900 720 1100 770 Q1300 730 1500 760"/>
+    </use>
+
+    <!-- 招牌 -->
+    <g transform="translate(800 950)">
+      <line x1="-6" y1="-30" x2="-6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <line x1="6" y1="-30" x2="6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <rect x="-70" y="-30" width="140" height="36" fill="#FFE9B0" stroke="#3D2812" stroke-width="3" rx="6"/>
+      <text x="0" y="-12" text-anchor="middle" font-weight="900" font-size="18" fill="#3D2812" font-family="'PingFang SC',sans-serif" letter-spacing="3">🏆 成就岛</text>
+      <text x="0" y="2" text-anchor="middle" font-weight="700" font-size="9" fill="#7A4F1B" font-family="'PingFang SC',sans-serif">看奖牌 · 找荣誉 · 颁勋章</text>
+      <circle cx="-60" cy="-22" r="2" fill="#3D2812"/>
+      <circle cx="60" cy="-22" r="2" fill="#3D2812"/>
+    </g>
+
+    <!-- 海面波浪 -->
+    <g opacity="0.6" fill="#fff">
+      <path d="M0 970 Q80 950 160 970 T320 970 T480 970 T640 970 T800 970 T960 970 T1120 970 T1280 970 T1440 970 T1600 970 L1600 1000 L0 1000 Z"/>
+    </g>
+    <g opacity="0.85" fill="#fff">
+      <path d="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z">
+        <animate attributeName="d" dur="5s" repeatCount="indefinite"
+          values="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 998 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z"/>
+      </path>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

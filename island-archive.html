@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>档案岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{background: linear-gradient(180deg,#FFF6D8 0%, #FFE3B0 18%, #BFE6FF 50%, #6FC8F0 100%);overflow-x:hidden;min-height:100vh}
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,140,66,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  /* 满载横幅 */
+  .banner{position:relative;height:360px;overflow:hidden;background: linear-gradient(180deg,#FFE3B0 0%, #FFC890 100%);border-bottom:4px solid #FFB37A}
+  .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#0E5E80;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#3DB7E2;box-shadow:0 0 0 3px rgba(61,183,226,.25)}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,80,120,0.08);border:1px solid rgba(180,220,240,.6)}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:linear-gradient(135deg,#FFE7B0,#FFB37A)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* 搜索 + 筛选 */
+  .search-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+  .search-input{flex:1;min-width:220px;height:42px;border-radius:14px;border:2px solid #E0EBF0;background:#F4FAFD;padding:0 14px;font-size:14px;color:#1F3A4D;outline:none;transition:border-color .2s}
+  .search-input:focus{border-color:#5BC8E8;background:#fff}
+  .filter-pill{padding:8px 14px;border-radius:14px;background:#F4FAFD;border:2px solid #E0EBF0;color:#5C7A8C;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+  .filter-pill:hover{border-color:#7BC8E8}
+  .filter-pill.active{background:linear-gradient(135deg,#5BC8E8,#3DB7E2);color:#fff;border-color:#3DB7E2}
+
+  /* 学生卡片网格 */
+  .stu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+  .stu-card{background:#fff;border:2px solid #E0EBF0;border-radius:18px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+  .stu-card:hover{transform:translateY(-4px);border-color:#7BC8E8;box-shadow:0 8px 18px rgba(123,200,232,0.25)}
+  .stu-card .av{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;margin:0 auto 8px;box-shadow:0 4px 10px rgba(0,0,0,0.15)}
+  .stu-card .nm{font-size:14px;font-weight:800;color:#1F3A4D;letter-spacing:.5px}
+  .stu-card .gr{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px}
+  .stu-card .tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .stu-card .tag{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:700}
+  .stu-card .tag.allergy{background:#FFE0E0;color:#C2410C}
+  .stu-card .tag.health{background:#E0F8E4;color:#15803D}
+  .stu-card .tag.read{background:#E0E8F8;color:#3B5BC0}
+  .stu-card .tag.club{background:#F2EBFF;color:#5C42A0}
+  .stu-card .tag.award{background:#FFF6D8;color:#7A4F1B}
+
+  /* 详情 modal */
+  .veil{position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .veil.show{display:flex}
+  .modal{background:#fff;border-radius:24px;width:560px;max-width:100%;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 24px 60px rgba(0,30,60,.3);animation:popIn .35s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-h{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .modal-av{width:80px;height:80px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 6px 12px rgba(0,0,0,.15)}
+  .modal-nm{font-size:24px;font-weight:900;color:#1F3A4D;letter-spacing:1px}
+  .modal-gr{font-size:13px;color:#7BB8DA;margin-top:4px;font-weight:700;letter-spacing:.5px}
+  .modal-section{margin-top:16px;padding-top:16px;border-top:1.5px dashed #E0EBF0}
+  .modal-section h3{font-size:14px;font-weight:800;color:#0E5E80;letter-spacing:1px;margin-bottom:10px}
+  .modal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .modal-row{display:flex;justify-content:space-between;background:#F4FAFD;padding:8px 12px;border-radius:10px;font-size:12.5px}
+  .modal-row .l{color:#7BB8DA;font-weight:700}
+  .modal-row .v{color:#1F3A4D;font-weight:800}
+  .modal-fit{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .fit-cell{background:#F4FAFD;border:1.5px solid #DCEBF3;border-radius:10px;padding:8px 6px;text-align:center}
+  .fit-cell .e{font-size:20px;line-height:1}
+  .fit-cell .n{font-size:10px;color:#5C7A8C;font-weight:700;margin-top:3px}
+  .fit-cell .s{font-size:11px;font-weight:800;margin-top:3px}
+  .fit-cell.good .s{color:#22A05B}
+  .fit-cell.fair .s{color:#FFA050}
+  .fit-cell.watch .s{color:#E94B6A}
+  .fit-cell.great .s{color:#15803D}
+  .modal-actions{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+  .btn{font-weight:800;font-size:14px;letter-spacing:1px;border:none;border-radius:18px;padding:10px 18px;cursor:pointer;transition:transform .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.primary{background:linear-gradient(135deg,#5BC8E8,#0E5E80);color:#fff;box-shadow:0 6px 14px rgba(14,94,128,.4)}
+  .btn.ghost{background:#F4FAFD;color:#5C7A8C}
+
+  .empty{text-align:center;padding:40px 20px;color:#7BB8DA;font-weight:700}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#0E5E80;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(14,94,128,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* AI 体质分析面板 */
+  .ai-panel{margin-top:16px;padding:16px;background:linear-gradient(135deg,#F0F8FF 0%,#E0F2FF 100%);border:2px solid #B0D8F0;border-radius:16px}
+  .ai-panel-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ai-panel-h .ai-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .ai-panel-h .ai-title{font-size:15px;font-weight:900;color:#0E5E80;letter-spacing:1px}
+  .ai-panel-h .ai-sub{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px}
+  .ai-panel-h .ai-status{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:800;background:#fff;color:#7BB8DA}
+  .ai-status.loading{background:#FFF6E0;color:#C2410C}
+  .ai-status.done{background:#E0F8E4;color:#15803D}
+  .ai-status.error{background:#FFE0E0;color:#C2410C}
+  .ai-status .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .ai-status.loading .dot{animation:aiBlink .8s ease-in-out infinite}
+  @keyframes aiBlink{0%,100%{opacity:1}50%{opacity:.2}}
+  .ai-gen-btn{width:100%;padding:11px 18px;background:linear-gradient(135deg,#5BC8E8,#0E5E80);color:#fff;border:none;font-size:14px;font-weight:800;letter-spacing:1px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(14,94,128,.3);transition:transform .15s}
+  .ai-gen-btn:hover:not(:disabled){transform:translateY(-2px)}
+  .ai-gen-btn:disabled{background:#B0C8D8;cursor:not-allowed;box-shadow:none}
+  .ai-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:aiSpin .6s linear infinite}
+  @keyframes aiSpin{to{transform:rotate(360deg)}}
+  .ai-output{margin-top:14px;display:none}
+  .ai-output.visible{display:block}
+  .ai-block{margin-bottom:10px}
+  .ai-block:last-child{margin-bottom:0}
+  .ai-block-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;color:#0E5E80;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}
+  .ai-block-label .ic{font-size:14px}
+  .ai-text{font-size:13px;line-height:1.7;color:#1F3A4D;background:#fff;border-radius:10px;padding:11px 13px;border-left:4px solid #5BC8E8;font-weight:600}
+  .ai-text.green{border-left-color:#22C55E}
+  .ai-text.amber{border-left-color:#FFA050}
+  .ai-text.purple{border-left-color:#7C5BCC}
+  .ai-disclaimer{display:flex;gap:6px;align-items:flex-start;padding:8px 12px;margin-top:10px;background:rgba(255,255,255,.7);border-radius:8px;font-size:11px;color:#7BB8DA;line-height:1.5;font-weight:700}
+  .ai-key-btn{padding:6px 12px;border-radius:14px;border:1.5px solid #B0D8F0;background:#fff;color:#0E5E80;font-weight:800;font-size:12px;cursor:pointer;transition:all .15s}
+  .ai-key-btn:hover{background:#E0F2FF;border-color:#7BB8DA}
+</style>
+<script src="assets/ai-helper.js"></script>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>📚 档案岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar">林</div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+      <div class="stu-info">
+        <div class="name">林**</div>
+        <div class="meta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 满载横幅 -->
+<div class="banner">
+  <img class="banner-img" src="assets/档案岛.png" alt="档案岛">
+  <div class="banner-text">
+    <h1>📚 档案岛</h1>
+    <p data-text-teacher="看看小伙伴们 · 翻一翻档案 · 找一个同学"
+       data-text-parent="我的孩子档案 · 体测情况 · 获奖记录"
+    >看看小伙伴们 · 翻一翻档案 · 找一个同学</p>
+    <span class="tag"><span class="dot"></span>共 <strong id="total-count">45</strong> 名同学在档</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 数据上传卡（仅老师/管理员可见） -->
+  <div class="card" data-hide-for="parent" style="margin-bottom:20px;background:linear-gradient(135deg,#FFF6E5 0%,#FFE3B0 100%);border:3px dashed #FFC23F;cursor:pointer" onclick="document.getElementById('uploadInput').click()">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#FFC23F,#FF6B6B);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;box-shadow:0 6px 14px rgba(255,107,107,.3)">📤</div>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:900;color:#3D2812;letter-spacing:1px">上传学生数据</div>
+        <div style="font-size:12.5px;color:#7A4F1B;font-weight:700;margin-top:4px">支持 Excel (.xlsx) · CSV · JSON 格式 · 拖到这里 / 点击选文件</div>
+      </div>
+      <button style="background:linear-gradient(135deg,#FF8C42,#FF6B6B);color:#fff;font-weight:900;font-size:13px;letter-spacing:1px;padding:10px 18px;border:none;border-radius:18px;cursor:pointer;box-shadow:0 4px 10px rgba(255,107,107,.4);pointer-events:none">选择文件</button>
+    </div>
+    <input type="file" id="uploadInput" accept=".xlsx,.xls,.csv,.json" style="display:none" onchange="handleUpload(event)"/>
+    <div id="uploadProgress" style="display:none;margin-top:12px;background:#fff;border-radius:14px;padding:14px"></div>
+  </div>
+
+  <!-- 老师视图：学生网格 -->
+  <div class="card" data-hide-for="parent">
+    <div class="card-h">
+      <div class="icon">🔍</div>
+      <h2>找一个同学</h2>
+      <div class="sub" id="show-count">显示 45 / 45</div>
+    </div>
+
+    <div class="search-row">
+      <input class="search-input" id="search" type="text" placeholder="🔍 搜名字 · 学号 · 班级…" oninput="render()"/>
+      <button class="filter-pill active" data-grade="all" onclick="setGrade(this,'all')">全部</button>
+      <button class="filter-pill" data-grade="小学" onclick="setGrade(this,'小学')">小学</button>
+      <button class="filter-pill" data-grade="初中" onclick="setGrade(this,'初中')">初中</button>
+      <button class="filter-pill" data-grade="高中" onclick="setGrade(this,'高中')">高中</button>
+      <select id="classSelect" onchange="setClass(this.value)" style="height:42px;border-radius:14px;border:2px solid #E0EBF0;background:#F4FAFD;padding:0 14px;font-size:13px;font-weight:700;color:#5C7A8C;cursor:pointer;outline:none">
+        <option value="all">📚 所有班级</option>
+      </select>
+      <button class="filter-pill" data-tag="过敏" onclick="toggleTag(this,'过敏')">⚠️ 有过敏</button>
+      <button class="filter-pill" data-tag="奖项" onclick="toggleTag(this,'奖项')">🏆 有奖项</button>
+    </div>
+
+    <div class="stu-grid" id="grid"></div>
+  </div>
+
+  <!-- 家长视图：直接展示一个孩子的完整档案 -->
+  <div data-show-for="parent" id="parentProfile" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#FFFAF0,#FFE3B0);border:3px solid #FFC890;margin-bottom:18px">
+      <div id="ppHeader" style="display:flex;align-items:center;gap:18px">
+        <div id="ppAvatar" style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;box-shadow:0 6px 18px rgba(0,30,60,.2)"></div>
+        <div style="flex:1">
+          <div id="ppName" style="font-size:28px;font-weight:900;color:#3D2812;letter-spacing:2px"></div>
+          <div id="ppMeta" style="font-size:14px;color:#7A4F1B;font-weight:700;margin-top:6px;letter-spacing:1px"></div>
+          <div id="ppTags" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon">📋</div>
+        <h2>基本信息</h2>
+      </div>
+      <div id="ppBasic" class="modal-grid"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon" style="background:linear-gradient(135deg,#C7F0C0,#85D279)">💪</div>
+        <h2>体测情况</h2>
+      </div>
+      <div id="ppFitness" class="modal-fit"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div class="icon" style="background:linear-gradient(135deg,#FFE672,#A06B12)">🏆</div>
+        <h2>获奖记录</h2>
+        <div class="sub" id="ppCertCount">共 0 项</div>
+      </div>
+      <div id="ppCerts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+    </div>
+
+    <!-- AI 体质分析（沿用老的 ai-panel 样式） -->
+    <div class="card">
+      <div class="card-h">
+        <div class="icon" style="background:linear-gradient(135deg,#7C5BCC,#3DB7E2)">🤖</div>
+        <h2>AI 体质分析 & 运动推荐</h2>
+        <div class="sub">基于体测 + 兴趣智能生成</div>
+      </div>
+      <div class="ai-panel" style="margin-top:0">
+        <div class="ai-panel-h">
+          <div class="ai-icon">🤖</div>
+          <div>
+            <div class="ai-title">超级英雄训练任务</div>
+            <div class="ai-sub">点下面按钮让 AI 教练为孩子设计专属训练</div>
+          </div>
+          <div class="ai-status" id="aiStatus-parent"><div class="dot"></div><span>待生成</span></div>
+        </div>
+        <button class="ai-gen-btn" id="aiBtn-parent" onclick="aiAnalyzeParentKid()">✨ 生成 AI 个性化建议</button>
+        <div class="ai-output" id="aiOutput-parent"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="veil" id="veil" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let STUDENTS = [], allLoaded = false;
+let gradeFilter = 'all';
+let classFilter = 'all';
+let tagFilter = new Set();
+
+const COLORS = ['#FF6B6B','#5BC8E8','#76C342','#FFD86A','#A893E8','#FF8C42','#3DB7E2','#E94B6A','#22C55E','#7C5BCC','#0E5E80','#C2410C'];
+
+async function loadData(){
+  try{
+    const r = await fetch('data.json');
+    const d = await r.json();
+    STUDENTS = d.students || [];
+    document.getElementById('total-count').textContent = STUDENTS.length;
+    allLoaded = true;
+    refreshClassDropdown();
+    render();
+  }catch(e){
+    // fallback demo data
+    STUDENTS = makeMockData(45);
+    document.getElementById('total-count').textContent = STUDENTS.length;
+    refreshClassDropdown();
+    render();
+  }
+}
+
+function makeMockData(n){
+  const surnames = ['林','王','陈','张','李','刘','黄','周','吴','徐','孙','马','胡','郭','何'];
+  const list = [];
+  for(let i=0;i<n;i++){
+    const sn = surnames[i%surnames.length];
+    list.push({
+      id:'stu_'+i, no:'BS'+(2024000+i), name: sn+'**', displayName: sn+'**',
+      grade:'小学', school:'宝山实验小学', class:((i%6)+1)+'班',
+      age: 8+Math.floor(Math.random()*5),
+      avatar: sn,
+      color: COLORS[i%COLORS.length],
+      allergy: i%5===0 ? ['花生'] : (i%7===0 ? ['鸡蛋'] : []),
+      tags: i%3===0 ? ['健康在档'] : (i%4===0 ? ['阅读达人'] : []),
+      awards: i%6===0 ? [{name:'游泳第一名',subject:'体育'}] : [],
+      books: i%3===0 ? [{name:'西游记'},{name:'十万个为什么'}] : [],
+      fitness:{items:[
+        {e:'🏃',n:'50米跑',s:i%3?'good':'fair'},
+        {e:'🤸',n:'坐位体前屈',s:'fair'},
+        {e:'💪',n:'跳绳',s:i%4?'good':'watch'},
+        {e:'🫁',n:'肺活量',s:'fair'},
+        {e:'⏱',n:'耐力跑',s:'great'},
+        {e:'🦵',n:'立定跳远',s:'fair'}
+      ]}
+    });
+  }
+  return list;
+}
+
+function setGrade(btn, g){
+  gradeFilter = g;
+  document.querySelectorAll('[data-grade]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  refreshClassDropdown();
+  render();
+}
+function setClass(c){ classFilter = c; render(); }
+function toggleTag(btn, t){
+  if(tagFilter.has(t)){ tagFilter.delete(t); btn.classList.remove('active'); }
+  else { tagFilter.add(t); btn.classList.add('active'); }
+  render();
+}
+
+/* 班级下拉：根据当前年级动态生成 */
+function refreshClassDropdown(){
+  const sel = document.getElementById('classSelect');
+  if(!sel) return;
+  const classes = new Set();
+  STUDENTS.forEach(s=>{
+    if(gradeFilter==='all' || s.grade===gradeFilter){
+      if(s.class) classes.add(s.class);
+    }
+  });
+  const sorted = Array.from(classes).sort();
+  classFilter = 'all';
+  sel.innerHTML = '<option value="all">📚 所有班级 ('+sorted.length+')</option>' +
+    sorted.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function getFiltered(){
+  // 家长模式：先把列表缩到自己孩子（按 kidName 真名 / displayName / 兜底合成 demo）
+  let base = STUDENTS;
+  if(window.UserAuth && UserAuth.isParent()){
+    const kidName = UserAuth.getKidName && UserAuth.getKidName();
+    const bound = UserAuth.getBoundStudent();
+    // 1. 优先按真名匹配（家长选过的真实学生）
+    if(kidName){
+      base = STUDENTS.filter(s => (s.name || s.displayName) === kidName);
+    } else if(bound){
+      // 2. demo: 按 displayName 模糊匹配
+      base = STUDENTS.filter(s => (s.displayName || s.name) === bound.displayName);
+    } else {
+      base = [];
+    }
+    // 3. 都找不到 → 合成 demo 卡（用 STUDENT_ROSTER 兜底）
+    if(!base.length && window.StudentRoster){
+      const idx = UserAuth.getBoundIdx();
+      const rs = StudentRoster.get(idx != null ? idx : 0);
+      if(rs){
+        base = [{
+          id:'demo_'+(kidName||rs.displayName), no:'DEMO',
+          name: kidName || rs.displayName, displayName: kidName || rs.displayName,
+          grade: rs.grade, school:'宝山实验小学', class: rs.class,
+          age: rs.age, avatar: (kidName||rs.displayName).charAt(0), color: rs.color,
+          allergy: rs.allergy||[], interests: rs.interests||[],
+          books: (rs.borrowed||[]).map(t=>({name:t})),
+          awards: [], tags:[],
+          fitness: { items: (rs.fitness||[]).map(f=>({e:f.emoji, n:f.name, s:f.status})) },
+        }];
+      }
+    }
+  }
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  return base.filter(s=>{
+    if(gradeFilter!=='all' && s.grade!==gradeFilter) return false;
+    if(classFilter!=='all' && s.class!==classFilter) return false;
+    if(tagFilter.has('过敏') && (!s.allergy || s.allergy.length===0)) return false;
+    if(tagFilter.has('奖项') && (!s.awards || s.awards.length===0)) return false;
+    if(q){
+      const text = (s.name + ' ' + s.displayName + ' ' + s.no + ' ' + s.class + ' ' + s.school).toLowerCase();
+      if(!text.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render(){
+  // 家长模式 → 不渲染老师视图的学生网格（避免任何瞬时露出）
+  if(window.UserAuth && UserAuth.isParent && UserAuth.isParent()){
+    const grid = document.getElementById('grid');
+    if(grid) grid.innerHTML = '';
+    return;
+  }
+  const list = getFiltered();
+  document.getElementById('show-count').textContent = `显示 ${list.length} / ${STUDENTS.length}`;
+  if(list.length===0){
+    document.getElementById('grid').innerHTML = '<div class="empty">没找到符合条件的同学，换个关键词试试~</div>';
+    return;
+  }
+  document.getElementById('grid').innerHTML = list.map((s,i)=>{
+    const color = s.color || COLORS[i%COLORS.length];
+    const av = s.avatar || s.name.charAt(0);
+    const tags = [];
+    if(s.allergy && s.allergy.length) tags.push(`<span class="tag allergy">⚠️ 过敏</span>`);
+    if(s.tags && s.tags.includes('健康在档')) tags.push(`<span class="tag health">健康✓</span>`);
+    if(s.tags && s.tags.includes('阅读达人')) tags.push(`<span class="tag read">📖 阅读</span>`);
+    if(s.books && s.books.length) tags.push(`<span class="tag read">借${s.books.length}本</span>`);
+    if(s.awards && s.awards.length) tags.push(`<span class="tag award">🏆${s.awards.length}</span>`);
+    return `
+      <div class="stu-card" onclick="openStudent(${STUDENTS.indexOf(s)})">
+        <div class="av" style="background:${color}">${av}</div>
+        <div class="nm">${s.displayName||s.name}</div>
+        <div class="gr">${s.grade} · ${s.class||''}</div>
+        <div class="tags">${tags.join('')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openStudent(i){
+  const s = STUDENTS[i];
+  const color = s.color || COLORS[i%COLORS.length];
+  const av = s.avatar || s.name.charAt(0);
+  const fitItems = (s.fitness && s.fitness.items) || [];
+  const STATUS = {good:'良好',fair:'一般',watch:'待提升',great:'优秀'};
+  const fitHtml = fitItems.map(f=>`
+    <div class="fit-cell ${f.s}">
+      <div class="e">${f.e}</div>
+      <div class="n">${f.n}</div>
+      <div class="s">${STATUS[f.s]||f.s}</div>
+    </div>
+  `).join('');
+  const allergy = s.allergy && s.allergy.length ? s.allergy.join('、') : '无';
+  const books = s.books && s.books.length ? s.books.map(b=>b.name||b).join('、') : '暂未借阅';
+  const awards = s.awards && s.awards.length ? s.awards.map(a=>a.name||a.prize||a).join('；') : '暂无获奖记录';
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-h">
+      <div class="modal-av" style="background:${color}">${av}</div>
+      <div>
+        <div class="modal-nm">${s.displayName||s.name}</div>
+        <div class="modal-gr">${s.school||'宝山实验小学'} · ${s.grade}${s.class||''} · ${s.age||'-'} 岁</div>
+        <div class="modal-gr">学号：${s.no||'—'}</div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>📋 基本信息</h3>
+      <div class="modal-grid">
+        <div class="modal-row"><span class="l">过敏档案</span><span class="v">${allergy}</span></div>
+        <div class="modal-row"><span class="l">兴趣</span><span class="v">${(s.interests||['暂无']).join('、')}</span></div>
+        <div class="modal-row"><span class="l">借阅</span><span class="v">${books}</span></div>
+        <div class="modal-row"><span class="l">获奖</span><span class="v">${awards}</span></div>
+      </div>
+    </div>
+
+    ${fitItems.length ? `
+    <div class="modal-section">
+      <h3>💪 体测情况</h3>
+      <div class="modal-fit">${fitHtml}</div>
+    </div>
+
+    <div class="ai-panel">
+      <div class="ai-panel-h">
+        <div class="ai-icon">🤖</div>
+        <div>
+          <div class="ai-title">AI 体质分析 & 运动推荐</div>
+          <div class="ai-sub">基于体测数据 · 兴趣 · 健康档案智能生成</div>
+        </div>
+        <div class="ai-status" id="aiStatus-${i}"><div class="dot"></div><span>待生成</span></div>
+      </div>
+      <button class="ai-gen-btn" id="aiBtn-${i}" onclick="aiAnalyzeStudent(${i})">
+        ✨ 生成 AI 个性化建议
+      </button>
+      <div class="ai-output" id="aiOutput-${i}"></div>
+      <div class="ai-disclaimer">⚠️ AI 建议仅供参考，具体训练计划请遵从体育老师/家长指导。学生姓名已脱敏（${s.displayName||s.name}）后发送。</div>
+    </div>` : ''}
+
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">关闭</button>
+      <button class="btn ghost" onclick="printStudent(${i})" style="background:#FFF6E5;color:#C2410C;border:1.5px solid #FFC23F">🖨️ 打印档案</button>
+      <button class="btn primary" onclick="closeModal();showToast('${s.displayName||s.name} 的完整档案已打开')">查看完整档案</button>
+    </div>
+  `;
+  document.getElementById('veil').classList.add('show');
+}
+function closeModal(){ document.getElementById('veil').classList.remove('show'); }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function goHome(){ location.href='island-homepage.html' }
+
+/* 打印学生档案：弹一个新窗口、调用浏览器打印 */
+function printStudent(i){
+  const s = STUDENTS[i];
+  if(!s) return;
+  const fitItems = (s.fitness && s.fitness.items) || [];
+  const STATUS = {good:'良好',fair:'一般',watch:'待提升',great:'优秀'};
+  const allergy = s.allergy && s.allergy.length ? s.allergy.join('、') : '无';
+  const books = s.books && s.books.length ? s.books.map(b=>b.name||b).join('、') : '暂无';
+  const awards = s.awards && s.awards.length ? s.awards.map(a=>a.name||a.prize||a).join('；') : '暂无';
+  const interests = (s.interests||['—']).join('、');
+
+  const w = window.open('', '_blank', 'width=850,height=1100');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${s.displayName||s.name} · 学生档案</title>
+  <style>
+    @media print{ @page{margin:1.5cm} body{print-color-adjust:exact;-webkit-print-color-adjust:exact} .no-print{display:none!important} }
+    body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;color:#1F3A4D;padding:30px;max-width:800px;margin:0 auto;background:#fff}
+    .head{display:flex;align-items:center;gap:18px;border-bottom:3px solid #1F3A4D;padding-bottom:18px;margin-bottom:24px}
+    .av{width:84px;height:84px;border-radius:50%;background:${s.color||'#5BC8E8'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900}
+    .nm{font-size:28px;font-weight:900;letter-spacing:2px}
+    .meta{margin-top:6px;color:#5C7A8C;font-size:13px;font-weight:700}
+    h2{font-size:16px;color:#0E5E80;border-left:5px solid #5BC8E8;padding-left:10px;margin:20px 0 12px}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    table td{padding:8px 12px;border:1px solid #E0EBF0;font-size:13px}
+    table td.l{background:#F4FAFD;color:#5C7A8C;font-weight:700;width:25%}
+    table td.v{color:#1F3A4D;font-weight:600}
+    .fit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+    .fit-cell{border:1px solid #E0EBF0;border-radius:8px;padding:10px;text-align:center;background:#F4FAFD}
+    .fit-cell .e{font-size:22px}
+    .fit-cell .n{font-size:11px;color:#5C7A8C;font-weight:700;margin-top:4px}
+    .fit-cell .s{font-size:12px;font-weight:800;margin-top:3px;color:#22A05B}
+    .fit-cell.warn .s{color:#E94B6A}
+    .footer{margin-top:30px;padding-top:14px;border-top:1px dashed #C0C8D0;font-size:11px;color:#7BB8DA;text-align:center}
+    .toolbar{position:fixed;top:14px;right:14px;display:flex;gap:8px}
+    .toolbar button{background:#0E5E80;color:#fff;border:none;border-radius:14px;padding:10px 18px;font-weight:800;cursor:pointer;font-size:13px}
+    .toolbar button.ghost{background:#E0EBF0;color:#5C7A8C}
+  </style></head>
+  <body>
+    <div class="toolbar no-print">
+      <button onclick="window.print()">🖨️ 打印</button>
+      <button class="ghost" onclick="window.close()">关闭</button>
+    </div>
+    <div class="head">
+      <div class="av">${s.avatar||s.name.charAt(0)}</div>
+      <div>
+        <div class="nm">${s.displayName||s.name}</div>
+        <div class="meta">学号 ${s.no||'—'} · ${s.school||'宝山实验小学'} · ${s.grade}${s.class||''} · ${s.age||'-'} 岁</div>
+      </div>
+    </div>
+    <h2>📋 基本信息</h2>
+    <table>
+      <tr><td class="l">姓名</td><td class="v">${s.displayName||s.name}</td><td class="l">学号</td><td class="v">${s.no||'—'}</td></tr>
+      <tr><td class="l">学校</td><td class="v">${s.school||'宝山实验小学'}</td><td class="l">班级</td><td class="v">${s.grade}${s.class||''}</td></tr>
+      <tr><td class="l">年龄</td><td class="v">${s.age||'-'}</td><td class="l">性别</td><td class="v">${s.sex==='2'?'女':s.sex==='1'?'男':'—'}</td></tr>
+    </table>
+    <h2>🏥 健康档案</h2>
+    <table>
+      <tr><td class="l">过敏原</td><td class="v">${allergy}</td></tr>
+      <tr><td class="l">饮食备注</td><td class="v">${s.diet_note||'—'}</td></tr>
+      <tr><td class="l">特殊情况</td><td class="v">${s.special||'—'}</td></tr>
+    </table>
+    ${fitItems.length?`<h2>💪 体测情况</h2><div class="fit-grid">${fitItems.map(f=>`
+      <div class="fit-cell ${f.s==='watch'?'warn':''}">
+        <div class="e">${f.e}</div>
+        <div class="n">${f.n}</div>
+        <div class="s">${STATUS[f.s]||f.s}</div>
+      </div>`).join('')}</div>`:''}
+    <h2>📚 兴趣与借阅</h2>
+    <table>
+      <tr><td class="l">兴趣爱好</td><td class="v">${interests}</td></tr>
+      <tr><td class="l">借阅书籍</td><td class="v">${books}</td></tr>
+    </table>
+    <h2>🏆 获奖记录</h2>
+    <table><tr><td class="v">${awards}</td></tr></table>
+    <div class="footer">宝山实验小学 · UniEdu 智慧教育平台 · 打印时间 ${new Date().toLocaleString('zh-CN')}</div>
+  </body></html>`);
+  w.document.close();
+  closeModal();
+  showToast('档案已生成，可点新窗口顶部"打印"按钮');
+}
+
+/* ───── 文件上传：模拟解析进度 ───── */
+function handleUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const box = document.getElementById('uploadProgress');
+  box.style.display = 'block';
+  const sizeKB = (file.size/1024).toFixed(1);
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:24px">📄</div>
+      <div style="flex:1">
+        <div style="font-size:13.5px;font-weight:800;color:#1F3A4D">${file.name}</div>
+        <div style="font-size:11px;color:#7BB8DA;font-weight:700">${sizeKB} KB · 正在解析…</div>
+      </div>
+      <span id="upPct" style="font-size:14px;font-weight:900;color:#FF8C42">0%</span>
+    </div>
+    <div style="background:#F4FAFD;border-radius:8px;height:8px;overflow:hidden">
+      <div id="upBar" style="background:linear-gradient(90deg,#FF8C42,#FF6B6B);height:100%;width:0%;transition:width .3s ease;border-radius:8px"></div>
+    </div>
+  `;
+  let p = 0;
+  const tick = setInterval(()=>{
+    p += 8 + Math.random()*15;
+    if(p > 100) p = 100;
+    document.getElementById('upPct').textContent = Math.round(p)+'%';
+    document.getElementById('upBar').style.width = p+'%';
+    if(p >= 100){
+      clearInterval(tick);
+      setTimeout(()=>{
+        // 模拟解析出 N 条记录
+        const fakeCount = 30 + Math.floor(Math.random()*40);
+        box.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;color:#15803D">
+            <div style="width:32px;height:32px;border-radius:50%;background:#22C55E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900">✓</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:900">解析成功！识别到 <strong style="color:#15803D">${fakeCount}</strong> 名学生</div>
+              <div style="font-size:11.5px;color:#7BB8DA;font-weight:700;margin-top:2px">已合并到档案库（演示模式：未实际写入）</div>
+            </div>
+            <button onclick="document.getElementById('uploadProgress').style.display='none'" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:12px;padding:6px 12px;border:none;border-radius:10px;cursor:pointer">关闭</button>
+          </div>
+        `;
+        showToast(`✅ 上传成功！${fakeCount} 名学生已加入`);
+      }, 400);
+    }
+  }, 180);
+}
+
+/* 拖拽上传支持 */
+const uploadCard = document.querySelector('.card[onclick*="uploadInput"]');
+if(uploadCard){
+  uploadCard.addEventListener('dragover', e=>{ e.preventDefault(); uploadCard.style.borderColor='#FF6B6B'; });
+  uploadCard.addEventListener('dragleave', ()=>{ uploadCard.style.borderColor='#FFC23F'; });
+  uploadCard.addEventListener('drop', e=>{
+    e.preventDefault(); uploadCard.style.borderColor='#FFC23F';
+    if(e.dataTransfer.files[0]){
+      document.getElementById('uploadInput').files = e.dataTransfer.files;
+      handleUpload({target:{files:e.dataTransfer.files}});
+    }
+  });
+}
+
+// 先加载学生数据（最重要的，必须保证执行）
+loadData();
+// UserAuth 异步就位后重新 render（让家长过滤生效）
+if(window.UserAuth) UserAuth.ready(()=>{
+  if(window.UserAuth.isParent && UserAuth.isParent()){
+    // 家长模式：直接渲染单学生档案，不显示老师网格
+    renderParentProfile();
+  } else if(typeof render === 'function' && STUDENTS.length){
+    render();
+  }
+});
+
+/* ════════════ 家长视角：单学生档案页 ════════════ */
+async function renderParentProfile(){
+  const panel = document.getElementById('parentProfile');
+  if(!panel) return;
+  panel.style.display = 'block';
+
+  // 1) 解析孩子身份
+  const kidName = UserAuth.getKidName ? UserAuth.getKidName() : null;
+  const idx = UserAuth.getBoundIdx ? UserAuth.getBoundIdx() : null;
+  const roster = window.StudentRoster ? StudentRoster.get(idx != null ? idx : 0) : null;
+  const displayName = kidName || (roster && roster.displayName) || '我的孩子';
+
+  // 2) 找数据：先看 data.json 里有没有真实数据，没有就合成 from STUDENT_ROSTER
+  let s = STUDENTS.find(x => (x.name||x.displayName) === displayName);
+  if(!s && roster){
+    s = {
+      name: displayName, displayName,
+      grade: roster.grade, class: roster.class, age: roster.age,
+      avatar: displayName.charAt(0), color: roster.color,
+      allergy: roster.allergy||[], interests: roster.interests||[],
+      books: (roster.borrowed||[]).map(t=>({name:t})),
+      awards: [], tags: [],
+      fitness: { items: (roster.fitness||[]).map(f=>({e:f.emoji, n:f.name, s:f.status})) },
+      special: roster.special,
+    };
+  }
+  if(!s){
+    panel.innerHTML = '<div class="card" style="text-align:center;padding:40px">⚠️ 暂未找到孩子档案数据</div>';
+    return;
+  }
+
+  // 3) 渲染 header
+  const color = s.color || '#7C5BCC';
+  document.getElementById('ppAvatar').style.background = `linear-gradient(135deg,${color},#3DB7E2)`;
+  document.getElementById('ppAvatar').textContent = s.avatar || (s.name||s.displayName).charAt(0);
+  document.getElementById('ppName').textContent = s.displayName || s.name;
+  document.getElementById('ppMeta').textContent = `${s.school||'宝山实验小学'} · ${s.grade||''}${s.class||''} · ${s.age?s.age+'岁':''}`;
+  const tags = [];
+  if(s.allergy && s.allergy.length) tags.push('⚠️ 过敏：'+s.allergy.join('、'));
+  if(s.interests && s.interests.length) tags.push('🎨 兴趣：'+s.interests.slice(0,3).join('、'));
+  document.getElementById('ppTags').innerHTML = tags.map(t =>
+    `<span style="background:rgba(255,255,255,.6);padding:4px 10px;border-radius:10px;font-size:11.5px;color:#3D2812;font-weight:700">${t}</span>`
+  ).join('');
+
+  // 4) 基本信息
+  const allergy = (s.allergy && s.allergy.length) ? s.allergy.join('、') : '无';
+  const books = (s.books && s.books.length) ? s.books.map(b=>b.name||b).join('、') : '暂未借阅';
+  document.getElementById('ppBasic').innerHTML = `
+    <div class="modal-row"><span class="l">过敏档案</span><span class="v">${allergy}</span></div>
+    <div class="modal-row"><span class="l">兴趣</span><span class="v">${(s.interests||['暂无']).join('、')}</span></div>
+    <div class="modal-row"><span class="l">借阅</span><span class="v">${books}</span></div>
+    <div class="modal-row"><span class="l">健康备注</span><span class="v">${s.special||'无特殊情况'}</span></div>
+  `;
+
+  // 5) 体测
+  const STATUS = {good:'良好',fair:'一般',watch:'待提升',great:'优秀'};
+  const fitItems = (s.fitness && s.fitness.items) || [];
+  document.getElementById('ppFitness').innerHTML = fitItems.length ? fitItems.map(f=>`
+    <div class="fit-cell ${f.s}">
+      <div class="e">${f.e}</div>
+      <div class="n">${f.n}</div>
+      <div class="s">${STATUS[f.s]||f.s}</div>
+    </div>
+  `).join('') : '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#7BB8DA">暂无体测数据</div>';
+
+  // 6) 获奖（含证书图片）
+  try {
+    const r = await fetch('/api/award-certs?name=' + encodeURIComponent(displayName));
+    if(r.ok){
+      const d = await r.json();
+      const certs = d.certs || [];
+      document.getElementById('ppCertCount').textContent = `共 ${certs.length} 项`;
+      document.getElementById('ppCerts').innerHTML = certs.length ? certs.map(c => `
+        <div style="background:#fff;border:2px solid #FFC890;border-radius:14px;padding:10px;cursor:zoom-in" onclick="window.open('${c.image_path}','_blank')">
+          <img src="${c.image_path}" style="width:100%;height:160px;object-fit:cover;border-radius:8px" loading="lazy">
+          <div style="margin-top:8px;font-size:12.5px;font-weight:800;color:#1F3A4D">${c.competition||'班级表彰'}</div>
+          <div style="margin-top:4px;font-size:11px;color:#C2410C;font-weight:700">${c.prize||'奖状'} · ${c.class_name||''}</div>
+        </div>
+      `).join('') : '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#7BB8DA">暂无获奖记录</div>';
+    }
+  } catch(e){
+    document.getElementById('ppCerts').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#C2410C">获奖数据加载失败</div>';
+  }
+
+  // 7) 把 STUDENTS 替换成单条，让 aiAnalyzeStudent 能用 idx=0
+  STUDENTS = [s];
+}
+
+/* 家长视图触发 AI 分析（复用既有 aiAnalyzeStudent，但渲染到不同的 DOM） */
+async function aiAnalyzeParentKid(){
+  const btn = document.getElementById('aiBtn-parent');
+  const status = document.getElementById('aiStatus-parent');
+  const out = document.getElementById('aiOutput-parent');
+  if(!btn || !status || !out) return;
+  const s = STUDENTS[0];
+  if(!s){ alert('找不到孩子数据'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<div class="ai-spinner"></div> 分析中...';
+  status.className = 'ai-status loading';
+  status.innerHTML = '<div class="dot"></div><span>生成中</span>';
+  out.classList.remove('visible');
+  try {
+    const text = await AIHelper.call(AI_FITNESS_SYSTEM, buildFitnessUserPrompt(s));
+    const json = AIHelper.parseJson(text);
+    const esc = AIHelper.escapeHtml;
+    if(!json){
+      out.innerHTML = `<div class="ai-text amber">⚠️ AI 返回格式异常：<br><br>${esc(text).slice(0,800)}</div>`;
+    } else {
+      out.innerHTML = `
+        <div class="ai-block"><div class="ai-block-label"><span class="ic">🔍</span>整体状况</div><div class="ai-text">${esc(json['整体状况']||'-')}</div></div>
+        <div class="ai-block"><div class="ai-block-label"><span class="ic">⚠️</span>重点关注</div><div class="ai-text amber">${esc(json['重点关注']||'-')}</div></div>
+        <div class="ai-block"><div class="ai-block-label"><span class="ic">💪</span>运动建议</div><div class="ai-text green">${esc(json['运动建议']||'-')}</div></div>
+        <div class="ai-block"><div class="ai-block-label"><span class="ic">🌟</span>日常提示</div><div class="ai-text purple">${esc(json['日常提示']||'-')}</div></div>
+      `;
+    }
+    out.classList.add('visible');
+    status.className = 'ai-status done';
+    status.innerHTML = '<div class="dot"></div><span>已完成</span>';
+    btn.innerHTML = '✨ 重新生成';
+  } catch(err){
+    out.innerHTML = `<div class="ai-text" style="border-left-color:#E94B6A;color:#C2410C">❌ ${AIHelper.escapeHtml(err.message||'调用失败')}</div>`;
+    out.classList.add('visible');
+    status.className = 'ai-status error';
+    status.innerHTML = '<div class="dot"></div><span>失败</span>';
+    btn.innerHTML = '✨ 重试';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* 学生切换：下拉选人（仅顶栏展示） */
+try {
+  const pill = document.querySelector('.student-pill');
+  if(pill && window.StudentRoster){
+    const applyStudent = (idx)=>{
+      if(window.UserAuth && UserAuth.isTeacher && UserAuth.isTeacher()){ UserAuth.refreshPill && UserAuth.refreshPill(); return; }
+      const s = StudentRoster.get(idx);
+      if(!s){ UserAuth.refreshPill && UserAuth.refreshPill(); return; }
+      pill.querySelector('.stu-avatar').textContent = s.avatar;
+      pill.querySelector('.stu-avatar').style.background = `linear-gradient(135deg,${s.color},#3DB7E2)`;
+      pill.querySelector('.name').textContent = s.displayName;
+      pill.querySelector('.meta').textContent = `${s.grade} · ${s.class}`;
+      showToast(`已切换到 ${s.displayName}`);
+    };
+    StudentRoster.attachPicker(pill, { onChange: applyStudent });
+    // 进入页面后用持久化的当前学生立即刷新顶栏 pill
+    applyStudent(StudentRoster.getCurrentIdx());
+  }
+} catch(err){
+  console.error('[archive picker] init failed:', err);
+}
+
+/* ═══════════════════════ AI 体质分析（使用 ai-helper.js） ═══════════════════════ */
+const AI_FITNESS_SYSTEM = `${(window.AIHelper && AIHelper.SAFETY) || ''}
+
+【你的任务】
+根据学生的体测数据、健康档案、兴趣等信息，为这位小学生输出一份体质健康建议。要用游戏化的比喻（例如"解锁新技能""击败弱点小怪兽""收集体能宝石"）让孩子有兴趣去尝试。
+
+【输出格式】
+严格用如下 JSON 返回，不要包代码块、不要任何额外说明：
+{"整体状况":"<60-100 字>","重点关注":"<40-80 字>","运动建议":"<60-100 字>","日常提示":"<40-80 字>"}`;
+
+function buildFitnessUserPrompt(s){
+  const fitItems = (s.fitness && s.fitness.items) || [];
+  const STATUS = {good:'良好',fair:'一般',watch:'待提升',great:'优秀'};
+  return `学生信息：
+- 姓名（脱敏）：${s.displayName || s.name}
+- 年级班级：${s.grade} ${s.class || ''}
+- 年龄：${s.age || '-'} 岁
+
+体测情况（共 ${fitItems.length} 项）：
+${fitItems.map(i => `- ${i.n}：${STATUS[i.s] || i.s}`).join('\n')}
+
+健康档案：${s.special || '无特殊情况'}
+过敏原：${(s.allergy || []).join('、') || '无'}
+兴趣偏好：${(s.interests || ['暂无']).join('、')}
+借阅记录：${(s.books || []).length} 本
+获奖记录：${(s.awards || []).length} 项
+
+请按 system 中的 JSON 格式输出建议。`;
+}
+
+
+
+async function aiAnalyzeStudent(idx){
+  const btn = document.getElementById('aiBtn-'+idx);
+  const status = document.getElementById('aiStatus-'+idx);
+  const out = document.getElementById('aiOutput-'+idx);
+  if(!btn || !status || !out) return;
+
+  const s = STUDENTS[idx];
+  if(!s){ showToast('❌ 学生数据缺失'); return; }
+
+  
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="ai-spinner"></div> 分析中...';
+  status.className = 'ai-status loading';
+  status.innerHTML = '<div class="dot"></div><span>生成中</span>';
+  out.classList.remove('visible');
+
+  try {
+    const text = await AIHelper.call(AI_FITNESS_SYSTEM, buildFitnessUserPrompt(s));
+    const json = AIHelper.parseJson(text);
+    const esc = AIHelper.escapeHtml;
+    if(!json){
+      out.innerHTML = `<div class="ai-text amber" style="border-left-color:#FFA050">⚠️ AI 返回的格式无法解析，原文：<br><br>${esc(text).slice(0,800)}</div>`;
+    } else {
+      out.innerHTML = `
+        <div class="ai-block">
+          <div class="ai-block-label"><span class="ic">🔍</span>整体状况</div>
+          <div class="ai-text">${esc(json['整体状况'] || '-')}</div>
+        </div>
+        <div class="ai-block">
+          <div class="ai-block-label"><span class="ic">⚠️</span>重点关注</div>
+          <div class="ai-text amber">${esc(json['重点关注'] || '-')}</div>
+        </div>
+        <div class="ai-block">
+          <div class="ai-block-label"><span class="ic">💪</span>运动建议</div>
+          <div class="ai-text green">${esc(json['运动建议'] || '-')}</div>
+        </div>
+        <div class="ai-block">
+          <div class="ai-block-label"><span class="ic">🌟</span>日常提示</div>
+          <div class="ai-text purple">${esc(json['日常提示'] || '-')}</div>
+        </div>
+      `;
+    }
+    out.classList.add('visible');
+    status.className = 'ai-status done';
+    status.innerHTML = '<div class="dot"></div><span>已完成</span>';
+    btn.innerHTML = '✨ 重新生成';
+  } catch(err){
+    console.error(err);
+    let msg = err.message || '调用失败';
+    if(msg === 'NO_KEY') msg = 'AI 服务异常，请稍后重试';
+    out.innerHTML = `<div class="ai-text" style="border-left-color:#E94B6A;color:#C2410C">❌ ${AIHelper.escapeHtml(msg)}</div>`;
+    out.classList.add('visible');
+    status.className = 'ai-status error';
+    status.innerHTML = '<div class="dot"></div><span>失败</span>';
+    btn.innerHTML = '✨ 重试';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+</script>
+<script>/* 家长模式强制刷新 */
+(function(){
+  var urlRole = new URLSearchParams(location.search).get('role');
+  var cachedRole = sessionStorage.getItem('bs_role');
+  if(urlRole === 'parent' || cachedRole === 'parent'){
+    var force = function(){
+      document.querySelectorAll('[data-show-for="parent"]').forEach(function(el){ el.style.display = ''; });
+      document.querySelectorAll('[data-show-for="teacher,admin"]').forEach(function(el){ el.style.display = 'none'; });
+      document.querySelectorAll('[data-hide-for="parent"]').forEach(function(el){ el.style.display = 'none'; });
+    };
+    force();
+    setTimeout(force, 300);
+    setTimeout(force, 1000);
+  }
+})();
+</script>
+</body>
+</html>

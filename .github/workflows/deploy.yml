@@ -1,0 +1,28 @@
+name: 部署到腾讯云
+
+on:
+  push:
+    branches: [main]   # 如果你用 master 改成 master
+  workflow_dispatch:    # 允许在 GitHub 网页手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH 进服务器并执行部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.TENCENT_HOST }}      # 服务器 IP
+          username: ${{ secrets.TENCENT_USER }}      # 一般是 ubuntu 或 root
+          key:      ${{ secrets.TENCENT_SSH_KEY }}   # 私钥内容
+          port:     ${{ secrets.TENCENT_PORT }}      # 一般 22
+          script: |
+            set -e
+            cd /opt/baoshan
+            echo "▶ 拉最新代码…"
+            git pull --rebase origin main
+            echo "▶ 装依赖（如有变更）…"
+            pip3 install -r requirements.txt --quiet
+            echo "▶ 重启服务…"
+            sudo systemctl restart baoshan
+            echo "✅ 部署完成 $(date)"

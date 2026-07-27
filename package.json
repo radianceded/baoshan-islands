@@ -1,0 +1,21 @@
+{
+  "name": "baoshan-edu-platform",
+  "version": "4.7.0",
+  "description": "宝山实验学校智慧教育平台",
+  "main": "baoshan_v4.7.html",
+  "scripts": {
+    "lint": "eslint js/ --ext .js",
+    "lint:fix": "eslint js/ --ext .js --fix",
+    "serve": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "browserslist": [
+    "Safari >= 12",
+    "iOS >= 12",
+    "Chrome >= 80",
+    "Edge >= 80",
+    "Firefox >= 75"
+  ]
+}

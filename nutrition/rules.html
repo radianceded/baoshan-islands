@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>营养规则配置 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="alert alert-warning">
+    ⚠️ <b>重要提示：</b>以下所有营养阈值和权重均为<b>测试演示配置</b>，不构成医学标准。
+    真实阈值应由有资质的营养师根据《中国居民膳食指南》等权威标准配置并审核。
+  </div>
+
+  <div class="card" id="rulesContent">
+    <div class="loading"><span class="spinner"></span> 加载中...</div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  loadRules();
+
+  async function loadRules() {
+    const data = await apiFetch('/rules');
+    if (!data) return;
+
+    const activeId = data.active_rule_id;
+    let html = `<div class="card-header"><h2>⚙️ 营养规则配置</h2>
+      <button class="btn btn-primary btn-sm" onclick="showCreateRule()">+ 新建规则</button></div>`;
+
+    html += data.rules.map(r => {
+      const isActive = r.id === activeId;
+      const cc = JSON.parse(r.calorie_range_config || '{}');
+      const pc = JSON.parse(r.protein_min_config || '{}');
+      const sc = JSON.parse(r.sugar_max_config || '{}');
+      const nc = JSON.parse(r.sodium_max_config || '{}');
+      const fc = JSON.parse(r.fat_range_config || '{}');
+      const fic = JSON.parse(r.fiber_min_config || '{}');
+
+      return `
+        <div class="card ${isActive ? '' : ''}" style="${isActive ? 'border:2px solid var(--primary)' : 'opacity:0.8'}">
+          <div class="card-header">
+            <h3>${isActive ? '🟢 ' : '⚪ '} v${escHtml(r.version)} — ${escHtml(r.name)}</h3>
+            <div class="btn-group">
+              ${isActive ? '<span class="badge badge-success">生效中</span>' : `<button class="btn btn-outline btn-sm" onclick="activateRule(${r.id})">启用</button>`}
+            </div>
+          </div>
+
+          <h4 class="mb-1">📊 评分权重</h4>
+          <div class="detail-grid mb-2">
+            <div class="detail-item"><label>热量权重</label><span class="value">${(r.weight_calorie*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>蛋白质权重</label><span class="value">${(r.weight_protein*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>糖含量权重</label><span class="value">${(r.weight_sugar*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>钠含量权重</label><span class="value">${(r.weight_sodium*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>脂肪权重</label><span class="value">${(r.weight_fat*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>膳食纤维权重</label><span class="value">${(r.weight_fiber*100).toFixed(0)}%</span></div>
+            <div class="detail-item"><label>特殊需求权重</label><span class="value">${(r.weight_special*100).toFixed(0)}%</span></div>
+          </div>
+
+          <h4 class="mb-1">📏 各年龄段阈值</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>年龄段</th><th>热量(kcal)</th><th>蛋白质≥(g)</th><th>糖≤(g)</th><th>钠≤(mg)</th><th>脂肪(g)</th><th>纤维≥(g)</th></tr></thead>
+              <tbody>
+                ${['3-6','7-10','11-13','14-17'].map(ag => `
+                  <tr>
+                    <td><b>${ag} 岁</b></td>
+                    <td>${(cc[ag]||['-','-']).join(' - ')}</td>
+                    <td>${pc[ag]||'-'}</td>
+                    <td>${sc[ag]||'-'}</td>
+                    <td>${nc[ag]||'-'}</td>
+                    <td>${(fc[ag]||['-','-']).join(' - ')}</td>
+                    <td>${fic[ag]||'-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="text-sm mt-1" style="color:var(--text-secondary)">
+            创建: ${formatDateTime(r.created_at)} | 更新: ${formatDateTime(r.updated_at)} | 创建者: ${escHtml(r.created_by||'-')}
+          </div>
+        </div>`;
+    }).join('');
+
+    html += `
+      <div class="card" id="newRuleForm" style="display:none;">
+        <h3 class="mb-1">➕ 新建规则</h3>
+        ${buildRuleForm()}
+        <div class="btn-group mt-2">
+          <button class="btn btn-primary" onclick="saveRule()">保存规则</button>
+          <button class="btn btn-outline" onclick="document.getElementById('newRuleForm').style.display='none'">取消</button>
+        </div>
+      </div>`;
+
+    document.getElementById('rulesContent').innerHTML = html;
+  }
+
+  function showCreateRule() {
+    document.getElementById('newRuleForm').style.display = 'block';
+  }
+
+  function buildRuleForm() {
+    return `
+      <div class="form-row">
+        <div class="form-group"><label>版本号</label><input type="text" class="form-control" id="rVersion" placeholder="如 v2.0"></div>
+        <div class="form-group"><label>规则名称</label><input type="text" class="form-control" id="rName" placeholder="如：学龄儿童标准规则"></div>
+      </div>
+      <h4 class="mb-1">评分权重（合计应为100%）</h4>
+      <div class="form-row">
+        <div class="form-group"><label>热量</label><input type="number" class="form-control rule-weight" data-w="calorie" value="25" min="0" max="100"></div>
+        <div class="form-group"><label>蛋白质</label><input type="number" class="form-control rule-weight" data-w="protein" value="20" min="0" max="100"></div>
+        <div class="form-group"><label>糖</label><input type="number" class="form-control rule-weight" data-w="sugar" value="15" min="0" max="100"></div>
+        <div class="form-group"><label>钠</label><input type="number" class="form-control rule-weight" data-w="sodium" value="15" min="0" max="100"></div>
+        <div class="form-group"><label>脂肪</label><input type="number" class="form-control rule-weight" data-w="fat" value="10" min="0" max="100"></div>
+        <div class="form-group"><label>纤维</label><input type="number" class="form-control rule-weight" data-w="fiber" value="10" min="0" max="100"></div>
+        <div class="form-group"><label>特殊需求</label><input type="number" class="form-control rule-weight" data-w="special" value="5" min="0" max="100"></div>
+      </div>
+      <h4 class="mb-1">各年龄段阈值（格式：用逗号分隔范围，如 "1200,1600" 表示1200-1600）</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>指标</th><th>3-6岁</th><th>7-10岁</th><th>11-13岁</th><th>14-17岁</th></tr></thead>
+        <tbody>
+          <tr><td>热量范围(kcal)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-cal" data-age="${a}" value="${a==='3-6'?'1200,1600':a==='7-10'?'1600,2000':a==='11-13'?'2000,2400':'2200,2800'}" style="width:120px"></td>`).join('')}</tr>
+          <tr><td>蛋白质≥(g)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-prot" data-age="${a}" value="${a==='3-6'?20:a==='7-10'?30:a==='11-13'?40:55}" style="width:80px"></td>`).join('')}</tr>
+          <tr><td>糖≤(g)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-sug" data-age="${a}" value="${a==='3-6'?25:a==='7-10'?30:a==='11-13'?35:40}" style="width:80px"></td>`).join('')}</tr>
+          <tr><td>钠≤(mg)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-na" data-age="${a}" value="${a==='3-6'?1200:a==='7-10'?1500:a==='11-13'?1800:2000}" style="width:80px"></td>`).join('')}</tr>
+          <tr><td>脂肪范围(g)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-fat" data-age="${a}" value="${a==='3-6'?'30,50':a==='7-10'?'40,65':a==='11-13'?'50,75':'60,90'}" style="width:120px"></td>`).join('')}</tr>
+          <tr><td>纤维≥(g)</td>${['3-6','7-10','11-13','14-17'].map(a=>`<td><input class="form-control r-fib" data-age="${a}" value="${a==='3-6'?10:a==='7-10'?14:a==='11-13'?18:22}" style="width:80px"></td>`).join('')}</tr>
+        </tbody>
+      </table></div>`;
+  }
+
+  async function saveRule() {
+    const version = document.getElementById('rVersion').value.trim();
+    const name = document.getElementById('rName').value.trim();
+    if (!version || !name) { showError('请填写版本号和名称'); return; }
+
+    function parseRange(cls) {
+      const cfg = {};
+      document.querySelectorAll(`.${cls}`).forEach(el => {
+        const age = el.dataset.age;
+        const val = el.value.trim();
+        if (val.includes(',')) cfg[age] = val.split(',').map(Number);
+        else cfg[age] = Number(val);
+      });
+      return cfg;
+    }
+
+    const data = {
+      version, name,
+      weight_calorie: Number(document.querySelector('[data-w="calorie"]').value) / 100,
+      weight_protein: Number(document.querySelector('[data-w="protein"]').value) / 100,
+      weight_sugar: Number(document.querySelector('[data-w="sugar"]').value) / 100,
+      weight_sodium: Number(document.querySelector('[data-w="sodium"]').value) / 100,
+      weight_fat: Number(document.querySelector('[data-w="fat"]').value) / 100,
+      weight_fiber: Number(document.querySelector('[data-w="fiber"]').value) / 100,
+      weight_special: Number(document.querySelector('[data-w="special"]').value) / 100,
+      calorie_range_config: JSON.stringify(parseRange('r-cal')),
+      protein_min_config: JSON.stringify(parseRange('r-prot')),
+      sugar_max_config: JSON.stringify(parseRange('r-sug')),
+      sodium_max_config: JSON.stringify(parseRange('r-na')),
+      fat_range_config: JSON.stringify(parseRange('r-fat')),
+      fiber_min_config: JSON.stringify(parseRange('r-fib')),
+      is_active: 1,
+      created_by: ROLE,
+    };
+
+    const result = await apiFetch('/rules', { method: 'POST', body: JSON.stringify(data) });
+    if (result) { showSuccess('规则创建成功并已生效'); loadRules(); }
+  }
+
+  async function activateRule(id) {
+    showConfirm('启用规则', '启用此规则后，之前的规则将被停用。确认？', async () => {
+      const result = await apiFetch(`/rules/${id}/activate`, { method: 'POST' });
+      if (result) { showSuccess('规则已启用'); loadRules(); }
+    });
+  }
+</script>
+</body>
+</html>

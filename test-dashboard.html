@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>测试面板 — 罗泾调试</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,BlinkMacSystemFont,sans-serif; background: #f0f2f5; color: #1a1a2e; padding: 20px; }
+.card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+h2 { font-size: 16px; margin-bottom: 12px; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 4px; }
+.btn-parent { background: #fbb6ce; color: #9b2c2c; }
+.btn-teacher { background: #9ae6b4; color: #22543d; }
+.btn-test { background: #4f46e5; color: #fff; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+label { font-size: 13px; font-weight: 600; color: #374151; }
+select, input { padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 13px; }
+.result { font-family: 'SF Mono',monospace; font-size: 12px; background: #1e1e2e; color: #cdd6f4; padding: 12px; border-radius: 8px; max-height: 400px; overflow: auto; white-space: pre-wrap; word-break: break-all; margin-top: 8px; }
+.status-ok { color: #22c55e; }
+.status-err { color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🧪 罗泾测试面板</h2>
+  <p style="font-size:12px;color:#6b7280;margin-bottom:12px">绕过钉钉 SSO，直接以测试角色访问各校区</p>
+  
+  <div class="row">
+    <label>校区</label>
+    <select id="campus">
+      <option value="luojing" selected>罗泾校区</option>
+      <option value="benbu">本部校区</option>
+      <option value="baolin">宝林校区</option>
+    </select>
+    <label>角色</label>
+    <select id="role">
+      <option value="parent">家长</option>
+      <option value="teacher">教师</option>
+    </select>
+  </div>
+  
+  <div class="row" id="kidRow">
+    <label>学生 ID</label>
+    <input type="text" id="kidId" placeholder="点下方"获取学生"自动填充" style="width:180px">
+    <button class="btn btn-sm btn-test" onclick="loadStudents()">获取学生列表</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <button class="btn btn-parent" onclick="openAs('parent')">👨‍👧 以家长身份打开</button>
+    <button class="btn btn-teacher" onclick="openAs('teacher')">👨‍🏫 以教师身份打开</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔍 API 诊断</h2>
+  <div class="row">
+    <button class="btn btn-sm btn-test" onclick="checkAPI('/api/health')">健康检查</button>
+    <button class="btn btn-sm btn-test" onclick="checkAPI('/api/campus-grades?campus='+cam())">年级列表</button>
+    <button class="btn btn-sm btn-test" onclick="checkAPI('/api/auth/binding-status?role='+rol())">绑定状态</button>
+    <button class="btn btn-sm btn-test" onclick="checkAPI('/api/award-certs?campus='+cam())">奖状列表</button>
+    <button class="btn btn-sm btn-test" onclick="checkAPI('/api/campus-info?campus='+cam())">校区信息</button>
+  </div>
+  <div class="result" id="apiResult">点击按钮测试...</div>
+</div>
+
+<div class="card">
+  <h2>🎯 快速直达</h2>
+  <p style="font-size:12px;color:#6b7280;margin-bottom:8px">在生产页面中注入测试角色参数</p>
+  <a id="prodLink" href="#" target="_blank" class="btn btn-sm" style="display:inline-block;text-decoration:none;background:#4f46e5;color:#fff">在生产页面中打开</a>
+</div>
+
+<script>
+function cam(){ return document.getElementById('campus').value; }
+function rol(){ return document.getElementById('role').value; }
+
+function openAs(role){
+  var campus = cam();
+  var kid = document.getElementById('kidId').value;
+  var url = '/dingtalk-awards.html?role='+role+'&campus='+campus;
+  if(role==='parent' && kid) url += '&kid='+kid;
+  // 注入 demo headers 模式
+  sessionStorage.setItem('bs_test_mode', role);
+  if(kid) sessionStorage.setItem('bs_test_kid', kid);
+  window.open(url, '_blank');
+}
+
+async function checkAPI(path){
+  var div = document.getElementById('apiResult');
+  div.textContent = '请求中...';
+  try {
+    var r = await fetch(path);
+    var text = await r.text();
+    var status = r.ok ? 'OK' : 'ERR';
+    div.innerHTML = '<span class="status-'+(r.ok?'ok':'err')+'">HTTP '+r.status+' '+status+'</span>\n' 
+      + text.substring(0, 2000);
+  } catch(e){
+    div.innerHTML = '<span class="status-err">ERROR</span> ' + e.message;
+  }
+}
+
+async function loadStudents(){
+  var campus = cam();
+  var div = document.getElementById('apiResult');
+  div.textContent = '获取学生中...';
+  // 先拿年级
+  try {
+    var gr = await fetch('/api/campus-grades?campus='+campus);
+    var grades = await gr.json();
+    if(!grades.grades || !grades.grades.length){
+      div.textContent = '无年级数据';
+      return;
+    }
+    var g = grades.grades[0];
+    var cl = await fetch('/api/campus-classes?campus='+campus+'&grade='+encodeURIComponent(g));
+    var classes = await cl.json();
+    if(!classes.classes || !classes.classes.length){
+      div.textContent = '无班级数据';
+      return;
+    }
+    var c = classes.classes[0];
+    var st = await fetch('/api/campus-students?campus='+campus+'&grade='+encodeURIComponent(g)+'&class='+encodeURIComponent(c));
+    var students = await st.json();
+    if(students.students && students.students.length){
+      document.getElementById('kidId').value = students.students[0].idCard;
+      div.innerHTML = students.students.slice(0,10).map(function(s){
+        return s.idCard+' '+s.name+' '+s.grade+' '+s.class;
+      }).join('\n');
+    } else {
+      div.textContent = '无学生数据';
+    }
+  } catch(e){
+    div.innerHTML = '<span class="status-err">ERROR</span> '+e.message;
+  }
+}
+
+// 更新直达链接
+function updateLink(){
+  var campus = cam();
+  var role = rol();
+  document.getElementById('prodLink').href = '/dingtalk-awards.html?role='+role+'&campus='+campus;
+}
+document.getElementById('campus').onchange = updateLink;
+document.getElementById('role').onchange = updateLink;
+updateLink();
+</script>
+</body>
+</html>

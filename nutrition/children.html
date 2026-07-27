@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>儿童信息管理 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<!-- Header -->
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid" style="display:none;"></div>
+
+  <!-- Filter + Actions -->
+  <div class="card">
+    <div class="card-header">
+      <h2>👶 儿童信息管理</h2>
+      <div class="btn-group">
+        <a href="children.html?action=import" class="btn btn-outline btn-sm">📥 批量导入</a>
+        <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📄 下载模板</button>
+        <a href="children.html?action=exportCSV" class="btn btn-outline btn-sm" onclick="exportCSV();return false">📤 导出CSV</a>
+        <button class="btn btn-outline btn-sm" onclick="checkAnomalies()">🔍 异常检查</button>
+        <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ 新增儿童</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select class="form-control" id="filterCampus" onchange="loadChildren()">
+        <option value="">全部校区</option>
+        <option value="本部">本部校区</option>
+        <option value="宝林">宝林校区</option>
+        <option value="罗泾">罗泾校区</option>
+      </select>
+      <select class="form-control" id="filterStatus" onchange="loadChildren()">
+        <option value="">全部状态</option>
+        <option value="complete">数据完整</option>
+        <option value="incomplete">数据不完整</option>
+      </select>
+      <input type="text" class="form-control" id="searchInput" placeholder="搜索编号或姓名..." oninput="debouncedSearch()">
+    </div>
+
+    <!-- Import panel -->
+    <div id="importPanel" class="hidden">
+      <h3 class="mb-1">📥 批量导入儿童数据</h3>
+      <div class="alert alert-info text-sm mb-2">
+        支持 CSV / JSON 格式。CSV 表头支持中文（编号、姓名、年龄、性别、身高、体重、过敏信息、忌口、特殊需求、医生备注、校区）。
+        重复编号将自动跳过。
+      </div>
+      <input type="file" id="importFile" accept=".csv,.json" class="form-control mb-2">
+      <div class="btn-group">
+        <button class="btn btn-primary btn-sm" onclick="doImport()">开始导入</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('importPanel').classList.add('hidden')">取消</button>
+      </div>
+      <div id="importResult" class="mt-2"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" id="childrenTable"></div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal (hidden) -->
+<div class="modal-overlay hidden" id="childModal">
+  <div class="modal" style="min-width:500px;">
+    <h2 id="modalTitle">新增儿童</h2>
+    <form id="childForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>儿童编号 *</label>
+          <input type="text" class="form-control" id="fChildCode" placeholder="留空自动生成 NC_0001">
+        </div>
+        <div class="form-group">
+          <label>姓名/匿名编号</label>
+          <input type="text" class="form-control" id="fDisplayName" placeholder="如：张三 或 学生001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>年龄 *</label>
+          <input type="number" class="form-control" id="fAge" min="2" max="18" placeholder="岁">
+        </div>
+        <div class="form-group">
+          <label>性别 *</label>
+          <select class="form-control" id="fGender">
+            <option value="">请选择</option><option value="男">男</option><option value="女">女</option><option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>身高 (cm) *</label>
+          <input type="number" class="form-control" id="fHeight" step="0.1" placeholder="厘米">
+        </div>
+        <div class="form-group">
+          <label>体重 (kg) *</label>
+          <input type="number" class="form-control" id="fWeight" step="0.1" placeholder="千克">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>过敏信息</label>
+        <input type="text" class="form-control" id="fAllergies" placeholder="用逗号分隔，如：牛奶,花生,鸡蛋">
+      </div>
+      <div class="form-group">
+        <label>忌口</label>
+        <input type="text" class="form-control" id="fRestrictions" placeholder="用逗号分隔，如：素食,清真">
+      </div>
+      <div class="form-group">
+        <label>特殊饮食需求</label>
+        <input type="text" class="form-control" id="fSpecialNeeds" placeholder="用逗号分隔，如：低糖,低盐,高蛋白">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>医生/营养师备注</label>
+          <textarea class="form-control" id="fDoctorNotes" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>校区</label>
+          <select class="form-control" id="fCampus">
+            <option value="本部">本部校区</option><option value="宝林">宝林校区</option><option value="罗泾">罗泾校区</option>
+          </select>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveChild()">保存</button>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer">
+  ⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。真实阈值应由有资质的营养师配置并审核。
+</footer>
+
+<script src="common.js"></script>
+<script>
+  // ========== Init ==========
+  let currentPage = 1, editingId = null;
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  document.getElementById('mainNav').innerHTML = buildNav();
+
+  // URL action handling
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('action') === 'import') {
+    document.getElementById('importPanel').classList.remove('hidden');
+  }
+
+  loadChildren();
+
+  // ========== Navigation ==========
+  function buildNav() {
+    const links = [
+      ['children.html', '儿童管理'],
+      ['meal-plans.html', '套餐管理'],
+      ['rules.html', '规则配置'],
+      ['recommendations.html', '智能推荐'],
+      ['review.html', '人工复核'],
+      ['history.html', '历史记录'],
+      ['audit-logs.html', '审计日志'],
+    ];
+    return links.map(([url, label]) => {
+      const cls = window.location.pathname.endsWith(url) ? 'active' : '';
+      return `<a href="${url}" class="${cls}">${label}</a>`;
+    }).join('');
+  }
+
+  // ========== Load ==========
+  async function loadChildren() {
+    const campus = document.getElementById('filterCampus').value;
+    const status = document.getElementById('filterStatus').value;
+    const search = document.getElementById('searchInput').value;
+    const data = await apiFetch(`/children?page=${currentPage}&page_size=50&campus=${campus}&status=${status}&search=${encodeURIComponent(search)}`);
+    if (!data) return;
+
+    // Stats
+    renderStats(data);
+
+    // Table
+    const tbody = data.items.map(c => `
+      <tr>
+        <td><code>${escHtml(c.child_code)}</code></td>
+        <td>${escHtml(c.display_name || '-')}</td>
+        <td>${c.age ?? '-'}</td>
+        <td>${escHtml(c.gender || '-')}</td>
+        <td>${formatNum(c.height_cm)}</td>
+        <td>${formatNum(c.weight_kg)}</td>
+        <td>${formatNum(c.bmi)}</td>
+        <td>${parseJsonField(c.allergies).map(a => `<span class="tag">${escHtml(a)}</span>`).join('') || '-'}</td>
+        <td><span class="badge ${c.data_status === 'complete' ? 'badge-success' : 'badge-warning'}">${c.data_status === 'complete' ? '完整' : '不完整'}</span></td>
+        <td>${escHtml(c.campus || '-')}</td>
+        <td nowrap>
+          <a href="child-detail.html?id=${c.id}" class="btn btn-outline btn-sm">详情</a>
+          <button class="btn btn-outline btn-sm" onclick="showEditModal(${c.id})">编辑</button>
+          <button class="btn btn-outline btn-sm text-danger" onclick="deleteChild(${c.id}, '${c.child_code}')">删除</button>
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('childrenTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>编号</th><th>姓名</th><th>年龄</th><th>性别</th>
+          <th>身高(cm)</th><th>体重(kg)</th><th>BMI</th>
+          <th>过敏信息</th><th>状态</th><th>校区</th><th>操作</th>
+        </tr></thead>
+        <tbody>${tbody || '<tr><td colspan="11" class="text-center">暂无数据</td></tr>'}</tbody>
+      </table>`;
+
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50,
+      (p) => { currentPage = p; loadChildren(); });
+  }
+
+  const debouncedSearch = debounce(() => { currentPage = 1; loadChildren(); }, 400);
+
+  function renderStats(data) {
+    const complete = data.items.filter(c => c.data_status === 'complete').length;
+    const incomplete = data.items.filter(c => c.data_status === 'incomplete').length;
+    document.getElementById('statsGrid').style.display = 'grid';
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-value">${data.total}</div><div class="stat-label">儿童总数</div></div>
+      <div class="stat-card"><div class="stat-value">${complete}</div><div class="stat-label">数据完整</div></div>
+      <div class="stat-card"><div class="stat-value">${incomplete}</div><div class="stat-label">数据不完整</div></div>
+    `;
+  }
+
+  // ========== CRUD ==========
+  function showCreateModal() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = '新增儿童';
+    ['fChildCode','fDisplayName','fAge','fHeight','fWeight','fAllergies','fRestrictions','fSpecialNeeds','fDoctorNotes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fGender').value = '';
+    document.getElementById('fCampus').value = '本部';
+    document.getElementById('childModal').classList.remove('hidden');
+  }
+
+  async function showEditModal(id) {
+    const child = await apiFetch(`/children/${id}`);
+    if (!child) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = '编辑儿童';
+    document.getElementById('fChildCode').value = child.child_code || '';
+    document.getElementById('fDisplayName').value = child.display_name || '';
+    document.getElementById('fAge').value = child.age || '';
+    document.getElementById('fGender').value = child.gender || '';
+    document.getElementById('fHeight').value = child.height_cm || '';
+    document.getElementById('fWeight').value = child.weight_kg || '';
+    document.getElementById('fAllergies').value = parseJsonField(child.allergies).join(', ');
+    document.getElementById('fRestrictions').value = parseJsonField(child.dietary_restrictions).join(', ');
+    document.getElementById('fSpecialNeeds').value = parseJsonField(child.special_needs).join(', ');
+    document.getElementById('fDoctorNotes').value = child.doctor_notes || '';
+    document.getElementById('fCampus').value = child.campus || '本部';
+    document.getElementById('childModal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('childModal').classList.add('hidden');
+    editingId = null;
+  }
+
+  async function saveChild() {
+    const data = {
+      child_code: document.getElementById('fChildCode').value || null,
+      display_name: document.getElementById('fDisplayName').value || null,
+      age: document.getElementById('fAge').value ? parseInt(document.getElementById('fAge').value) : null,
+      gender: document.getElementById('fGender').value || null,
+      height_cm: document.getElementById('fHeight').value ? parseFloat(document.getElementById('fHeight').value) : null,
+      weight_kg: document.getElementById('fWeight').value ? parseFloat(document.getElementById('fWeight').value) : null,
+      allergies: document.getElementById('fAllergies').value ? document.getElementById('fAllergies').value.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [],
+      dietary_restrictions: document.getElementById('fRestrictions').value ? document.getElementById('fRestrictions').value.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [],
+      special_needs: document.getElementById('fSpecialNeeds').value ? document.getElementById('fSpecialNeeds').value.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [],
+      doctor_notes: document.getElementById('fDoctorNotes').value || null,
+      campus: document.getElementById('fCampus').value || '本部',
+    };
+
+    if (!data.age || !data.gender || !data.height_cm || !data.weight_kg) {
+      showError('请填写年龄、性别、身高、体重（带*号字段）');
+      return;
+    }
+
+    let result;
+    if (editingId) {
+      result = await apiFetch(`/children/${editingId}`, { method: 'PUT', body: JSON.stringify(data) });
+    } else {
+      result = await apiFetch('/children', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    if (result) {
+      showSuccess(editingId ? '更新成功' : '创建成功');
+      closeModal();
+      loadChildren();
+    }
+  }
+
+  async function deleteChild(id, code) {
+    showConfirm('删除确认', `确定要删除儿童「${code}」吗？此操作为软删除。`, async () => {
+      const result = await apiFetch(`/children/${id}`, { method: 'DELETE' });
+      if (result) { showSuccess('已删除'); loadChildren(); }
+    });
+  }
+
+  // ========== Import ==========
+  async function doImport() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    if (!file) { showError('请选择文件'); return; }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const resp = await fetch(API_BASE + '/children/import', { method: 'POST', body: form });
+    const result = await resp.json();
+
+    document.getElementById('importResult').innerHTML = `
+      <div class="alert ${result.errors?.length ? 'alert-warning' : 'alert-success'}">
+        导入完成：成功 ${result.imported} 条，跳过 ${result.skipped} 条
+        ${result.errors?.length ? `<br>错误：${result.errors.join('<br>')}` : ''}
+      </div>`;
+    loadChildren();
+  }
+
+  function downloadTemplate() {
+    window.open(API_BASE + '/children/template', '_blank');
+  }
+
+  async function exportCSV() {
+    window.open(API_BASE + '/children/export', '_blank');
+  }
+
+  async function checkAnomalies() {
+    const data = await apiFetch('/children/anomalies');
+    if (!data) return;
+    if (data.anomaly_count === 0) {
+      showSuccess('所有数据正常，未发现异常');
+    } else {
+      showModal('异常数据检查', `
+        <p>发现 <b>${data.anomaly_count}</b> 条异常记录：</p>
+        ${data.anomalies.map(a => `<div class="mb-1"><b>${escHtml(a.child_code)}</b> ${escHtml(a.display_name)}: ${a.issues.map(i => escHtml(i)).join('；')}</div>`).join('')}
+      `);
+    }
+  }
+
+  // ========== Search ==========
+  document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+</script>
+</body>
+</html>

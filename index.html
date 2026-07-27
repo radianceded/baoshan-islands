@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宝山实验智慧教育平台 · UniEdu</title>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<!-- ════════════════════════════════════════
+LOGIN - 已禁用（Demo 模式）
+════════════════════════════════════════ -->
+<div id="login-screen" style="display:none !important">
+<div class="login-card">
+<div class="login-logo">
+<div class="login-logo-icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div>
+<div>
+<div class="login-logo-text">UniEdu</div>
+<div class="login-logo-sub">宝山实验智慧教育 · AI Agent 平台</div>
+</div>
+</div>
+<div class="login-title">欢迎登录</div>
+<div class="login-sub">宝山实验 · 智慧教育系统</div>
+<div class="login-field">
+<label class="login-label">账号</label>
+<input class="login-input" id="login-user" type="text" placeholder="请输入账号" placeholder="请输入账号">
+</div>
+<div class="login-field">
+<label class="login-label">密码</label>
+<input class="login-input" id="login-pass" type="password" placeholder="请输入密码">
+</div>
+<div class="login-error" id="login-error">账号或密码错误，请重试</div>
+<button class="login-btn" id="login-btn" onclick="doLogin()">登 录</button>
+<div class="login-hint">
+</div>
+</div>
+</div>
+<!-- ════════════════════════════════════════
+APP SHELL
+════════════════════════════════════════ -->
+<div id="app">
+<!-- HEADER -->
+<header class="header">
+<div class="header-logo">
+<div class="header-logo-icon">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div>
+<div>
+<div class="header-logo-name">UniEdu</div>
+<div style="font-size:10px;color:var(--ink-4)">宝山实验智慧教育平台</div>
+</div>
+</div>
+<div class="header-breadcrumb" id="breadcrumb">
+<span>首页</span>
+</div>
+<div class="header-right">
+<div class="header-date" id="header-date"></div>
+<button id="toggle-anon-btn" class="btn btn-sm" style="background:var(--green-l);color:#15803D;border:1px solid #BDE8CE" onclick="toggleAnonymization()">🔒 姓名已去敏</button>
+<div class="header-notif" onclick="toast('暂无新通知')">
+🔔<div class="header-notif-dot"></div>
+</div>
+<div class="header-user" onclick="toast('个人设置功能开发中')">
+<div class="header-avatar">李</div>
+<div>
+<div class="header-user-name">李老师</div>
+<div class="header-user-role">管理员</div>
+</div>
+</div>
+</div>
+</header>
+<div class="app-body">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+<div class="sidebar-section">
+<div class="sidebar-section-label">核心</div>
+<div class="nav-item active" data-view="dashboard" onclick="nav('dashboard')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<rect x="3" y="3" width="7" height="7" rx="1"/>
+<rect x="14" y="3" width="7" height="7" rx="1"/>
+<rect x="14" y="14" width="7" height="7" rx="1"/>
+<rect x="3" y="14" width="7" height="7" rx="1"/>
+</svg>
+<span>仪表盘</span>
+</div>
+<div class="nav-item" data-view="students" onclick="nav('students')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+<circle cx="9" cy="7" r="4"/>
+<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+</svg>
+<span>学生档案库</span>
+<span class="nav-badge" id="student-count">248</span>
+</div>
+<div class="nav-item" data-view="awards" onclick="nav('awards')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="12" cy="8" r="7"/>
+<polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+</svg>
+<span>获奖管理</span>
+</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-section-label">AI 服务</div>
+<div class="nav-item" data-view="canteen-admin" onclick="nav('canteen-admin')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+<path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+<line x1="6" y1="1" x2="6" y2="4"/>
+<line x1="10" y1="1" x2="10" y2="4"/>
+<line x1="14" y1="1" x2="14" y2="4"/>
+</svg>
+<span>食堂菜单管理</span>
+</div>
+<a class="nav-item" href="/nutrition/" target="_blank">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-4"/>
+</svg>
+<span>🍱 营养餐智能分配</span>
+</a>
+<div class="nav-item" data-view="ai-log" onclick="nav('ai-log')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+<polyline points="14 2 14 8 20 8"/>
+<line x1="16" y1="13" x2="8" y2="13"/>
+<line x1="16" y1="17" x2="8" y2="17"/>
+<polyline points="10 9 9 9 8 9"/>
+</svg>
+<span>AI 推送记录</span>
+<span class="nav-badge green">3</span>
+</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-section-label">教学</div>
+<div class="nav-item" data-view="resources" onclick="nav('resources')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+</svg>
+<span>教学资源中心</span>
+</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-section-label">系统</div>
+<div class="nav-item" data-view="governance" onclick="nav('governance')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+</svg>
+<span>数据治理规则</span>
+</div>
+</div>
+</aside>
+<!-- MAIN -->
+<main class="main" id="main-container">
+<!-- 视图内容将通过 JS 动态加载 -->
+<div id="view-dashboard" class="view active"></div>
+<div id="view-students" class="view"></div>
+<div id="view-student-detail" class="view"></div>
+<div id="view-canteen-admin" class="view"></div>
+<div id="view-ai-log" class="view"></div>
+<div id="view-governance" class="view"></div>
+<div id="view-resources" class="view"></div>
+<div id="view-awards" class="view"></div>
+</main>
+</div>
+</div>
+<!-- ═══ MODALS ═══════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()"></div>
+<div class="modal" id="modal" style="display:none">
+<div class="modal-header">
+<div class="modal-title" id="modal-title">标题</div>
+<button class="modal-close" onclick="closeModal()">×</button>
+</div>
+<div class="modal-body" id="modal-body"></div>
+<div class="modal-footer" id="modal-footer"></div>
+</div>
+<!-- TOAST -->
+<div id="toast"></div>
+<!-- ══════════════════════════════════════════════════════
+  全局数据容器（从 data.json 异步加载）
+  ══════════════════════════════════════════════════════ -->
+<script>
+let STUDENTS = [];
+let REAL_DATA = {
+    awards_by_student: {},
+    clubs_by_student: {},
+    menu_by_week: {},
+    fitness_history: []
+};
+let DATA_LOADED = false;
+
+// ══════════════════════════════════════════════════════
+//  筛选状态变量（必须在 renderStudents/getFilteredStudents 之前定义！）
+//  Safari 对 TDZ (Temporal Dead Zone) 处理更严格
+// ══════════════════════════════════════════════════════
+let gradeFilter = 'all';
+let allergyFilter = false;
+
+// ══════════════════════════════════════════════════════
+//  状态映射常量（必须在所有使用它们的函数之前定义）
+// ══════════════════════════════════════════════════════
+var STATUS_MAP = { good:'良好', fair:'一般', watch:'待提升', great:'优秀' };
+var STATUS_CSS = { good:'fs-good', fair:'fs-fair', watch:'fs-watch', great:'fs-great' };
+</script>
+<!-- 加载外部脚本 -->
+<script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+<script src="js/api.js"></script>
+<script src="js/student-service.js"></script>
+<script src="js/modules/students.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

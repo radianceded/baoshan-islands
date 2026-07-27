@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能推荐结果 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="card">
+    <div class="card-header">
+      <h2>🤖 自动分配结果</h2>
+      <div class="btn-group">
+        <a href="review.html" class="btn btn-outline btn-sm">📋 人工复核</a>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">📤 导出CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 导出JSON</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" class="form-control" id="filterDate" onchange="loadResults()">
+      <select class="form-control" id="filterPlan" onchange="loadResults()">
+        <option value="">全部推荐</option>
+        <option value="A">推荐A餐</option>
+        <option value="B">推荐B餐</option>
+        <option value="MANUAL">需人工处理</option>
+      </select>
+      <select class="form-control" id="filterConfirmed" onchange="loadResults()">
+        <option value="">全部确认状态</option>
+        <option value="1">已确认</option>
+        <option value="0">未确认</option>
+      </select>
+      <select class="form-control" id="filterCampus" onchange="loadResults()">
+        <option value="">全部校区</option>
+        <option value="本部">本部</option><option value="宝林">宝林</option><option value="罗泾">罗泾</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="runRecommendation()" id="runBtn">🚀 执行推荐</button>
+    </div>
+
+    <!-- Stats -->
+    <div id="statsBar" class="mb-2"></div>
+
+    <!-- Running indicator -->
+    <div id="runningIndicator" class="hidden alert alert-info text-center">
+      <span class="spinner"></span> 正在执行推荐计算...
+    </div>
+
+    <!-- Results Table -->
+    <div class="table-wrap" id="resultsTable">
+      <div class="loading"><span class="spinner"></span> 加载中...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  let currentPage = 1;
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+  loadResults();
+
+  async function loadResults() {
+    const d = document.getElementById('filterDate').value;
+    const plan = document.getElementById('filterPlan').value;
+    const confirmed = document.getElementById('filterConfirmed').value;
+    const campus = document.getElementById('filterCampus').value;
+    const params = new URLSearchParams({ page: currentPage, page_size: 50 });
+    if (d) params.set('plan_date', d);
+    if (plan) params.set('recommended_plan', plan);
+    if (confirmed) params.set('confirmed', confirmed);
+    if (campus) params.set('campus', campus);
+
+    const data = await apiFetch(`/recommendations?${params.toString()}`);
+    if (!data) return;
+
+    // Stats
+    loadStats(d);
+
+    document.getElementById('resultsTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>儿童编号</th><th>年龄</th><th>数据状态</th>
+          <th class="text-right">A餐得分</th><th class="text-right">B餐得分</th>
+          <th>推荐结果</th><th>推荐原因</th><th>风险提示</th><th>确认状态</th><th>操作</th>
+        </tr></thead>
+        <tbody>${data.items.map(r => `
+          <tr>
+            <td><code>${escHtml(r.child_code)}</code></td>
+            <td>${r.age ?? '-'}</td>
+            <td><span class="badge ${r.data_status==='complete'?'badge-success':'badge-warning'}">${r.data_status==='complete'?'完整':'需补充'}</span></td>
+            <td class="text-right">${formatNum(r.score_a)}</td>
+            <td class="text-right">${formatNum(r.score_b)}</td>
+            <td><span class="badge ${r.recommended_plan==='A'?'badge-info':r.recommended_plan==='B'?'badge-success':'badge-danger'}">
+              ${r.recommended_plan==='MANUAL'?'⚠️ 人工处理':r.recommended_plan+'餐'}</span></td>
+            <td><small>${escHtml(r.reason||'-')}</small></td>
+            <td>${r.risk_notes ? `<small class="text-warning">${escHtml(r.risk_notes)}</small>` : '-'}</td>
+            <td>${r.confirmed ? '<span class="badge badge-success">已确认</span>' : '<span class="badge badge-neutral">待确认</span>'}</td>
+            <td>${!r.confirmed ? `<button class="btn btn-outline btn-sm" onclick="quickConfirm(${r.id})">确认</button>` : ''}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="10" class="text-center">暂无推荐结果，请先执行推荐</td></tr>'}</tbody>
+      </table>`;
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadResults(); });
+  }
+
+  async function loadStats(d) {
+    if (!d) { document.getElementById('statsBar').innerHTML = ''; return; }
+    const stats = await apiFetch(`/recommendations/stats?plan_date=${d}`);
+    if (!stats) return;
+    document.getElementById('statsBar').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">总人数</div></div>
+        <div class="stat-card" style="border-left:4px solid #1565c0"><div class="stat-value">${stats.a_count}</div><div class="stat-label">推荐A餐</div></div>
+        <div class="stat-card" style="border-left:4px solid #2e7d32"><div class="stat-value">${stats.b_count}</div><div class="stat-label">推荐B餐</div></div>
+        <div class="stat-card" style="border-left:4px solid #c62828"><div class="stat-value">${stats.manual_count}</div><div class="stat-label">需人工处理</div></div>
+        <div class="stat-card" style="border-left:4px solid #f57f17"><div class="stat-value">${stats.confirmed_count}</div><div class="stat-label">已确认</div></div>
+      </div>`;
+  }
+
+  async function runRecommendation() {
+    const d = document.getElementById('filterDate').value;
+    if (!d) { showError('请选择日期'); return; }
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true; btn.textContent = '计算中...';
+    document.getElementById('runningIndicator').classList.remove('hidden');
+
+    const result = await apiFetch('/recommend', { method: 'POST', body: JSON.stringify({ plan_date: d }) });
+
+    btn.disabled = false; btn.textContent = '🚀 执行推荐';
+    document.getElementById('runningIndicator').classList.add('hidden');
+
+    if (result) {
+      showSuccess(`推荐完成！共 ${result.saved} 条，A餐 ${result.stats.a_count} / B餐 ${result.stats.b_count} / 人工 ${result.stats.manual_count}`);
+      currentPage = 1;
+      loadResults();
+    }
+  }
+
+  async function quickConfirm(id) {
+    const result = await apiFetch(`/recommendations/${id}/confirm`, { method: 'POST', body: JSON.stringify({ operator: ROLE }) });
+    if (result) { showSuccess('已确认'); loadResults(); }
+  }
+
+  function exportCSV() {
+    window.open(`${API_BASE}/recommendations/export?plan_date=${document.getElementById('filterDate').value}&format=csv`, '_blank');
+  }
+  function exportJSON() {
+    window.open(`${API_BASE}/recommendations/export?plan_date=${document.getElementById('filterDate').value}&format=json`, '_blank');
+  }
+</script>
+</body>
+</html>

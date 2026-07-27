@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>套餐管理 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 套餐信息管理</h2>
+      <div class="btn-group">
+        <button class="btn btn-primary btn-sm" onclick="showCreateModal('A')">+ A餐</button>
+        <button class="btn btn-primary btn-sm" onclick="showCreateModal('B')">+ B餐</button>
+        <button class="btn btn-outline btn-sm" onclick="showBatchModal()">📝 批量录入 A+B</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" class="form-control" id="filterDate" onchange="loadMeals()">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('filterDate').value='';loadMeals()">清除</button>
+    </div>
+
+    <div class="table-wrap" id="mealTable"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay hidden" id="mealModal">
+  <div class="modal" style="min-width:560px;">
+    <h2 id="modalTitle">新增套餐</h2>
+    <form id="mealForm">
+      <input type="hidden" id="fPlanId">
+      <div class="form-row">
+        <div class="form-group"><label>日期 *</label><input type="date" class="form-control" id="fPlanDate"></div>
+        <div class="form-group"><label>餐型</label><input type="text" class="form-control" id="fPlanType" readonly></div>
+      </div>
+      <div class="form-group"><label>套餐名称</label><input type="text" class="form-control" id="fPlanName" placeholder="如：红烧鸡块套餐"></div>
+      <div class="form-group"><label>食材列表</label><input type="text" class="form-control" id="fIngredients" placeholder="用逗号分隔，如：米饭,鸡肉,青菜,豆腐"></div>
+      <div class="form-row">
+        <div class="form-group"><label>热量 (千卡) *</label><input type="number" class="form-control" id="fCalories" step="0.1"></div>
+        <div class="form-group"><label>蛋白质 (克) *</label><input type="number" class="form-control" id="fProtein" step="0.1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>脂肪 (克) *</label><input type="number" class="form-control" id="fFat" step="0.1"></div>
+        <div class="form-group"><label>碳水 (克) *</label><input type="number" class="form-control" id="fCarbs" step="0.1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>糖 (克) *</label><input type="number" class="form-control" id="fSugar" step="0.1"></div>
+        <div class="form-group"><label>钠 (毫克) *</label><input type="number" class="form-control" id="fSodium" step="0.1"></div>
+      </div>
+      <div class="form-group"><label>膳食纤维 (克) *</label><input type="number" class="form-control" id="fFiber" step="0.1"></div>
+      <div class="form-row">
+        <div class="form-group"><label>过敏原</label><input type="text" class="form-control" id="fAllergens" placeholder="用逗号分隔，如：牛奶,鸡蛋,花生"></div>
+        <div class="form-group"><label>适用饮食标签</label><input type="text" class="form-control" id="fSuitableTags" placeholder="用逗号分隔，如：低糖,低盐,清真"></div>
+      </div>
+      <div class="form-group"><label>不适用人群说明</label><textarea class="form-control" id="fUnsuitable" rows="2" placeholder="如：乳糖不耐受者不宜"></textarea></div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveMeal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch Modal -->
+<div class="modal-overlay hidden" id="batchModal">
+  <div class="modal" style="min-width:700px;">
+    <h2>批量录入 A+B 餐</h2>
+    <div class="form-group"><label>日期 *</label><input type="date" class="form-control" id="batchDate"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <h3 class="mb-1" style="color:var(--primary)">🅰️ A餐</h3>
+        <div class="form-group"><label>名称</label><input type="text" class="form-control batch-a" data-field="plan_name"></div>
+        <div class="form-group"><label>食材</label><input type="text" class="form-control batch-a" data-field="ingredients"></div>
+        <div class="form-row">
+          <div class="form-group"><label>热量(kcal)</label><input type="number" class="form-control batch-a" data-field="calories_kcal" step="0.1"></div>
+          <div class="form-group"><label>蛋白质(g)</label><input type="number" class="form-control batch-a" data-field="protein_g" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>脂肪(g)</label><input type="number" class="form-control batch-a" data-field="fat_g" step="0.1"></div>
+          <div class="form-group"><label>碳水(g)</label><input type="number" class="form-control batch-a" data-field="carbs_g" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>糖(g)</label><input type="number" class="form-control batch-a" data-field="sugar_g" step="0.1"></div>
+          <div class="form-group"><label>钠(mg)</label><input type="number" class="form-control batch-a" data-field="sodium_mg" step="0.1"></div>
+        </div>
+        <div class="form-group"><label>纤维(g)</label><input type="number" class="form-control batch-a" data-field="fiber_g" step="0.1"></div>
+        <div class="form-group"><label>过敏原</label><input type="text" class="form-control batch-a" data-field="allergens"></div>
+        <div class="form-group"><label>适用标签</label><input type="text" class="form-control batch-a" data-field="suitable_tags"></div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <h3 class="mb-1" style="color:#1565c0">🅱️ B餐</h3>
+        <div class="form-group"><label>名称</label><input type="text" class="form-control batch-b" data-field="plan_name"></div>
+        <div class="form-group"><label>食材</label><input type="text" class="form-control batch-b" data-field="ingredients"></div>
+        <div class="form-row">
+          <div class="form-group"><label>热量(kcal)</label><input type="number" class="form-control batch-b" data-field="calories_kcal" step="0.1"></div>
+          <div class="form-group"><label>蛋白质(g)</label><input type="number" class="form-control batch-b" data-field="protein_g" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>脂肪(g)</label><input type="number" class="form-control batch-b" data-field="fat_g" step="0.1"></div>
+          <div class="form-group"><label>碳水(g)</label><input type="number" class="form-control batch-b" data-field="carbs_g" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>糖(g)</label><input type="number" class="form-control batch-b" data-field="sugar_g" step="0.1"></div>
+          <div class="form-group"><label>钠(mg)</label><input type="number" class="form-control batch-b" data-field="sodium_mg" step="0.1"></div>
+        </div>
+        <div class="form-group"><label>纤维(g)</label><input type="number" class="form-control batch-b" data-field="fiber_g" step="0.1"></div>
+        <div class="form-group"><label>过敏原</label><input type="text" class="form-control batch-b" data-field="allergens"></div>
+        <div class="form-group"><label>适用标签</label><input type="text" class="form-control batch-b" data-field="suitable_tags"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('batchModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" onclick="saveBatch()">批量保存</button>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  let currentPage = 1;
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+  loadMeals();
+
+  async function loadMeals() {
+    const d = document.getElementById('filterDate').value;
+    const data = await apiFetch(`/meal-plans?plan_date=${d || ''}&page=${currentPage}&page_size=50`);
+    if (!data) return;
+
+    document.getElementById('mealTable').innerHTML = `
+      <table>
+        <thead><tr><th>日期</th><th>餐型</th><th>名称</th><th>热量(kcal)</th><th>蛋白质(g)</th><th>脂肪(g)</th><th>碳水(g)</th><th>糖(g)</th><th>钠(mg)</th><th>纤维(g)</th><th>过敏原</th><th>标签</th><th>操作</th></tr></thead>
+        <tbody>${data.items.map(m => `
+          <tr>
+            <td>${formatDate(m.plan_date)}</td>
+            <td><span class="badge ${m.plan_type==='A'?'badge-info':'badge-success'}">${m.plan_type}餐</span></td>
+            <td>${escHtml(m.plan_name||'-')}</td>
+            <td>${formatNum(m.calories_kcal)}</td><td>${formatNum(m.protein_g)}</td><td>${formatNum(m.fat_g)}</td><td>${formatNum(m.carbs_g)}</td>
+            <td>${formatNum(m.sugar_g)}</td><td>${formatNum(m.sodium_mg)}</td><td>${formatNum(m.fiber_g)}</td>
+            <td>${parseJsonField(m.allergens).join(', ')||'-'}</td>
+            <td>${parseJsonField(m.suitable_tags).map(t=>`<span class="tag">${escHtml(t)}</span>`).join('')||'-'}</td>
+            <td nowrap>
+              <button class="btn btn-outline btn-sm" onclick="editMeal(${m.id})">编辑</button>
+              <button class="btn btn-outline btn-sm text-danger" onclick="deleteMeal(${m.id},'${m.plan_date} ${m.plan_type}餐')">删除</button>
+            </td>
+          </tr>`).join('') || '<tr><td colspan="13" class="text-center">暂无套餐数据</td></tr>'}</tbody>
+      </table>`;
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadMeals(); });
+  }
+
+  function showCreateModal(type) {
+    ['fPlanId','fPlanName','fIngredients','fCalories','fProtein','fFat','fCarbs','fSugar','fSodium','fFiber','fAllergens','fSuitableTags','fUnsuitable'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fPlanDate').value = document.getElementById('filterDate').value;
+    document.getElementById('fPlanType').value = type;
+    document.getElementById('modalTitle').textContent = type === 'A' ? '新增 A 餐' : '新增 B 餐';
+    document.getElementById('mealModal').classList.remove('hidden');
+  }
+
+  function showBatchModal() {
+    document.getElementById('batchDate').value = document.getElementById('filterDate').value;
+    document.querySelectorAll('.batch-a input, .batch-b input').forEach(el => el.value = '');
+    document.getElementById('batchModal').classList.remove('hidden');
+  }
+
+  function closeModal() { document.getElementById('mealModal').classList.add('hidden'); }
+
+  async function editMeal(id) {
+    const meal = await apiFetch(`/meal-plans/${id}`);
+    if (!meal) return;
+    document.getElementById('fPlanId').value = meal.id;
+    document.getElementById('fPlanDate').value = meal.plan_date;
+    document.getElementById('fPlanType').value = meal.plan_type;
+    document.getElementById('fPlanName').value = meal.plan_name || '';
+    document.getElementById('fIngredients').value = parseJsonField(meal.ingredients).join(', ');
+    document.getElementById('fCalories').value = meal.calories_kcal || '';
+    document.getElementById('fProtein').value = meal.protein_g || '';
+    document.getElementById('fFat').value = meal.fat_g || '';
+    document.getElementById('fCarbs').value = meal.carbs_g || '';
+    document.getElementById('fSugar').value = meal.sugar_g || '';
+    document.getElementById('fSodium').value = meal.sodium_mg || '';
+    document.getElementById('fFiber').value = meal.fiber_g || '';
+    document.getElementById('fAllergens').value = parseJsonField(meal.allergens).join(', ');
+    document.getElementById('fSuitableTags').value = parseJsonField(meal.suitable_tags).join(', ');
+    document.getElementById('fUnsuitable').value = meal.unsuitable_notes || '';
+    document.getElementById('modalTitle').textContent = `编辑 ${meal.plan_type} 餐`;
+    document.getElementById('mealModal').classList.remove('hidden');
+  }
+
+  async function saveMeal() {
+    const id = document.getElementById('fPlanId').value;
+    const data = {
+      plan_date: document.getElementById('fPlanDate').value,
+      plan_type: document.getElementById('fPlanType').value,
+      plan_name: document.getElementById('fPlanName').value || null,
+      ingredients: document.getElementById('fIngredients').value ? document.getElementById('fIngredients').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [],
+      calories_kcal: parseFloat(document.getElementById('fCalories').value) || null,
+      protein_g: parseFloat(document.getElementById('fProtein').value) || null,
+      fat_g: parseFloat(document.getElementById('fFat').value) || null,
+      carbs_g: parseFloat(document.getElementById('fCarbs').value) || null,
+      sugar_g: parseFloat(document.getElementById('fSugar').value) || null,
+      sodium_mg: parseFloat(document.getElementById('fSodium').value) || null,
+      fiber_g: parseFloat(document.getElementById('fFiber').value) || null,
+      allergens: document.getElementById('fAllergens').value ? document.getElementById('fAllergens').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [],
+      suitable_tags: document.getElementById('fSuitableTags').value ? document.getElementById('fSuitableTags').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [],
+      unsuitable_notes: document.getElementById('fUnsuitable').value || null,
+    };
+
+    if (id) data.id = parseInt(id);
+
+    const result = await apiFetch('/meal-plans', { method: 'POST', body: JSON.stringify(data) });
+    if (result) { showSuccess(id ? '更新成功' : '创建成功'); closeModal(); loadMeals(); }
+  }
+
+  async function saveBatch() {
+    const date = document.getElementById('batchDate').value;
+    if (!date) { showError('请选择日期'); return; }
+
+    function collect(cls) {
+      const data = {};
+      document.querySelectorAll(`.${cls}`).forEach(el => {
+        const field = el.dataset.field;
+        let val = el.value;
+        if (['calories_kcal','protein_g','fat_g','carbs_g','sugar_g','sodium_mg','fiber_g'].includes(field)) {
+          val = val ? parseFloat(val) : null;
+        } else if (['ingredients','allergens','suitable_tags'].includes(field)) {
+          val = val ? val.split(/[,，]/).map(s=>s.trim()).filter(Boolean) : [];
+        }
+        data[field] = val;
+      });
+      return data;
+    }
+
+    const mealA = collect('batch-a'); mealA.plan_date = date; mealA.plan_type = 'A';
+    const mealB = collect('batch-b'); mealB.plan_date = date; mealB.plan_type = 'B';
+
+    const result = await apiFetch('/meal-plans/batch', { method: 'POST', body: JSON.stringify({ plan_date: date, meal_a: mealA, meal_b: mealB }) });
+    if (result) {
+      showSuccess('批量录入成功');
+      document.getElementById('batchModal').classList.add('hidden');
+      document.getElementById('filterDate').value = date;
+      loadMeals();
+    }
+  }
+
+  async function deleteMeal(id, label) {
+    showConfirm('删除确认', `确定删除「${label}」吗？`, async () => {
+      const result = await apiFetch(`/meal-plans/${id}`, { method: 'DELETE' });
+      if (result) { showSuccess('已删除'); loadMeals(); }
+    });
+  }
+</script>
+</body>
+</html>

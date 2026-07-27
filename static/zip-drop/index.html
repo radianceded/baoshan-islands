@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZIP 投放站 — 宝山奖状系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  .container { max-width: 680px; margin: 40px auto; padding: 0 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 20px; }
+  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; margin-top: 16px; }
+  select, input[type=text] { width: 100%; padding: 10px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 4px; }
+  select:focus, input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+  .upload-zone {
+    border: 2px dashed #d1d5db; border-radius: 10px; padding: 36px 20px; text-align: center;
+    cursor: pointer; transition: all 0.2s; margin-top: 16px; background: #fafbfc;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: #4f46e5; background: #eef2ff; }
+  .upload-zone .icon { font-size: 40px; margin-bottom: 8px; }
+  .upload-zone p { color: #6b7280; font-size: 14px; }
+  .upload-zone .highlight { color: #4f46e5; font-weight: 600; }
+  #file-input { display: none; }
+  .file-info { margin-top: 12px; padding: 10px 14px; background: #f0fdf4; border-radius: 8px; font-size: 13px; display: none; }
+  .file-info.show { display: block; }
+  .btn {
+    display: block; width: 100%; padding: 12px; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 20px;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-secondary { background: #e5e7eb; color: #374151; margin-top: 8px; }
+  .progress-wrap { margin-top: 16px; display: none; }
+  .progress-wrap.show { display: block; }
+  .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .progress-fill { height: 100%; background: #4f46e5; border-radius: 4px; width: 0%; transition: width 0.3s; }
+  .progress-text { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  .result { margin-top: 16px; display: none; }
+  .result.show { display: block; }
+  .result-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; }
+  .result-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; }
+  .result h3 { font-size: 15px; margin-bottom: 8px; }
+  .result table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .result td { padding: 4px 8px; border-bottom: 1px solid #e5e7eb; }
+  .result td:last-child { text-align: right; font-weight: 600; }
+  .jobs-list { font-size: 13px; }
+  .jobs-list .job { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .job-status { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .job-status.processing { background: #fef3c7; color: #92400e; }
+  .job-status.completed { background: #d1fae5; color: #065f46; }
+  .job-status.failed { background: #fee2e2; color: #991b1b; }
+  .note { font-size: 12px; color: #9ca3af; margin-top: 12px; line-height: 1.6; }
+  .scp-box { background: #1e1e2e; color: #cdd6f4; padding: 12px 16px; border-radius: 8px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.8; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>📦 ZIP 投放站</h1>
+    <p class="sub">上传大体积奖状压缩包，AI 自动识别并分发到对应校区</p>
+
+    <!-- 大文件走 SCP -->
+    <details style="margin-bottom: 16px;">
+      <summary style="cursor: pointer; font-weight: 600; font-size: 14px; color: #4f46e5;">💡 超过 500MB？用 SCP 直传更稳定</summary>
+      <p style="font-size: 13px; color: #6b7280; margin: 8px 0 4px;">把 ZIP 传到服务器投放目录：</p>
+      <div class="scp-box">scp 奖状.zip root@118.25.196.70:/srv/baoshan/zip-drop/uploads/</div>
+      <p style="font-size: 13px; color: #6b7280; margin-top: 8px;">传完后告诉 AI 助手："处理 zip-drop/uploads/奖状.zip，campus=luojing"</p>
+    </details>
+
+    <form id="upload-form">
+      <label for="campus">目标校区 *</label>
+      <select id="campus" required>
+        <option value="">-- 请选择 --</option>
+        <option value="benbu">本部校区</option>
+        <option value="baolin">宝林校区</option>
+        <option value="luojing">罗泾校区</option>
+      </select>
+
+      <label for="grade">年级筛选（可选）</label>
+      <select id="grade">
+        <option value="">全部年级</option>
+        <option value="一">一年级</option>
+        <option value="二">二年级</option>
+        <option value="三">三年级</option>
+        <option value="四">四年级</option>
+        <option value="五">五年级</option>
+      </select>
+
+      <label for="class_name">班级筛选（可选）</label>
+      <input type="text" id="class_name" placeholder="如：1（一班），留空=全部">
+
+      <div class="upload-zone" id="drop-zone">
+        <div class="icon">📁</div>
+        <p>拖拽 ZIP 到此处，或 <span class="highlight">点击选择文件</span></p>
+        <p style="font-size:12px;color:#9ca3af;margin-top:4px;">支持 .zip，单文件最大 1GB</p>
+      </div>
+      <input type="file" id="file-input" accept=".zip">
+
+      <div class="file-info" id="file-info"></div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">上传中...</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn" disabled>上传并处理</button>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- 最近任务 -->
+  <div class="card">
+    <h2 style="font-size:16px;margin-bottom:12px;">📋 最近任务</h2>
+    <div class="jobs-list" id="jobs-list">加载中...</div>
+    <button class="btn btn-secondary" onclick="loadJobs()">刷新列表</button>
+  </div>
+
+  <p class="note">⚠️ ZIP 处理在独立进程中运行，不占用 Web 服务资源。上传完成后处理自动开始，可关闭页面稍后查看。</p>
+</div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileInfo = document.getElementById('file-info');
+const submitBtn = document.getElementById('submit-btn');
+const progressWrap = document.getElementById('progress-wrap');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+const resultDiv = document.getElementById('result');
+const jobsList = document.getElementById('jobs-list');
+
+let selectedFile = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) handleFile(files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith('.zip')) {
+    alert('请上传 .zip 格式的压缩包');
+    return;
+  }
+  selectedFile = file;
+  const mb = (file.size / 1024 / 1024).toFixed(1);
+  const gb = file.size > 1024*1024*1024 ? ` (${(file.size/1024/1024/1024).toFixed(2)}GB)` : '';
+  fileInfo.innerHTML = `✅ <strong>${file.name}</strong> — ${mb}MB${gb}`;
+  fileInfo.classList.add('show');
+  submitBtn.disabled = false;
+  if (file.size > 500 * 1024 * 1024) {
+    fileInfo.innerHTML += '<br>⚠️ 文件较大，建议用 SCP 上传（见上方折叠区）';
+  }
+}
+
+document.getElementById('upload-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!selectedFile) return;
+
+  const campus = document.getElementById('campus').value;
+  if (!campus) { alert('请选择目标校区'); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '上传中...';
+  progressWrap.classList.add('show');
+  resultDiv.classList.remove('show');
+  progressFill.style.width = '0%';
+  progressText.textContent = '上传中...';
+
+  const formData = new FormData();
+  formData.append('zip', selectedFile);
+  formData.append('campus', campus);
+  formData.append('grade', document.getElementById('grade').value);
+  formData.append('class', document.getElementById('class_name').value);
+
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/zip-drop/upload');
+
+    xhr.upload.addEventListener('progress', ev => {
+      if (ev.lengthComputable) {
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        progressFill.style.width = pct + '%';
+        progressText.textContent = `上传中... ${pct}%`;
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      try {
+        const resp = JSON.parse(xhr.responseText);
+        if (resp.success) {
+          progressText.textContent = '✅ 上传完成，处理已开始...';
+          progressFill.style.width = '100%';
+          showResult(resp);
+          pollJobStatus(resp.job_id);
+        } else {
+          progressText.textContent = '❌ ' + (resp.error || '上传失败');
+          showError(resp.error || '未知错误');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '上传并处理';
+        }
+      } catch {
+        showError('解析响应失败: ' + xhr.responseText.substring(0, 200));
+        submitBtn.disabled = false;
+        submitBtn.textContent = '上传并处理';
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      showError('网络错误，上传失败。大文件请用 SCP 方式上传。');
+      submitBtn.disabled = false;
+      submitBtn.textContent = '上传并处理';
+    });
+
+    xhr.send(formData);
+  } catch(err) {
+    showError('上传异常: ' + err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = '上传并处理';
+  }
+});
+
+function showResult(resp) {
+  const campusName = {benbu:'本部',baolin:'宝林',luojing:'罗泾'}[resp.campus] || resp.campus;
+  resultDiv.innerHTML = `
+    <div class="result-success">
+      <h3>📤 上传成功 — 处理已启动</h3>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:8px;">
+        校区: ${campusName} | 文件: ${resp.filename} (${resp.size_mb}MB) | 任务ID: <code>${resp.job_id}</code>
+      </p>
+      <div id="job-status-poll" style="font-size:13px;color:#6b7280;">⏳ 处理中，稍后自动更新...</div>
+    </div>
+  `;
+  resultDiv.classList.add('show');
+}
+
+function showError(msg) {
+  resultDiv.innerHTML = `<div class="result-error"><h3>❌ 错误</h3><p>${msg}</p></div>`;
+  resultDiv.classList.add('show');
+  progressWrap.classList.remove('show');
+}
+
+async function pollJobStatus(jobId) {
+  const pollDiv = document.getElementById('job-status-poll');
+  if (!pollDiv) return;
+
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const resp = await fetch(`/api/zip-drop/status/${jobId}`).then(r => r.json());
+      if (resp.status === 'completed') {
+        pollDiv.innerHTML = `
+          ✅ 处理完成！入库 <strong>${resp.saved}</strong> 张
+          ${resp.duplicated ? `（${resp.duplicated} 张重复跳过）` : ''}
+          ${resp.unmatched ? `（${resp.unmatched} 张未匹配）` : ''}
+          耗时 ${resp.elapsed}
+        `;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '上传并处理';
+        progressWrap.classList.remove('show');
+        loadJobs();
+        return;
+      } else if (resp.status === 'failed') {
+        pollDiv.innerHTML = `❌ 处理失败: ${(resp.errors||[]).join('; ')}`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '上传并处理';
+        progressWrap.classList.remove('show');
+        loadJobs();
+        return;
+      } else {
+        pollDiv.innerHTML = `⏳ 处理中... ${resp.files_processed || 0}/${resp.files_total || '?'} 张`;
+      }
+    } catch { break; }
+  }
+  pollDiv.innerHTML = '⏰ 处理时间较长，可稍后刷新查看结果';
+}
+
+async function loadJobs() {
+  try {
+    const resp = await fetch('/api/zip-drop/jobs').then(r => r.json());
+    if (resp.jobs && resp.jobs.length > 0) {
+      jobsList.innerHTML = resp.jobs.map(j => `
+        <div class="job">
+          <div>
+            <strong>${j.job_id}</strong>
+            <span style="color:#6b7280;margin-left:8px;">${j.campus_name}</span>
+            ${j.files_processed ? `<span style="color:#6b7280;">(${j.files_processed}/${j.files_total}张)</span>` : ''}
+          </div>
+          <div>
+            ${j.saved ? `<span style="margin-right:8px;font-size:12px;">入库${j.saved}</span>` : ''}
+            <span class="job-status ${j.status}">${j.status==='completed'?'完成':j.status==='processing'?'处理中':'失败'}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      jobsList.innerHTML = '<p style="color:#9ca3af;padding:10px;">暂无任务记录</p>';
+    }
+  } catch {
+    jobsList.innerHTML = '<p style="color:#ef4444;">加载失败</p>';
+  }
+}
+
+loadJobs();
+</script>
+</body>
+</html>

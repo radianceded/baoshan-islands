@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>满载版档案岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#FFF8E5 0%, #FFE0B0 100%);color:#1F3A4D;padding:30px 20px 60px;min-height:100vh}
+  .head{max-width:1400px;margin:0 auto 20px}
+  .head h1{font-size:30px;font-weight:900;letter-spacing:3px;color:#3D2812}
+  .head p{margin-top:8px;font-size:14px;color:#7A4F1B;line-height:1.7}
+  .stage{max-width:1400px;margin:0 auto;background:linear-gradient(180deg,#FFE3B0 0%, #FFC890 25%, #BFE6FF 55%, #6FC8F0 90%, #2E8FBE 100%);border-radius:24px;overflow:hidden;box-shadow:0 16px 50px rgba(60,40,20,0.18);position:relative}
+  .stage svg{width:100%;display:block}
+  .legend{position:absolute;left:20px;top:20px;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-radius:16px;padding:14px 16px;font-size:12px;line-height:1.7;box-shadow:0 6px 18px rgba(0,40,80,0.18);max-width:240px}
+  .legend h3{font-size:14px;font-weight:900;color:#0E5E80;margin-bottom:8px;letter-spacing:1px}
+  .legend ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:4px}
+  .legend li{background:#F4FAFD;border:1px solid #DCEBF3;border-radius:8px;padding:2px 7px;font-size:11px;color:#0E5E80;font-weight:700}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>📚 满载版「档案岛」</h1>
+  <p>3 栋图书馆 + 钟楼 + 凯旋拱门 + 信箱 + 学习长椅 + 大书雕塑 + 6 个学生角色 + 猫头鹰老师 + 飞舞卷轴 + 公告栏 + 路灯…… <strong>30+ 元素</strong></p>
+</div>
+<div class="stage">
+  <div class="legend">
+    <h3>🔍 这座岛上有……</h3>
+    <ul>
+      <li>主图书馆（3 层）</li><li>钟楼</li><li>小书亭 ×2</li><li>拱门</li>
+      <li>大书雕塑</li><li>信箱</li><li>公告栏</li><li>长椅</li>
+      <li>学生 ×6</li><li>猫头鹰老师</li><li>飞舞卷轴</li>
+      <li>路灯 ×3</li><li>彩旗</li><li>书堆</li>
+      <li>蘑菇 ×3</li><li>小鸟</li><li>蝴蝶</li><li>纸飞机</li>
+      <li>石板路</li><li>台阶</li><li>沙滩贝壳</li><li>帆船</li>
+    </ul>
+  </div>
+
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFF8C8"/><stop offset="60%" stop-color="#FFC23F"/><stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FD2F1"/><stop offset="100%" stop-color="#3FA8D8"/></linearGradient>
+      <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DDB6A"/><stop offset="100%" stop-color="#5FA830"/></linearGradient>
+      <linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0B2"/><stop offset="100%" stop-color="#E0A878"/></linearGradient>
+      <linearGradient id="wallStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0E5C8"/><stop offset="100%" stop-color="#C8B080"/></linearGradient>
+      <linearGradient id="roofRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E8584A"/><stop offset="100%" stop-color="#9C2D18"/></linearGradient>
+      <linearGradient id="roofBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5BC8E8"/><stop offset="100%" stop-color="#1E6FA0"/></linearGradient>
+
+      <symbol id="bookS" viewBox="0 0 20 28">
+        <rect x="0" y="0" width="6" height="28" fill="#E94B6A" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="7" y="0" width="6" height="28" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="0" width="6" height="28" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="2" y1="6" x2="4" y2="6" stroke="#fff" stroke-width="1"/>
+        <line x1="9" y1="6" x2="11" y2="6" stroke="#fff" stroke-width="1"/>
+        <line x1="16" y1="6" x2="18" y2="6" stroke="#3D2812" stroke-width="1"/>
+      </symbol>
+      <symbol id="lantern" viewBox="0 0 16 24">
+        <line x1="8" y1="0" x2="8" y2="3" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="5" y="3" width="6" height="2" fill="#5C3D17"/>
+        <ellipse cx="8" cy="12" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="2" y1="12" x2="14" y2="12" stroke="#3D2812" stroke-width="1"/>
+        <rect x="5" y="19" width="6" height="2" fill="#5C3D17"/>
+      </symbol>
+      <symbol id="butterfly" viewBox="0 0 24 16">
+        <ellipse cx="8" cy="8" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <ellipse cx="16" cy="8" rx="6" ry="7" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="12" y1="3" x2="12" y2="13" stroke="#3D2812" stroke-width="2"/>
+      </symbol>
+      <symbol id="bird" viewBox="0 0 24 16">
+        <ellipse cx="10" cy="8" rx="7" ry="5" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="16" cy="6" r="3.5" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="17" cy="5" r=".8" fill="#3D2812"/>
+        <path d="M19 6 L22 5 L19 7 Z" fill="#FF8C42" stroke="#3D2812" stroke-width="1"/>
+        <path d="M5 8 Q2 6 0 8" stroke="#3D2812" stroke-width="1.5" fill="none"/>
+      </symbol>
+      <symbol id="mush" viewBox="0 0 20 20">
+        <rect x="7" y="10" width="6" height="9" fill="#FFF6DD" stroke="#3D2812" stroke-width="1.5"/>
+        <path d="M2 10 Q2 2 10 2 Q18 2 18 10 Z" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="6" cy="6" r="1.5" fill="#fff"/>
+        <circle cx="12" cy="5" r="1.5" fill="#fff"/>
+        <circle cx="14" cy="8" r="1.2" fill="#fff"/>
+      </symbol>
+      <symbol id="scroll" viewBox="0 0 24 14">
+        <rect x="2" y="4" width="20" height="6" fill="#FFF6DD" stroke="#3D2812" stroke-width="1.2"/>
+        <ellipse cx="2" cy="7" rx="2" ry="3" fill="#E8C896" stroke="#3D2812" stroke-width="1.2"/>
+        <ellipse cx="22" cy="7" rx="2" ry="3" fill="#E8C896" stroke="#3D2812" stroke-width="1.2"/>
+        <line x1="6" y1="6" x2="18" y2="6" stroke="#3D2812" stroke-width=".6"/>
+        <line x1="6" y1="8" x2="16" y2="8" stroke="#3D2812" stroke-width=".6"/>
+      </symbol>
+      <symbol id="plane" viewBox="0 0 24 14">
+        <path d="M2 7 L22 2 L18 7 L22 12 Z" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="14" y1="7" x2="22" y2="2" stroke="#3D2812" stroke-width=".8"/>
+      </symbol>
+
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="0" dy="2" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- 太阳 -->
+    <circle cx="1380" cy="140" r="120" fill="url(#sun)" opacity=".85"/>
+    <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+      <circle cx="1380" cy="140" r="50" fill="#FFD645"/>
+      <g stroke-linecap="round">
+        <line x1="1380" y1="60" x2="1380" y2="78"/><line x1="1380" y1="202" x2="1380" y2="220"/>
+        <line x1="1300" y1="140" x2="1318" y2="140"/><line x1="1442" y1="140" x2="1460" y2="140"/>
+        <line x1="1320" y1="80" x2="1332" y2="92"/><line x1="1428" y1="188" x2="1440" y2="200"/>
+        <line x1="1320" y1="200" x2="1332" y2="188"/><line x1="1428" y1="92" x2="1440" y2="80"/>
+        <animateTransform attributeName="transform" type="rotate" from="0 1380 140" to="360 1380 140" dur="40s" repeatCount="indefinite"/>
+      </g>
+      <circle cx="1366" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <circle cx="1394" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <path d="M1366 152 Q1380 162 1394 152" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- 云 -->
+    <g fill="#fff" stroke="#3D2812" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M120 130 Q120 110 145 112 Q150 95 175 102 Q200 95 200 120 Q220 122 215 138 Q180 142 145 138 Q120 142 120 130 Z"/>
+      <path d="M650 70 Q650 55 670 57 Q673 45 690 48 Q708 45 708 65 Q722 65 720 78 Q692 82 670 80 Q650 82 650 70 Z"/>
+    </g>
+
+    <!-- 飞舞卷轴 -->
+    <use href="#scroll" x="0" y="0" width="32" height="18">
+      <animateMotion dur="14s" repeatCount="indefinite" path="M-50 280 Q400 230 800 280 T1700 240"/>
+    </use>
+    <use href="#scroll" x="0" y="0" width="26" height="15">
+      <animateMotion dur="18s" repeatCount="indefinite" path="M1700 320 Q1100 280 700 320 T-50 280" begin="-7s"/>
+    </use>
+
+    <!-- 纸飞机 -->
+    <use href="#plane" x="0" y="0" width="32" height="18">
+      <animateMotion dur="10s" repeatCount="indefinite" path="M-30 200 Q400 160 800 220 T1700 180"/>
+    </use>
+
+    <!-- 远山 -->
+    <g opacity=".55">
+      <path d="M0 480 Q200 420 400 460 Q600 480 800 430 Q1000 410 1200 460 Q1400 480 1600 440 L1600 540 L0 540 Z" fill="#7BB8DA"/>
+    </g>
+
+    <!-- 海面 -->
+    <rect x="0" y="540" width="1600" height="460" fill="url(#seaG)"/>
+    <g stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round">
+      <path d="M80 700 Q120 690 160 700"/><path d="M280 770 Q320 760 360 770"/>
+      <path d="M540 720 Q580 710 620 720"/><path d="M1080 760 Q1120 750 1160 760"/>
+      <path d="M1340 700 Q1380 690 1420 700"/>
+    </g>
+
+    <!-- 帆船 -->
+    <g transform="translate(120 760)">
+      <ellipse cx="0" cy="0" rx="50" ry="6" fill="#000" opacity=".18"/>
+      <path d="M-46 -4 L46 -4 Q52 8 38 16 L-38 16 Q-52 8 -46 -4 Z" fill="#7C5BCC" stroke="#3D2812" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="0" y2="-60" stroke="#7A4F1B" stroke-width="3"/>
+      <path d="M0 -58 L26 -42 L0 -28 Z" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+      <path d="M0 -58 L-26 -42 L0 -28 Z" fill="#FFE672" stroke="#3D2812" stroke-width="2"/>
+      <animateTransform attributeName="transform" type="translate" values="120 760;124 764;120 760" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 主岛 ═══ -->
+    <ellipse cx="800" cy="940" rx="700" ry="40" fill="#000" opacity=".22"/>
+    <path d="M120 880 Q200 940 800 940 Q1400 940 1480 880 Q1400 860 800 858 Q200 860 120 880 Z" fill="url(#sandG)" stroke="#3D2812" stroke-width="3"/>
+    <path d="M180 870 Q280 700 800 690 Q1320 700 1420 870 Q1380 880 800 880 Q220 880 180 870 Z" fill="url(#grassG)" stroke="#3D2812" stroke-width="3"/>
+
+    <!-- 沙滩纹理 + 贝壳 -->
+    <g stroke="#C28C5A" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round">
+      <path d="M260 900 Q280 906 300 900"/><path d="M1300 900 Q1320 906 1340 900"/>
+    </g>
+    <g transform="translate(200 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#FFD3D8" stroke="#3D2812" stroke-width="1.5"/>
+      <line x1="-4" y1="6" x2="4" y2="-6" stroke="#3D2812" stroke-width="1"/>
+    </g>
+    <g transform="translate(1380 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+      <line x1="-4" y1="6" x2="4" y2="-6" stroke="#3D2812" stroke-width="1"/>
+    </g>
+
+    <!-- 石板路 -->
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#D4B07C" stroke-width="44" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#3D2812" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#A8835A" stroke-width="40" fill="none" stroke-linecap="round" stroke-dasharray="20 12" opacity=".5"/>
+
+    <!-- ═══ 1. 主图书馆（3 层带圆柱） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(540 480)">
+        <!-- 台阶 -->
+        <rect x="-20" y="220" width="220" height="10" fill="#C8B080" stroke="#3D2812" stroke-width="2"/>
+        <rect x="-10" y="210" width="200" height="10" fill="#D8C090" stroke="#3D2812" stroke-width="2"/>
+        <!-- 主体 -->
+        <rect x="0" y="40" width="180" height="180" fill="url(#wallStone)" stroke="#3D2812" stroke-width="3"/>
+        <!-- 楼层线 -->
+        <line x1="0" y1="100" x2="180" y2="100" stroke="#7A4F1B" stroke-width="2"/>
+        <line x1="0" y1="160" x2="180" y2="160" stroke="#7A4F1B" stroke-width="2"/>
+        <!-- 屋顶 -->
+        <polygon points="-10,42 190,42 90,-10" fill="url(#roofRed)" stroke="#3D2812" stroke-width="3"/>
+        <polygon points="-10,42 90,42 90,-10" fill="#fff" opacity=".15"/>
+        <!-- 屋顶花纹 -->
+        <line x1="-6" y1="32" x2="186" y2="32" stroke="#3D2812" stroke-width="2"/>
+        <line x1="6" y1="20" x2="174" y2="20" stroke="#3D2812" stroke-width="2"/>
+        <!-- 顶尖 -->
+        <line x1="90" y1="-10" x2="90" y2="-30" stroke="#3D2812" stroke-width="3"/>
+        <polygon points="90,-30 110,-22 90,-14" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+        <!-- 4 根罗马柱 -->
+        <g stroke="#3D2812" stroke-width="2.5">
+          <rect x="6" y="100" width="14" height="120" fill="#FFF6DD"/>
+          <ellipse cx="13" cy="100" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="13" cy="220" rx="9" ry="3" fill="#E8C896"/>
+          <rect x="56" y="160" width="14" height="60" fill="#FFF6DD"/>
+          <ellipse cx="63" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="63" cy="220" rx="9" ry="3" fill="#E8C896"/>
+          <rect x="110" y="160" width="14" height="60" fill="#FFF6DD"/>
+          <ellipse cx="117" cy="160" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="117" cy="220" rx="9" ry="3" fill="#E8C896"/>
+          <rect x="160" y="100" width="14" height="120" fill="#FFF6DD"/>
+          <ellipse cx="167" cy="100" rx="9" ry="3" fill="#E8C896"/>
+          <ellipse cx="167" cy="220" rx="9" ry="3" fill="#E8C896"/>
+        </g>
+        <!-- 大门（拱形） -->
+        <path d="M76 220 L76 180 Q76 162 90 162 Q104 162 104 180 L104 220 Z" fill="#5A3712" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="90" y1="162" x2="90" y2="220" stroke="#3D2812" stroke-width="1.2"/>
+        <circle cx="84" cy="195" r="1.6" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+        <circle cx="96" cy="195" r="1.6" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+        <!-- 招牌 -->
+        <rect x="40" y="60" width="100" height="20" fill="#FFD86A" stroke="#3D2812" stroke-width="2.5" rx="3"/>
+        <text x="90" y="74" text-anchor="middle" font-weight="900" font-size="13" fill="#3D2812" font-family="'PingFang SC',sans-serif">档案馆</text>
+        <!-- 圆窗（2 楼） -->
+        <g stroke="#3D2812" stroke-width="2">
+          <circle cx="34" cy="130" r="11" fill="#A8E0F0"/>
+          <line x1="23" y1="130" x2="45" y2="130"/>
+          <line x1="34" y1="119" x2="34" y2="141"/>
+          <circle cx="146" cy="130" r="11" fill="#A8E0F0"/>
+          <line x1="135" y1="130" x2="157" y2="130"/>
+          <line x1="146" y1="119" x2="146" y2="141"/>
+        </g>
+        <!-- 三层小窗 -->
+        <g stroke="#3D2812" stroke-width="2">
+          <rect x="20" y="50" width="14" height="6" fill="#A8E0F0"/>
+          <rect x="46" y="50" width="14" height="6" fill="#A8E0F0"/>
+          <rect x="78" y="46" width="22" height="14" fill="#A8E0F0"/>
+          <line x1="89" y1="46" x2="89" y2="60"/>
+          <rect x="118" y="50" width="14" height="6" fill="#A8E0F0"/>
+          <rect x="146" y="50" width="14" height="6" fill="#A8E0F0"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 2. 钟楼（图书馆右后） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(770 460)">
+        <rect x="0" y="80" width="60" height="180" fill="url(#wallStone)" stroke="#3D2812" stroke-width="3"/>
+        <line x1="0" y1="140" x2="60" y2="140" stroke="#7A4F1B" stroke-width="1.5"/>
+        <line x1="0" y1="200" x2="60" y2="200" stroke="#7A4F1B" stroke-width="1.5"/>
+        <!-- 钟面 -->
+        <circle cx="30" cy="60" r="28" fill="#FFF6DD" stroke="#3D2812" stroke-width="3"/>
+        <circle cx="30" cy="60" r="22" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <text x="30" y="44" text-anchor="middle" font-weight="900" font-size="6" fill="#3D2812">12</text>
+        <text x="48" y="64" text-anchor="middle" font-weight="900" font-size="6" fill="#3D2812">3</text>
+        <text x="30" y="80" text-anchor="middle" font-weight="900" font-size="6" fill="#3D2812">6</text>
+        <text x="14" y="64" text-anchor="middle" font-weight="900" font-size="6" fill="#3D2812">9</text>
+        <line x1="30" y1="60" x2="30" y2="46" stroke="#3D2812" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="30" y1="60" x2="42" y2="60" stroke="#3D2812" stroke-width="2.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 30 60" to="360 30 60" dur="20s" repeatCount="indefinite"/>
+        </line>
+        <circle cx="30" cy="60" r="2" fill="#3D2812"/>
+        <!-- 屋顶 -->
+        <polygon points="-8,82 68,82 30,30" fill="url(#roofBlue)" stroke="#3D2812" stroke-width="3"/>
+        <line x1="30" y1="30" x2="30" y2="10" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="30,10 42,16 30,22" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 窗 -->
+        <rect x="22" y="156" width="16" height="22" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="30" y1="156" x2="30" y2="178" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="22" y1="167" x2="38" y2="167" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="22" y="216" width="16" height="22" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="30" y1="216" x2="30" y2="238" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="22" y1="227" x2="38" y2="227" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 3. 小书亭 ×2（左右） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(280 760)">
+        <rect x="0" y="20" width="80" height="60" fill="#FFD86A" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="-8,22 88,22 40,-12" fill="#76C342" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-4" y1="12" x2="84" y2="12" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 窗口 -->
+        <rect x="14" y="34" width="52" height="30" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="40" y1="34" x2="40" y2="64" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 招牌 -->
+        <rect x="18" y="-2" width="44" height="12" fill="#fff" stroke="#3D2812" stroke-width="1.5" rx="2"/>
+        <text x="40" y="7" text-anchor="middle" font-weight="900" font-size="8" fill="#3D2812">小书亭</text>
+        <!-- 一个学生在窗口 -->
+        <circle cx="40" cy="44" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.2"/>
+        <path d="M34 42 Q40 32 46 42 L46 38 Q40 28 34 38 Z" fill="#3D2812"/>
+        <circle cx="38" cy="44" r=".8" fill="#3D2812"/>
+        <circle cx="42" cy="44" r=".8" fill="#3D2812"/>
+        <path d="M38 47 Q40 49 42 47" stroke="#3D2812" stroke-width="1" fill="none"/>
+        <!-- 书堆在前 -->
+        <use href="#bookS" x="14" y="80" width="20" height="16"/>
+      </g>
+    </g>
+
+    <g filter="url(#soft)">
+      <g transform="translate(1180 770)">
+        <rect x="0" y="20" width="80" height="60" fill="#FF8C42" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="-8,22 88,22 40,-12" fill="#5BC8E8" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-4" y1="12" x2="84" y2="12" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="34" width="52" height="30" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="40" y1="34" x2="40" y2="64" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="-2" width="52" height="12" fill="#fff" stroke="#3D2812" stroke-width="1.5" rx="2"/>
+        <text x="40" y="7" text-anchor="middle" font-weight="900" font-size="8" fill="#3D2812">阅览室</text>
+        <!-- 学生 -->
+        <circle cx="40" cy="44" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.2"/>
+        <path d="M34 42 Q40 32 46 42 L46 38 Q40 28 34 38 Z" fill="#7A4F1B"/>
+        <circle cx="38" cy="44" r=".8" fill="#3D2812"/>
+        <circle cx="42" cy="44" r=".8" fill="#3D2812"/>
+        <use href="#bookS" x="46" y="80" width="20" height="16"/>
+      </g>
+    </g>
+
+    <!-- ═══ 4. 凯旋拱门（路中央） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(800 720)">
+        <!-- 两根柱子 -->
+        <rect x="-50" y="0" width="14" height="80" fill="url(#wallStone)" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="36" y="0" width="14" height="80" fill="url(#wallStone)" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 拱形顶 -->
+        <path d="M-58 0 Q-58 -40 -22 -40 L22 -40 Q58 -40 58 0 L50 0 Q50 -32 22 -32 L-22 -32 Q-50 -32 -50 0 Z" fill="#FFE9B0" stroke="#3D2812" stroke-width="3"/>
+        <!-- 招牌嵌入 -->
+        <rect x="-30" y="-30" width="60" height="14" fill="#FF8C42" stroke="#3D2812" stroke-width="2" rx="2"/>
+        <text x="0" y="-20" text-anchor="middle" font-weight="900" font-size="9" fill="#fff" font-family="'PingFang SC',sans-serif">欢迎进馆</text>
+        <!-- 装饰花纹 -->
+        <circle cx="-40" cy="20" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+        <circle cx="40" cy="20" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+      </g>
+    </g>
+
+    <!-- ═══ 5. 大书雕塑（右前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1080 820)">
+        <!-- 底座 -->
+        <rect x="-30" y="20" width="60" height="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 翻开的大书 -->
+        <path d="M-36 20 L0 12 L0 -10 L-36 -2 Z" fill="#fff" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M0 12 L36 20 L36 -2 L0 -10 Z" fill="#fff" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="0" y1="-10" x2="0" y2="12" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 字行 -->
+        <g stroke="#7BB8DA" stroke-width="1" opacity=".8">
+          <line x1="-30" y1="0" x2="-6" y2="-4"/>
+          <line x1="-30" y1="6" x2="-6" y2="2"/>
+          <line x1="-30" y1="12" x2="-6" y2="8"/>
+          <line x1="6" y1="-4" x2="30" y2="0"/>
+          <line x1="6" y1="2" x2="30" y2="6"/>
+          <line x1="6" y1="8" x2="30" y2="12"/>
+        </g>
+        <!-- 飘出的字母 -->
+        <text x="-20" y="-20" font-weight="900" font-size="14" fill="#5C42A0" opacity=".8">A</text>
+        <text x="0" y="-26" font-weight="900" font-size="14" fill="#FF6B6B" opacity=".8">B</text>
+        <text x="20" y="-20" font-weight="900" font-size="14" fill="#22A05B" opacity=".8">C</text>
+      </g>
+    </g>
+
+    <!-- ═══ 6. 信箱（左路边） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(420 855)">
+        <line x1="0" y1="0" x2="0" y2="-30" stroke="#3D2812" stroke-width="3"/>
+        <rect x="-14" y="-50" width="28" height="22" rx="3" fill="#E94B6A" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="-12" y="-46" width="20" height="6" fill="#3D2812"/>
+        <circle cx="6" cy="-37" r="1.5" fill="#FFD86A"/>
+        <!-- 旗帜 -->
+        <rect x="14" y="-50" width="2" height="14" fill="#3D2812"/>
+        <polygon points="16,-50 24,-46 16,-42" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 7. 公告栏（左后） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(450 700)">
+        <line x1="-30" y1="50" x2="-30" y2="80" stroke="#7A4F1B" stroke-width="3"/>
+        <line x1="30" y1="50" x2="30" y2="80" stroke="#7A4F1B" stroke-width="3"/>
+        <rect x="-40" y="0" width="80" height="50" fill="#FFE9B0" stroke="#3D2812" stroke-width="3"/>
+        <polygon points="-44,0 44,0 38,-8 -38,-8" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+        <!-- 公告纸 -->
+        <rect x="-32" y="6" width="22" height="18" fill="#fff" stroke="#3D2812" stroke-width="1.5" transform="rotate(-2 -21 15)"/>
+        <line x1="-30" y1="11" x2="-14" y2="11" stroke="#A8C2D4" stroke-width=".8"/>
+        <line x1="-30" y1="15" x2="-14" y2="15" stroke="#A8C2D4" stroke-width=".8"/>
+        <line x1="-30" y1="19" x2="-14" y2="19" stroke="#A8C2D4" stroke-width=".8"/>
+        <rect x="-6" y="6" width="22" height="18" fill="#FFD3D8" stroke="#3D2812" stroke-width="1.5" transform="rotate(3 5 15)"/>
+        <text x="5" y="18" text-anchor="middle" font-weight="900" font-size="10" fill="#E94B6A">📌</text>
+        <rect x="20" y="20" width="22" height="18" fill="#A8E0F0" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 8. 长椅 ×2 ═══ -->
+    <g transform="translate(620 870)">
+      <rect x="-24" y="0" width="48" height="6" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+      <line x1="-18" y1="6" x2="-18" y2="20" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="18" y1="6" x2="18" y2="20" stroke="#3D2812" stroke-width="2.5"/>
+      <rect x="-24" y="-12" width="48" height="6" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+    </g>
+    <g transform="translate(960 870)">
+      <rect x="-24" y="0" width="48" height="6" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+      <line x1="-18" y1="6" x2="-18" y2="20" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="18" y1="6" x2="18" y2="20" stroke="#3D2812" stroke-width="2.5"/>
+      <rect x="-24" y="-12" width="48" height="6" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+    </g>
+
+    <!-- ═══ 9. 学生角色 ×6 ═══ -->
+    <!-- 学生 1：长椅上看书 -->
+    <g transform="translate(620 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="8" ry="10" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-14" r="7" fill="#FFD8B0" stroke="#3D2812" stroke-width="2"/>
+      <path d="M-7 -14 Q0 -24 7 -14 L7 -18 Q0 -28 -7 -18 Z" fill="#3D2812"/>
+      <circle cx="-2.5" cy="-14" r="1.2" fill="#3D2812"/>
+      <circle cx="2.5" cy="-14" r="1.2" fill="#3D2812"/>
+      <path d="M-2 -10 Q0 -8 2 -10" stroke="#3D2812" stroke-width="1" fill="none"/>
+      <!-- 书在膝上 -->
+      <rect x="-10" y="2" width="20" height="6" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+      <line x1="0" y1="2" x2="0" y2="8" stroke="#3D2812" stroke-width="1"/>
+    </g>
+    <!-- 学生 2：长椅上 -->
+    <g transform="translate(960 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="8" ry="10" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-14" r="7" fill="#FFD8B0" stroke="#3D2812" stroke-width="2"/>
+      <path d="M-7 -12 Q-9 -22 0 -22 Q9 -22 7 -12" fill="#7A4F1B"/>
+      <circle cx="-2.5" cy="-14" r="1.2" fill="#3D2812"/>
+      <circle cx="2.5" cy="-14" r="1.2" fill="#3D2812"/>
+      <path d="M-2 -10 Q0 -8 2 -10" stroke="#3D2812" stroke-width="1" fill="none"/>
+    </g>
+    <!-- 学生 3：拱门下走 -->
+    <g transform="translate(800 855)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="8" ry="12" fill="#76C342" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-16" r="7" fill="#FFD8B0" stroke="#3D2812" stroke-width="2"/>
+      <path d="M-7 -16 Q0 -26 7 -16 L7 -20 Q0 -30 -7 -20 Z" fill="#E94B6A"/>
+      <circle cx="-2.5" cy="-16" r="1.2" fill="#3D2812"/>
+      <circle cx="2.5" cy="-16" r="1.2" fill="#3D2812"/>
+      <path d="M-2 -12 Q0 -10 2 -12" stroke="#3D2812" stroke-width="1" fill="none"/>
+      <!-- 书包 -->
+      <rect x="-10" y="-4" width="6" height="8" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <!-- 腿 -->
+      <rect x="-4" y="10" width="3" height="8" fill="#3D2812"/>
+      <rect x="1" y="10" width="3" height="8" fill="#3D2812"/>
+    </g>
+    <!-- 学生 4：图书馆台阶上 -->
+    <g transform="translate(580 695)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+    </g>
+    <!-- 学生 5：图书馆台阶上 -->
+    <g transform="translate(640 695)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -11 Q-8 -22 0 -22 Q8 -22 6 -11" fill="#7A4F1B"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+    </g>
+    <!-- 学生 6：在大书雕塑前 -->
+    <g transform="translate(1040 832)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-12" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -12 Q0 -20 6 -12 L6 -15 Q0 -23 -6 -15 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-12" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-12" r="1" fill="#3D2812"/>
+      <!-- 举着手 -->
+      <line x1="-7" y1="-4" x2="-12" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- ═══ 10. 猫头鹰老师（钟楼上） ═══ -->
+    <g transform="translate(800 540)">
+      <!-- 身体 -->
+      <ellipse cx="0" cy="0" rx="14" ry="18" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+      <ellipse cx="0" cy="2" rx="9" ry="11" fill="#FFE9B0" stroke="#3D2812" stroke-width="2"/>
+      <!-- 翅膀 -->
+      <path d="M-14 -4 Q-22 4 -14 14" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+      <path d="M14 -4 Q22 4 14 14" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+      <!-- 头部羽冠 -->
+      <path d="M-9 -16 Q-12 -24 -6 -22" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+      <path d="M9 -16 Q12 -24 6 -22" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+      <!-- 眼镜 -->
+      <circle cx="-5" cy="-6" r="5" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="5" cy="-6" r="5" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+      <line x1="0" y1="-6" x2="0" y2="-6" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="-5" cy="-6" r="2" fill="#3D2812"/>
+      <circle cx="5" cy="-6" r="2" fill="#3D2812"/>
+      <!-- 嘴 -->
+      <polygon points="-2,0 2,0 0,4" fill="#FF8C42" stroke="#3D2812" stroke-width="1.5"/>
+      <!-- 学士帽 -->
+      <rect x="-12" y="-26" width="24" height="4" fill="#3D2812"/>
+      <polygon points="-14,-22 14,-22 12,-26 -12,-26" fill="#3D2812"/>
+      <line x1="12" y1="-25" x2="20" y2="-18" stroke="#3D2812" stroke-width="1"/>
+      <circle cx="20" cy="-17" r="2" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+      <!-- 飞动 -->
+      <animateTransform attributeName="transform" type="translate" values="800 540;800 530;800 540" dur="3s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 11. 路灯 ×3 ═══ -->
+    <g>
+      <line x1="450" y1="850" x2="450" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="450" y1="800" x2="478" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <use href="#lantern" x="468" y="800" width="20" height="30"/>
+    </g>
+    <g>
+      <line x1="780" y1="780" x2="780" y2="730" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="780" y1="730" x2="808" y2="730" stroke="#3D2812" stroke-width="2.5"/>
+      <use href="#lantern" x="798" y="730" width="20" height="30"/>
+    </g>
+    <g>
+      <line x1="1140" y1="850" x2="1140" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="1140" y1="800" x2="1168" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <use href="#lantern" x="1158" y="800" width="20" height="30"/>
+    </g>
+
+    <!-- ═══ 12. 蘑菇 ×3 ═══ -->
+    <use href="#mush" x="240" y="850" width="22" height="22"/>
+    <use href="#mush" x="1300" y="855" width="20" height="20"/>
+    <use href="#mush" x="900" y="850" width="18" height="18"/>
+
+    <!-- ═══ 13. 书堆装饰 ═══ -->
+    <g transform="translate(380 870)">
+      <use href="#bookS" x="-10" y="-22" width="22" height="22"/>
+    </g>
+    <g transform="translate(1300 870)">
+      <use href="#bookS" x="-10" y="-22" width="22" height="22"/>
+    </g>
+
+    <!-- ═══ 14. 彩旗（图书馆和钟楼之间） ═══ -->
+    <g>
+      <line x1="720" y1="500" x2="850" y2="490" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="730,505 740,520 750,508" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="760,508 770,523 780,510" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="790,506 800,521 810,508" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="820,503 830,518 840,505" fill="#76C342" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- ═══ 15. 飞鸟 + 蝴蝶 ═══ -->
+    <use href="#bird" x="0" y="0" width="20" height="14">
+      <animateMotion dur="20s" repeatCount="indefinite" path="M-30 360 Q400 320 800 380 T1700 340"/>
+    </use>
+    <use href="#butterfly" x="0" y="0" width="22" height="15">
+      <animateMotion dur="14s" repeatCount="indefinite" path="M180 760 Q400 700 600 760 Q800 720 1000 770 Q1200 730 1400 760"/>
+    </use>
+
+    <!-- ═══ 16. 招牌 ═══ -->
+    <g transform="translate(800 950)">
+      <line x1="-6" y1="-30" x2="-6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <line x1="6" y1="-30" x2="6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <rect x="-70" y="-30" width="140" height="36" fill="#FFE9B0" stroke="#3D2812" stroke-width="3" rx="6"/>
+      <text x="0" y="-12" text-anchor="middle" font-weight="900" font-size="18" fill="#3D2812" font-family="'PingFang SC',sans-serif" letter-spacing="3">📚 档案岛</text>
+      <text x="0" y="2" text-anchor="middle" font-weight="700" font-size="9" fill="#7A4F1B" font-family="'PingFang SC',sans-serif">看小伙伴 · 翻档案 · 找记录</text>
+      <circle cx="-60" cy="-22" r="2" fill="#3D2812"/>
+      <circle cx="60" cy="-22" r="2" fill="#3D2812"/>
+    </g>
+
+    <!-- 海面波浪 -->
+    <g opacity="0.6" fill="#fff">
+      <path d="M0 970 Q80 950 160 970 T320 970 T480 970 T640 970 T800 970 T960 970 T1120 970 T1280 970 T1440 970 T1600 970 L1600 1000 L0 1000 Z"/>
+    </g>
+    <g opacity="0.85" fill="#fff">
+      <path d="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z">
+        <animate attributeName="d" dur="5s" repeatCount="indefinite"
+          values="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 998 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z"/>
+      </path>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

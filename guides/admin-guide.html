@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理员操作指南 · 奖状分发系统 · 宝山实验小学</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#F2F5F0;color:#1F3325;line-height:1.8}
+  .wrap{max-width:800px;margin:0 auto;padding:40px 20px}
+
+  .header{background:linear-gradient(135deg,#1C2A5E,#273371);color:#FFF;border-radius:16px;padding:40px 36px;margin-bottom:28px;text-align:center}
+  .header h1{font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:8px}
+  .header .sub{font-size:13px;opacity:.7;letter-spacing:1px}
+
+  .card{background:#FFF;border-radius:14px;padding:28px 30px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #E8E3D5}
+  .card h2{font-size:17px;color:#1C2A5E;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #F0ECE0;display:flex;align-items:center;gap:8px}
+  .card h2 .ico{font-size:20px}
+  .card p{margin-bottom:10px;font-size:14px}
+  .card ul{margin:8px 0 8px 20px}
+  .card li{margin-bottom:6px;font-size:14px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th,td{padding:10px 14px;border:1px solid #E8E3D5;font-size:13.5px;text-align:left}
+  th{background:#F7F5EE;font-weight:700;color:#1C2A5E;font-size:12px;letter-spacing:.5px}
+  td{color:#3E5E40}
+
+  .url-box{background:#F0F4EE;border:1.5px solid #C8D6C0;border-radius:10px;padding:14px 16px;font-family:'SF Mono','Consolas',monospace;font-size:13px;color:#2F5A33;word-break:break-all;margin:8px 0}
+  .code-block{background:#1C2A5E;color:#D4E6D0;border-radius:10px;padding:14px 18px;font-family:'SF Mono','Consolas',monospace;font-size:12.5px;line-height:1.7;overflow-x:auto;margin:8px 0;white-space:pre}
+
+  .tag{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-right:6px}
+  .tag-g{background:#E8F5E0;color:#2F7A2F}
+  .tag-b{background:#E0ECF5;color:#2F5A7A}
+  .tag-r{background:#FCE8E8;color:#A04040}
+  .tag-y{background:#FFF8E0;color:#8A7020}
+
+  .steps{margin:12px 0}
+  .step{display:flex;gap:14px;margin-bottom:14px}
+  .step-num{width:28px;height:28px;border-radius:50%;background:#1C2A5E;color:#FFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-body .t{font-weight:700;font-size:14px;color:#1F3325;margin-bottom:2px}
+  .step-body .d{font-size:13px;color:#5A6E55}
+
+  .note{background:#FFFBE6;border-left:4px solid #E8C84A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#6B5A20;margin:12px 0;line-height:1.7}
+  .tip{background:#E8F4FD;border-left:4px solid #4A9CE8;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#2A5A8A;margin:12px 0;line-height:1.7}
+  .warn{background:#FFF0E8;border-left:4px solid #E8844A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#7A4A2A;margin:12px 0;line-height:1.7}
+
+  .footer{text-align:center;font-size:12px;color:#9AAA95;margin-top:32px;padding:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <h1>⚙️ 管理员操作指南</h1>
+  <div class="sub">奖状分发系统 · 宝山区实验小学 · 2026-06-26</div>
+</div>
+
+<!-- 系统地址 -->
+<div class="card">
+  <h2><span class="ico">🔗</span> 系统访问地址</h2>
+  <table>
+    <tr><th>用途</th><th>地址</th></tr>
+    <tr><td>钉钉微应用（生产环境）</td><td><span class="tag tag-g">HTTPS</span> <code>https://jz.108agent.com/dingtalk-awards.html</code></td></tr>
+    <tr><td>数字美术馆（游客入口）</td><td><code>https://jz.108agent.com/art-login.html</code></td></tr>
+    <tr><td>数字美术馆（直接浏览）</td><td><code>https://jz.108agent.com/island-art.html</code></td></tr>
+    <tr><td>服务器 IP（备用）</td><td><code>118.25.196.70</code></td></tr>
+  </table>
+</div>
+
+<!-- 钉钉配置 -->
+<div class="card">
+  <h2><span class="ico">🔧</span> 钉钉开放平台配置</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="t">登录钉钉开放平台</div>
+        <div class="d">访问 <a href="https://open-dev.dingtalk.com/" target="_blank">open-dev.dingtalk.com</a>，使用学校企业管理员账号登录</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="t">找到对应应用</div>
+        <div class="d">「应用开发」→ 企业内部应用 → 找到「奖状分发」应用</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="t">配置应用首页地址</div>
+        <div class="d">左侧「开发配置」→ 应用首页地址，填入：</div>
+        <div class="url-box">https://jz.108agent.com/dingtalk-awards.html</div>
+        <div class="warn">⚠️ 必须使用 <b>https://</b> 开头。如果提示「地址不合法」，说明域名未备案或未用 HTTPS。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="t">服务器出口 IP</div>
+        <div class="d">填入：<code>118.25.196.70</code></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="t">开启必要权限</div>
+        <div class="d">确保已开启：通讯录个人信息读取、手机号获取</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 奖状上传管理 -->
+<div class="card">
+  <h2><span class="ico">📤</span> 奖状上传管理</h2>
+
+  <p><strong>单张上传：</strong>以教师身份登录 → 点击上传区域 → 选择图片 → AI 自动识别分发</p>
+  <p><strong>ZIP 批量上传：</strong></p>
+  <ul>
+    <li>准备 ZIP 文件，图片命名：<code>学生姓名+奖项名.jpg</code></li>
+    <li>✅ 正确：<code>林思雨三好学生.jpg</code>、<code>王梓涵 优秀班干部.png</code></li>
+    <li>❌ 错误：<code>IMG_001.jpg</code>（无法识别姓名）</li>
+    <li>单次 ≤ 50MB，上传后自动解压、AI 逐张识别、分发</li>
+  </ul>
+  <p><strong>识别结果：</strong></p>
+  <table>
+    <tr><th>状态</th><th>含义</th><th>处理方式</th></tr>
+    <tr><td><span class="tag tag-g">✅ 已分发</span></td><td>成功匹配并分发</td><td>无需操作</td></tr>
+    <tr><td><span class="tag tag-y">⚠️ 未匹配</span></td><td>姓名不在学生库</td><td>检查姓名拼写</td></tr>
+    <tr><td><span class="tag tag-r">❌ 失败</span></td><td>图片无法识别</td><td>重新上传或手动处理</td></tr>
+  </table>
+</div>
+
+<!-- 证书管理 -->
+<div class="card">
+  <h2><span class="ico">🔒</span> HTTPS 证书管理</h2>
+
+  <table>
+    <tr><th>项目</th><th>说明</th></tr>
+    <tr><td>颁发机构</td><td>ZeroSSL（免费）</td></tr>
+    <tr><td>有效期</td><td>90 天，自动续期</td></tr>
+    <tr><td>续期方式</td><td>每日 22:46 cron 自动检查</td></tr>
+    <tr><td>证书路径</td><td><code>/etc/nginx/ssl/jz.108agent.com.fullchain.crt</code></td></tr>
+  </table>
+
+  <div class="note">📌 证书自动续期依赖阿里云 DNS TXT 验证。如续期失败，需在阿里云 DNS 后台重新添加 TXT 记录后手动执行续期命令。</div>
+
+  <p style="margin-top:14px;font-weight:700">手动续期命令：</p>
+  <div class="code-block">~/.acme.sh/acme.sh --renew -d jz.108agent.com --dns \
+  --yes-I-know-dns-manual-mode-enough-go-ahead-please</div>
+</div>
+
+<!-- 三校区管理 -->
+<div class="card">
+  <h2><span class="ico">🏫</span> 三校区管理</h2>
+
+  <table>
+    <tr><th>校区</th><th>学生人数</th><th>说明</th></tr>
+    <tr><td>本部校区</td><td>~1970</td><td>默认校区，1-5年级各9-10班</td></tr>
+    <tr><td>宝林校区</td><td>~480</td><td>1-5年级各2-3班</td></tr>
+    <tr><td>罗泾校区</td><td>~待导入</td><td>1-5年级各7-8班</td></tr>
+  </table>
+
+  <div class="tip">💡 教师上传的奖状自动关联到所在校区，不跨校区分发。家长首次登录需确认校区、年级、班级。</div>
+</div>
+
+<!-- 常见问题 -->
+<div class="card">
+  <h2><span class="ico">❓</span> 常见问题</h2>
+
+  <table>
+    <tr><th>问题</th><th>解决方法</th></tr>
+    <tr><td>钉钉提示「地址不合法」</td><td>确认使用 https:// 开头，域名需已 ICP 备案</td></tr>
+    <tr><td>教师看不到上传按钮</td><td>确认登录角色为「教师」，家长端不显示上传</td></tr>
+    <tr><td>家长看不到孩子奖状</td><td>检查绑定信息（姓名/校区/年级/班级）是否与数据库一致</td></tr>
+    <tr><td>ZIP 上传失败</td><td>检查大小 ≤ 50MB，文件名不包含特殊字符</td></tr>
+    <tr><td>证书过期</td><td>SSH 登录服务器，执行手动续期命令</td></tr>
+  </table>
+</div>
+
+<div class="footer">宝山区实验小学 · 智慧教育平台 · 管理员指南</div>
+
+</div>
+</body>
+</html>

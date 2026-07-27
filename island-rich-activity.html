@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>满载版活动岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#FFF8E5 0%, #FFE0B0 100%);color:#1F3A4D;padding:30px 20px 60px;min-height:100vh}
+  .head{max-width:1400px;margin:0 auto 20px}
+  .head h1{font-size:30px;font-weight:900;letter-spacing:3px;color:#3D2812}
+  .head p{margin-top:8px;font-size:14px;color:#7A4F1B;line-height:1.7}
+  .stage{max-width:1400px;margin:0 auto;background:linear-gradient(180deg,#FFD8E8 0%, #FFB8C8 25%, #BFE6FF 55%, #6FC8F0 90%, #2E8FBE 100%);border-radius:24px;overflow:hidden;box-shadow:0 16px 50px rgba(60,40,20,0.18);position:relative}
+  .stage svg{width:100%;display:block}
+  .legend{position:absolute;left:20px;top:20px;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-radius:16px;padding:14px 16px;font-size:12px;line-height:1.7;box-shadow:0 6px 18px rgba(0,40,80,0.18);max-width:240px}
+  .legend h3{font-size:14px;font-weight:900;color:#0E5E80;margin-bottom:8px;letter-spacing:1px}
+  .legend ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:4px}
+  .legend li{background:#F4FAFD;border:1px solid #DCEBF3;border-radius:8px;padding:2px 7px;font-size:11px;color:#0E5E80;font-weight:700}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>🎨 满载版「活动岛」</h1>
+  <p>大马戏团帐篷 + 旋转摩天轮 + 演出舞台 + 美术工作室 + 乐器架 + 烟花 + 跳舞角色 + 啦啦队 + 彩虹拱门…… <strong>30+ 元素</strong></p>
+</div>
+<div class="stage">
+  <div class="legend">
+    <h3>🔍 这座岛上有……</h3>
+    <ul>
+      <li>大马戏团帐篷</li><li>摩天轮（转）</li><li>演出舞台</li>
+      <li>美术工作室</li><li>音乐凉亭</li><li>彩虹拱门</li>
+      <li>乐器架（钢琴+吉他+鼓）</li><li>调色盘</li><li>面具</li>
+      <li>烟花 ×3</li><li>气球串</li><li>飘带</li>
+      <li>跳舞小孩 ×2</li><li>画画小孩</li><li>表演小孩</li><li>啦啦队 ×2</li>
+      <li>彩旗串</li><li>旋转木马</li><li>射门球门</li>
+      <li>沙滩贝壳</li><li>帆船</li>
+    </ul>
+  </div>
+
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFF8C8"/><stop offset="60%" stop-color="#FFC23F"/><stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FD2F1"/><stop offset="100%" stop-color="#3FA8D8"/></linearGradient>
+      <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DDB6A"/><stop offset="100%" stop-color="#5FA830"/></linearGradient>
+      <linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0B2"/><stop offset="100%" stop-color="#E0A878"/></linearGradient>
+
+      <symbol id="balloon" viewBox="0 0 16 24">
+        <ellipse cx="8" cy="9" rx="6" ry="8" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <polygon points="8,17 6,20 10,20" fill="#FF6B6B" stroke="#3D2812" stroke-width="1"/>
+        <line x1="8" y1="20" x2="8" y2="24" stroke="#3D2812" stroke-width=".8"/>
+        <ellipse cx="6" cy="6" rx="1.5" ry="1" fill="#fff" opacity=".7"/>
+      </symbol>
+      <symbol id="firework" viewBox="0 0 40 40">
+        <g stroke="#FFD86A" stroke-width="2" stroke-linecap="round">
+          <line x1="20" y1="20" x2="20" y2="6"/>
+          <line x1="20" y1="20" x2="20" y2="34"/>
+          <line x1="20" y1="20" x2="6" y2="20"/>
+          <line x1="20" y1="20" x2="34" y2="20"/>
+          <line x1="20" y1="20" x2="10" y2="10"/>
+          <line x1="20" y1="20" x2="30" y2="30"/>
+          <line x1="20" y1="20" x2="10" y2="30"/>
+          <line x1="20" y1="20" x2="30" y2="10"/>
+        </g>
+        <circle cx="20" cy="6" r="2" fill="#FF6B6B"/>
+        <circle cx="20" cy="34" r="2" fill="#5BC8E8"/>
+        <circle cx="6" cy="20" r="2" fill="#A893E8"/>
+        <circle cx="34" cy="20" r="2" fill="#76C342"/>
+        <circle cx="10" cy="10" r="2" fill="#FFD86A"/>
+        <circle cx="30" cy="30" r="2" fill="#FF8C42"/>
+        <circle cx="10" cy="30" r="2" fill="#E94B6A"/>
+        <circle cx="30" cy="10" r="2" fill="#5BC8E8"/>
+      </symbol>
+      <symbol id="butterfly" viewBox="0 0 24 16">
+        <ellipse cx="8" cy="8" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <ellipse cx="16" cy="8" rx="6" ry="7" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="12" y1="3" x2="12" y2="13" stroke="#3D2812" stroke-width="2"/>
+      </symbol>
+
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="0" dy="2" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- 太阳 -->
+    <circle cx="1380" cy="140" r="120" fill="url(#sun)" opacity=".85"/>
+    <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+      <circle cx="1380" cy="140" r="50" fill="#FFD645"/>
+      <g stroke-linecap="round">
+        <line x1="1380" y1="60" x2="1380" y2="78"/><line x1="1380" y1="202" x2="1380" y2="220"/>
+        <line x1="1300" y1="140" x2="1318" y2="140"/><line x1="1442" y1="140" x2="1460" y2="140"/>
+        <animateTransform attributeName="transform" type="rotate" from="0 1380 140" to="360 1380 140" dur="40s" repeatCount="indefinite"/>
+      </g>
+      <circle cx="1366" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <circle cx="1394" cy="135" r="3" fill="#3D2812" stroke="none"/>
+      <path d="M1366 152 Q1380 162 1394 152" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- 云 -->
+    <g fill="#fff" stroke="#3D2812" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M120 130 Q120 110 145 112 Q150 95 175 102 Q200 95 200 120 Q220 122 215 138 Q180 142 145 138 Q120 142 120 130 Z"/>
+    </g>
+
+    <!-- 烟花 ×3 -->
+    <use href="#firework" x="180" y="60" width="80" height="80">
+      <animate attributeName="opacity" values="1;.3;1" dur="2s" repeatCount="indefinite"/>
+    </use>
+    <use href="#firework" x="500" y="40" width="70" height="70">
+      <animate attributeName="opacity" values=".3;1;.3" dur="2.4s" repeatCount="indefinite"/>
+    </use>
+    <use href="#firework" x="1050" y="80" width="76" height="76">
+      <animate attributeName="opacity" values="1;.3;1" dur="2.6s" repeatCount="indefinite" begin="-1.3s"/>
+    </use>
+
+    <!-- 气球串 -->
+    <g transform="translate(370 200)">
+      <use href="#balloon" x="0" y="0" width="20" height="30"/>
+      <use href="#balloon" x="14" y="-6" width="20" height="30"/>
+      <use href="#balloon" x="-12" y="-4" width="20" height="30"/>
+      <use href="#balloon" x="6" y="14" width="20" height="30"/>
+      <line x1="10" y1="30" x2="10" y2="80" stroke="#3D2812" stroke-width="1"/>
+      <animateTransform attributeName="transform" type="translate" values="370 200;376 192;370 200" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- 飘带（彩色丝带） -->
+    <g stroke-width="3" fill="none" opacity=".85">
+      <path d="M0 320 Q200 300 400 360 Q600 340 800 380" stroke="#FF6B6B"/>
+      <path d="M0 340 Q200 320 400 380 Q600 360 800 400" stroke="#5BC8E8"/>
+      <path d="M800 380 Q1000 360 1200 400 Q1400 380 1600 420" stroke="#FFD86A"/>
+    </g>
+
+    <!-- 远山 -->
+    <g opacity=".55">
+      <path d="M0 480 Q200 420 400 460 Q600 480 800 430 Q1000 410 1200 460 Q1400 480 1600 440 L1600 540 L0 540 Z" fill="#7BB8DA"/>
+    </g>
+
+    <!-- 海 -->
+    <rect x="0" y="540" width="1600" height="460" fill="url(#seaG)"/>
+    <g stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round">
+      <path d="M80 700 Q120 690 160 700"/><path d="M280 770 Q320 760 360 770"/>
+      <path d="M540 720 Q580 710 620 720"/><path d="M1080 760 Q1120 750 1160 760"/>
+      <path d="M1340 700 Q1380 690 1420 700"/>
+    </g>
+
+    <!-- 帆船 -->
+    <g transform="translate(140 770)">
+      <ellipse cx="0" cy="0" rx="50" ry="6" fill="#000" opacity=".18"/>
+      <path d="M-46 -4 L46 -4 Q52 8 38 16 L-38 16 Q-52 8 -46 -4 Z" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="0" y2="-60" stroke="#7A4F1B" stroke-width="3"/>
+      <path d="M0 -58 L26 -42 L0 -28 Z" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+      <path d="M0 -58 L-26 -42 L0 -28 Z" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+      <animateTransform attributeName="transform" type="translate" values="140 770;144 774;140 770" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 主岛 ═══ -->
+    <ellipse cx="800" cy="940" rx="700" ry="40" fill="#000" opacity=".22"/>
+    <path d="M120 880 Q200 940 800 940 Q1400 940 1480 880 Q1400 860 800 858 Q200 860 120 880 Z" fill="url(#sandG)" stroke="#3D2812" stroke-width="3"/>
+    <path d="M180 870 Q280 700 800 690 Q1320 700 1420 870 Q1380 880 800 880 Q220 880 180 870 Z" fill="url(#grassG)" stroke="#3D2812" stroke-width="3"/>
+
+    <!-- 沙滩贝壳 -->
+    <g transform="translate(220 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#FFD3D8" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(1380 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- 石板路 -->
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#D4B07C" stroke-width="44" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#3D2812" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#A8835A" stroke-width="40" fill="none" stroke-linecap="round" stroke-dasharray="20 12" opacity=".5"/>
+
+    <!-- ═══ 1. 大马戏团帐篷（中间偏左，最大） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(300 480)">
+        <!-- 帐篷主体 -->
+        <polygon points="0,300 240,300 200,80 40,80" fill="#fff" stroke="#3D2812" stroke-width="3"/>
+        <!-- 红色条纹 -->
+        <polygon points="40,80 60,80 30,300 0,300" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="80,80 100,80 80,300 50,300" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="120,80 140,80 130,300 100,300" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="160,80 180,80 180,300 150,300" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="200,80 220,80 230,300 200,300" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+        <!-- 顶 -->
+        <polygon points="40,80 200,80 120,0" fill="#5BC8E8" stroke="#3D2812" stroke-width="3"/>
+        <polygon points="40,80 120,80 120,0" fill="#fff" opacity=".25"/>
+        <!-- 旗 -->
+        <line x1="120" y1="0" x2="120" y2="-30" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="120,-30 150,-22 120,-14" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+        <!-- 入口 -->
+        <path d="M90 300 L90 220 Q120 180 150 220 L150 300 Z" fill="#5A3712" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M93 298 L93 220 Q120 184 147 220 L147 298 Z" fill="#7A4F1B"/>
+        <!-- 招牌 -->
+        <rect x="60" y="100" width="120" height="20" fill="#FFD86A" stroke="#3D2812" stroke-width="2.5" rx="3"/>
+        <text x="120" y="114" text-anchor="middle" font-weight="900" font-size="13" fill="#3D2812">活动中心</text>
+        <!-- 张紧绳 -->
+        <line x1="0" y1="300" x2="-20" y2="320" stroke="#3D2812" stroke-width="2"/>
+        <line x1="240" y1="300" x2="260" y2="320" stroke="#3D2812" stroke-width="2"/>
+      </g>
+    </g>
+
+    <!-- ═══ 2. 摩天轮（右上，巨大） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1100 530)">
+        <!-- 支架 -->
+        <line x1="-50" y1="280" x2="0" y2="0" stroke="#3D2812" stroke-width="6"/>
+        <line x1="50" y1="280" x2="0" y2="0" stroke="#3D2812" stroke-width="6"/>
+        <line x1="-30" y1="280" x2="0" y2="0" stroke="#3D2812" stroke-width="3"/>
+        <line x1="30" y1="280" x2="0" y2="0" stroke="#3D2812" stroke-width="3"/>
+        <!-- 大圆 -->
+        <g>
+          <circle cx="0" cy="0" r="120" fill="none" stroke="#3D2812" stroke-width="4"/>
+          <line x1="-120" y1="0" x2="120" y2="0" stroke="#3D2812" stroke-width="3"/>
+          <line x1="0" y1="-120" x2="0" y2="120" stroke="#3D2812" stroke-width="3"/>
+          <line x1="-85" y1="-85" x2="85" y2="85" stroke="#3D2812" stroke-width="3"/>
+          <line x1="-85" y1="85" x2="85" y2="-85" stroke="#3D2812" stroke-width="3"/>
+          <!-- 8 个吊舱 -->
+          <g transform="translate(0 -120)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(85 -85)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(120 0)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(85 85)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(0 120)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#76C342" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(-85 85)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#FF8C42" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(-120 0)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <g transform="translate(-85 -85)">
+            <rect x="-12" y="-12" width="24" height="20" rx="3" fill="#E94B6A" stroke="#3D2812" stroke-width="2"/>
+            <rect x="-10" y="-10" width="20" height="6" fill="#A8E0F0"/>
+          </g>
+          <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="30s" repeatCount="indefinite"/>
+        </g>
+        <!-- 中心 -->
+        <circle cx="0" cy="0" r="10" fill="#FFD86A" stroke="#3D2812" stroke-width="3"/>
+        <circle cx="0" cy="0" r="3" fill="#3D2812"/>
+      </g>
+    </g>
+
+    <!-- ═══ 3. 演出舞台（中间） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(680 750)">
+        <!-- 台 -->
+        <rect x="-60" y="40" width="120" height="40" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-60" y1="50" x2="60" y2="50" stroke="#7A4F1B" stroke-width="1.5"/>
+        <line x1="-60" y1="60" x2="60" y2="60" stroke="#7A4F1B" stroke-width="1.5"/>
+        <line x1="-60" y1="70" x2="60" y2="70" stroke="#7A4F1B" stroke-width="1.5"/>
+        <!-- 帷幕 -->
+        <path d="M-68 40 L-68 -10 L68 -10 L68 40 L48 40 Q48 18 38 40 Q28 18 18 40 Q8 18 -2 40 Q-12 18 -22 40 Q-32 18 -42 40 Q-52 18 -68 40 Z" fill="#E94B6A" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-68" y1="-10" x2="68" y2="-10" stroke="#FFD86A" stroke-width="3"/>
+        <!-- 灯 -->
+        <circle cx="-60" cy="-4" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="0" cy="-4" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="60" cy="-4" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 招牌 -->
+        <rect x="-30" y="-26" width="60" height="14" fill="#fff" stroke="#3D2812" stroke-width="2" rx="2"/>
+        <text x="0" y="-15" text-anchor="middle" font-weight="900" font-size="9" fill="#E94B6A">演出舞台</text>
+        <!-- 表演小孩 -->
+        <g transform="translate(0 30)">
+          <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+          <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+          <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+          <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+          <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+          <path d="M-2 -8 Q0 -5 2 -8" stroke="#3D2812" stroke-width="1" fill="none"/>
+          <!-- 麦克风 -->
+          <circle cx="-9" cy="-4" r="2.5" fill="#3D2812"/>
+          <line x1="-9" y1="-1" x2="-7" y2="3" stroke="#3D2812" stroke-width="1.5"/>
+          <!-- 举手 -->
+          <line x1="7" y1="-4" x2="12" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 4. 美术工作室（右下） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1280 770)">
+        <rect x="0" y="20" width="80" height="60" fill="#A893E8" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="-8,22 88,22 40,-12" fill="#FF6B6B" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-4" y1="12" x2="84" y2="12" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="34" width="52" height="30" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="40" y1="34" x2="40" y2="64" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="-2" width="52" height="12" fill="#fff" stroke="#3D2812" stroke-width="1.5" rx="2"/>
+        <text x="40" y="7" text-anchor="middle" font-weight="900" font-size="8" fill="#3D2812">美术室</text>
+        <!-- 调色盘前 -->
+        <g transform="translate(40 70)">
+          <ellipse cx="0" cy="0" rx="14" ry="6" fill="#FFE9B0" stroke="#3D2812" stroke-width="1.5"/>
+          <circle cx="-8" cy="-1" r="1.5" fill="#FF6B6B" stroke="#3D2812" stroke-width=".5"/>
+          <circle cx="-3" cy="-2" r="1.5" fill="#5BC8E8" stroke="#3D2812" stroke-width=".5"/>
+          <circle cx="3" cy="-1" r="1.5" fill="#FFD86A" stroke="#3D2812" stroke-width=".5"/>
+          <circle cx="8" cy="-2" r="1.5" fill="#76C342" stroke="#3D2812" stroke-width=".5"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 5. 音乐凉亭（中前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(900 800)">
+        <rect x="-40" y="40" width="6" height="40" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+        <rect x="34" y="40" width="6" height="40" fill="#7A4F1B" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="-50,40 50,40 0,-10" fill="#5BC8E8" stroke="#3D2812" stroke-width="3"/>
+        <line x1="-50" y1="30" x2="50" y2="30" stroke="#3D2812" stroke-width="2"/>
+        <line x1="-40" y1="20" x2="40" y2="20" stroke="#3D2812" stroke-width="2"/>
+        <circle cx="0" cy="-12" r="4" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+        <!-- 钢琴在亭中 -->
+        <g transform="translate(0 70)">
+          <rect x="-22" y="-4" width="44" height="14" fill="#3D2812" stroke="#3D2812" stroke-width="1.5"/>
+          <rect x="-22" y="-4" width="44" height="6" fill="#fff"/>
+          <line x1="-18" y1="-4" x2="-18" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="-12" y1="-4" x2="-12" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="-6" y1="-4" x2="-6" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="0" y1="-4" x2="0" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="6" y1="-4" x2="6" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="12" y1="-4" x2="12" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <line x1="18" y1="-4" x2="18" y2="2" stroke="#3D2812" stroke-width="1"/>
+          <rect x="-16" y="-4" width="3" height="4" fill="#3D2812"/>
+          <rect x="-10" y="-4" width="3" height="4" fill="#3D2812"/>
+          <rect x="3" y="-4" width="3" height="4" fill="#3D2812"/>
+          <rect x="9" y="-4" width="3" height="4" fill="#3D2812"/>
+          <rect x="15" y="-4" width="3" height="4" fill="#3D2812"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 6. 彩虹拱门（左前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(440 800)">
+        <path d="M-50 60 Q-50 -10 0 -10 Q50 -10 50 60" stroke="#FF6B6B" stroke-width="8" fill="none"/>
+        <path d="M-44 60 Q-44 -4 0 -4 Q44 -4 44 60" stroke="#FF8C42" stroke-width="8" fill="none"/>
+        <path d="M-38 60 Q-38 2 0 2 Q38 2 38 60" stroke="#FFD86A" stroke-width="8" fill="none"/>
+        <path d="M-32 60 Q-32 8 0 8 Q32 8 32 60" stroke="#76C342" stroke-width="8" fill="none"/>
+        <path d="M-26 60 Q-26 14 0 14 Q26 14 26 60" stroke="#5BC8E8" stroke-width="8" fill="none"/>
+        <path d="M-20 60 Q-20 20 0 20 Q20 20 20 60" stroke="#A893E8" stroke-width="8" fill="none"/>
+      </g>
+    </g>
+
+    <!-- ═══ 7. 旋转木马（活动岛右侧地面） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1280 850)">
+        <ellipse cx="0" cy="20" rx="50" ry="8" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <ellipse cx="0" cy="14" rx="48" ry="6" fill="#D4B07C" stroke="#3D2812" stroke-width="2"/>
+        <!-- 中心柱 -->
+        <line x1="0" y1="14" x2="0" y2="-30" stroke="#3D2812" stroke-width="3"/>
+        <!-- 顶 -->
+        <polygon points="-50,-30 50,-30 0,-60" fill="#FF6B6B" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-50" y1="-30" x2="50" y2="-30" stroke="#FFD86A" stroke-width="3"/>
+        <!-- 顶尖 -->
+        <line x1="0" y1="-60" x2="0" y2="-72" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="0,-72 8,-66 0,-60" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 木马（左右） -->
+        <g transform="translate(-30 6)">
+          <ellipse cx="0" cy="0" rx="10" ry="5" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="-6" y1="3" x2="-6" y2="8" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="6" y1="3" x2="6" y2="8" stroke="#3D2812" stroke-width="1.5"/>
+          <circle cx="-7" cy="-2" r="1" fill="#3D2812"/>
+        </g>
+        <g transform="translate(30 6)">
+          <ellipse cx="0" cy="0" rx="10" ry="5" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="-6" y1="3" x2="-6" y2="8" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="6" y1="3" x2="6" y2="8" stroke="#3D2812" stroke-width="1.5"/>
+          <circle cx="7" cy="-2" r="1" fill="#3D2812"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 8. 跳舞小孩 ×2 ═══ -->
+    <!-- 跳舞 1 -->
+    <g transform="translate(550 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <path d="M-2 -8 Q0 -5 2 -8" stroke="#3D2812" stroke-width="1" fill="none"/>
+      <line x1="-7" y1="-4" x2="-14" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" values="-20 -7 -4;20 -7 -4;-20 -7 -4" dur="0.8s" repeatCount="indefinite"/>
+      </line>
+      <line x1="7" y1="-4" x2="14" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" values="20 7 -4;-20 7 -4;20 7 -4" dur="0.8s" repeatCount="indefinite"/>
+      </line>
+    </g>
+    <!-- 跳舞 2 -->
+    <g transform="translate(810 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -11 Q-8 -22 0 -22 Q8 -22 6 -11" fill="#7A4F1B"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <path d="M-2 -8 Q0 -5 2 -8" stroke="#3D2812" stroke-width="1" fill="none"/>
+      <line x1="-7" y1="-4" x2="-14" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" values="20 -7 -4;-20 -7 -4;20 -7 -4" dur="0.7s" repeatCount="indefinite"/>
+      </line>
+      <line x1="7" y1="-4" x2="14" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" values="-20 7 -4;20 7 -4;-20 7 -4" dur="0.7s" repeatCount="indefinite"/>
+      </line>
+    </g>
+
+    <!-- ═══ 9. 啦啦队 ×2 ═══ -->
+    <!-- 啦啦 1 -->
+    <g transform="translate(1000 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#76C342" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#FFD86A"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <!-- 花球 -->
+      <circle cx="-12" cy="-14" r="4" fill="#FF6B6B" stroke="#3D2812" stroke-width="1"/>
+      <circle cx="12" cy="-14" r="4" fill="#FF6B6B" stroke="#3D2812" stroke-width="1"/>
+      <line x1="-10" y1="-10" x2="-7" y2="-2" stroke="#FFD8B0" stroke-width="2"/>
+      <line x1="10" y1="-10" x2="7" y2="-2" stroke="#FFD8B0" stroke-width="2"/>
+    </g>
+    <!-- 啦啦 2 -->
+    <g transform="translate(1100 870)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="-12" cy="-14" r="4" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+      <circle cx="12" cy="-14" r="4" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+    </g>
+
+    <!-- ═══ 10. 画画小孩（美术室前） ═══ -->
+    <g transform="translate(1290 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#FF8C42" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -11 Q-8 -22 0 -22 Q8 -22 6 -11" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <!-- 画板 -->
+      <rect x="-16" y="-12" width="10" height="14" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+      <line x1="-14" y1="-8" x2="-8" y2="-6" stroke="#FF6B6B" stroke-width="1"/>
+      <line x1="-14" y1="-4" x2="-8" y2="-2" stroke="#5BC8E8" stroke-width="1"/>
+    </g>
+
+    <!-- ═══ 11. 射门球门（前景路边） ═══ -->
+    <g transform="translate(660 870)">
+      <rect x="-16" y="-26" width="32" height="3" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+      <line x1="-16" y1="-26" x2="-16" y2="0" stroke="#fff" stroke-width="3"/>
+      <line x1="-16" y1="-26" x2="-16" y2="0" stroke="#3D2812" stroke-width="1"/>
+      <line x1="16" y1="-26" x2="16" y2="0" stroke="#fff" stroke-width="3"/>
+      <line x1="16" y1="-26" x2="16" y2="0" stroke="#3D2812" stroke-width="1"/>
+      <!-- 网 -->
+      <g stroke="#3D2812" stroke-width=".6" opacity=".5">
+        <line x1="-14" y1="-22" x2="14" y2="-22"/>
+        <line x1="-14" y1="-16" x2="14" y2="-16"/>
+        <line x1="-14" y1="-10" x2="14" y2="-10"/>
+        <line x1="-10" y1="-26" x2="-10" y2="-2"/>
+        <line x1="-4" y1="-26" x2="-4" y2="-2"/>
+        <line x1="4" y1="-26" x2="4" y2="-2"/>
+        <line x1="10" y1="-26" x2="10" y2="-2"/>
+      </g>
+      <!-- 球 -->
+      <circle cx="-30" cy="-2" r="6" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+      <polygon points="-30,-7 -34,-3 -32,2 -28,2 -26,-3" fill="#3D2812" opacity=".7"/>
+    </g>
+
+    <!-- ═══ 12. 彩旗串 ═══ -->
+    <g>
+      <line x1="200" y1="640" x2="540" y2="600" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="220,650 230,668 240,652" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="260,648 270,666 280,650" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="300,645 310,663 320,647" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="340,640 350,658 360,642" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="380,632 390,650 400,634" fill="#76C342" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="420,622 430,640 440,624" fill="#FF8C42" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="460,612 470,630 480,614" fill="#E94B6A" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="500,604 510,622 520,606" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- 蝴蝶 -->
+    <use href="#butterfly" x="0" y="0" width="22" height="15">
+      <animateMotion dur="14s" repeatCount="indefinite" path="M280 760 Q500 700 700 760 Q900 720 1100 770 Q1300 730 1500 760"/>
+    </use>
+
+    <!-- 招牌 -->
+    <g transform="translate(800 950)">
+      <line x1="-6" y1="-30" x2="-6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <line x1="6" y1="-30" x2="6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <rect x="-70" y="-30" width="140" height="36" fill="#FFE9B0" stroke="#3D2812" stroke-width="3" rx="6"/>
+      <text x="0" y="-12" text-anchor="middle" font-weight="900" font-size="18" fill="#3D2812" font-family="'PingFang SC',sans-serif" letter-spacing="3">🎨 活动岛</text>
+      <text x="0" y="2" text-anchor="middle" font-weight="700" font-size="9" fill="#7A4F1B" font-family="'PingFang SC',sans-serif">报社团 · 上才艺 · 玩到嗨</text>
+      <circle cx="-60" cy="-22" r="2" fill="#3D2812"/>
+      <circle cx="60" cy="-22" r="2" fill="#3D2812"/>
+    </g>
+
+    <!-- 海面波浪 -->
+    <g opacity="0.6" fill="#fff">
+      <path d="M0 970 Q80 950 160 970 T320 970 T480 970 T640 970 T800 970 T960 970 T1120 970 T1280 970 T1440 970 T1600 970 L1600 1000 L0 1000 Z"/>
+    </g>
+    <g opacity="0.85" fill="#fff">
+      <path d="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z">
+        <animate attributeName="d" dur="5s" repeatCount="indefinite"
+          values="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 998 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z"/>
+      </path>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

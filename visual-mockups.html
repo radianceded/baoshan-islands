@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>视觉方案对比 · 宝山实验海岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+    background: linear-gradient(180deg,#F5F1EA 0%, #E8DFD0 100%);
+    color:#1F3A4D;padding:40px 24px 80px;min-height:100vh;
+  }
+  .head{max-width:1280px;margin:0 auto 30px}
+  .head h1{font-size:32px;font-weight:900;letter-spacing:3px;color:#3D2812}
+  .head p{margin-top:8px;font-size:14px;color:#7A4F1B;line-height:1.7}
+  .head .meta{margin-top:14px;display:flex;gap:14px;flex-wrap:wrap}
+  .meta-pill{background:#fff;border-radius:14px;padding:6px 14px;font-size:12px;font-weight:700;color:#7A4F1B;box-shadow:0 3px 10px rgba(0,0,0,0.05)}
+  .meta-pill strong{color:#3D2812}
+
+  .grid{
+    max-width:1280px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+  }
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .scheme{
+    background:#fff;border-radius:24px;overflow:hidden;
+    box-shadow:0 12px 32px rgba(60,40,20,0.12);
+    display:flex;flex-direction:column;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .scheme:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(60,40,20,0.18)}
+  .canvas{
+    background: linear-gradient(180deg, var(--sky1, #BFE6FF) 0%, var(--sky2, #6FC8F0) 70%, var(--sea, #3FA8D8) 100%);
+    aspect-ratio: 4/3;position:relative;overflow:hidden;
+  }
+  .canvas svg{width:100%;height:100%;display:block}
+  .body{padding:20px 22px 24px}
+  .badge{
+    display:inline-block;font-size:11px;font-weight:900;letter-spacing:2px;
+    padding:4px 12px;border-radius:14px;color:#fff;margin-bottom:8px;
+  }
+  .body h2{font-size:22px;font-weight:900;letter-spacing:2px;margin-bottom:8px}
+  .body .desc{font-size:13.5px;line-height:1.7;color:#5C7A8C;margin-bottom:14px}
+  .features{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .features li{
+    font-size:12.5px;color:#3D4F5A;padding-left:22px;position:relative;line-height:1.5;
+  }
+  .features li::before{
+    content:'';position:absolute;left:0;top:6px;width:12px;height:12px;border-radius:50%;
+    background:var(--accent, #FF8C42);
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.15);
+  }
+  .cost{
+    margin-top:14px;padding-top:14px;border-top:1.5px dashed #E0DAD0;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .cost .label{font-size:11px;color:#9B8366;font-weight:700;letter-spacing:1px}
+  .cost .stars{color:#FFC23F;font-size:14px;letter-spacing:2px}
+  .cost .stars .off{color:#E5DCD0}
+
+  .pick-btn{
+    margin-top:16px;width:100%;
+    background:linear-gradient(135deg, var(--btn1,#FF8C42), var(--btn2,#FF6B6B));
+    color:#fff;font-weight:900;font-size:14px;letter-spacing:2px;
+    border:none;border-radius:18px;padding:12px;cursor:pointer;
+    box-shadow:0 6px 14px rgba(255,140,66,.4);transition:transform .15s;
+  }
+  .pick-btn:hover{transform:translateY(-2px)}
+
+  .footer{max-width:1280px;margin:30px auto 0;padding:20px 24px;background:#fff;border-radius:18px;box-shadow:0 6px 20px rgba(60,40,20,0.08);font-size:13px;color:#5C7A8C;line-height:1.7}
+  .footer strong{color:#3D2812}
+
+  /* SVG 内部公共动画 */
+  @keyframes sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+  @keyframes bobApple{0%,100%{transform:translateY(0)}50%{transform:translateY(2px)}}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>🎨 海岛视觉方案对比</h1>
+  <p>同一座 <strong>健康岛</strong>（小木屋 + 苹果树 + 菜地）画 3 个不同风格，请挑一个最贴近你想要的"卡通但精致"的方向。</p>
+  <div class="meta">
+    <div class="meta-pill"><strong>取景一致：</strong> 苹果树 + 木屋 + 蔬菜地 + 招牌</div>
+    <div class="meta-pill"><strong>用途：</strong> 首页 5 个岛 + 子页 banner</div>
+    <div class="meta-pill"><strong>限制：</strong> 纯 SVG，零外部图片，可缩放</div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ════════════════════════════════════════════
+       方案 A：立体渐变风（3D 渲染感 / 现代手游 UI）
+       ════════════════════════════════════════════ -->
+  <div class="scheme" style="--accent:#FF8C42;--btn1:#FF8C42;--btn2:#FF6B6B">
+    <div class="canvas" style="--sky1:#FFE3B0;--sky2:#FFC9A0;--sea:#7FD2F1">
+      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <!-- 太阳 -->
+          <radialGradient id="aSun" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFF6C8"/>
+            <stop offset="60%" stop-color="#FFC23F"/>
+            <stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 海岛沙滩 -->
+          <radialGradient id="aSand" cx="50%" cy="20%" r="80%">
+            <stop offset="0%" stop-color="#FFF1D6"/>
+            <stop offset="100%" stop-color="#D9A877"/>
+          </radialGradient>
+          <!-- 草地立体 -->
+          <radialGradient id="aGrass" cx="50%" cy="0%" r="100%">
+            <stop offset="0%" stop-color="#C8F08A"/>
+            <stop offset="55%" stop-color="#7FCB4A"/>
+            <stop offset="100%" stop-color="#4A8F2C"/>
+          </radialGradient>
+          <!-- 苹果立体 -->
+          <radialGradient id="aApple" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFB3B3"/>
+            <stop offset="60%" stop-color="#E94B6A"/>
+            <stop offset="100%" stop-color="#A02038"/>
+          </radialGradient>
+          <!-- 树叶蓬 -->
+          <radialGradient id="aLeaf" cx="40%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#A8E063"/>
+            <stop offset="60%" stop-color="#56AB2F"/>
+            <stop offset="100%" stop-color="#2D6E10"/>
+          </radialGradient>
+          <linearGradient id="aWood" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E8B97C"/>
+            <stop offset="100%" stop-color="#A06B3C"/>
+          </linearGradient>
+          <linearGradient id="aRoof" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E07050"/>
+            <stop offset="100%" stop-color="#8C2E18"/>
+          </linearGradient>
+          <!-- 软阴影 filter -->
+          <filter id="aShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+            <feOffset dx="0" dy="3" result="off"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- 太阳 -->
+        <circle cx="340" cy="60" r="70" fill="url(#aSun)" opacity=".85"/>
+        <circle cx="340" cy="60" r="22" fill="#FFE672"/>
+        <!-- 远山 -->
+        <path d="M0 180 Q60 150 120 175 Q180 195 240 165 Q300 145 360 175 L400 170 L400 200 L0 200 Z" fill="#7BB8DA" opacity=".5"/>
+        <!-- 云 -->
+        <ellipse cx="80" cy="50" rx="32" ry="10" fill="#fff" opacity=".95"/>
+        <ellipse cx="100" cy="42" rx="22" ry="14" fill="#fff" opacity=".95"/>
+
+        <!-- 岛体阴影 -->
+        <ellipse cx="200" cy="270" rx="160" ry="14" fill="#000" opacity="0.25"/>
+        <!-- 沙滩 -->
+        <path d="M50 250 Q90 275 200 275 Q310 275 350 250 Q310 240 200 240 Q90 240 50 250 Z" fill="url(#aSand)"/>
+        <!-- 沙滩纹理 -->
+        <path d="M70 252 Q90 258 110 252" stroke="#C28C5A" stroke-width="1" fill="none" opacity=".6"/>
+        <path d="M280 252 Q300 258 320 252" stroke="#C28C5A" stroke-width="1" fill="none" opacity=".6"/>
+        <!-- 草地（带高光） -->
+        <path d="M70 230 Q110 175 200 175 Q290 175 330 230 Q300 250 200 250 Q100 250 70 230 Z" fill="url(#aGrass)"/>
+        <ellipse cx="200" cy="190" rx="100" ry="14" fill="#fff" opacity=".18"/>
+        <!-- 草地散点小草 -->
+        <g fill="#3A7A20">
+          <path d="M110 220 L112 215 L114 220 Z"/>
+          <path d="M150 235 L152 228 L155 235 Z"/>
+          <path d="M270 235 L272 228 L275 235 Z"/>
+          <path d="M310 222 L313 215 L316 222 Z"/>
+        </g>
+
+        <!-- 木屋（阴影 + 立体） -->
+        <g filter="url(#aShadow)">
+          <!-- 屋身 -->
+          <rect x="100" y="170" width="80" height="60" rx="3" fill="url(#aWood)" stroke="#5A3712" stroke-width="2"/>
+          <!-- 木板纹理 -->
+          <line x1="100" y1="190" x2="180" y2="190" stroke="#5A3712" stroke-width="1" opacity=".4"/>
+          <line x1="100" y1="210" x2="180" y2="210" stroke="#5A3712" stroke-width="1" opacity=".4"/>
+          <!-- 屋顶 -->
+          <polygon points="92,172 188,172 140,128" fill="url(#aRoof)" stroke="#5A2018" stroke-width="2"/>
+          <!-- 屋顶高光 -->
+          <polygon points="92,172 130,172 140,128" fill="#fff" opacity=".15"/>
+          <!-- 门 -->
+          <path d="M125 230 L125 200 Q125 190 140 190 Q155 190 155 200 L155 230 Z" fill="#5A3712"/>
+          <path d="M127 228 L127 200 Q127 192 140 192 Q153 192 153 200 L153 228 Z" fill="#7A4F1B"/>
+          <circle cx="150" cy="215" r="1.5" fill="#FFD86A"/>
+          <!-- 窗 -->
+          <rect x="106" y="178" width="14" height="14" rx="1" fill="#B6E1F0" stroke="#5A3712" stroke-width="1.5"/>
+          <line x1="113" y1="178" x2="113" y2="192" stroke="#5A3712" stroke-width="1"/>
+          <line x1="106" y1="185" x2="120" y2="185" stroke="#5A3712" stroke-width="1"/>
+          <rect x="160" y="178" width="14" height="14" rx="1" fill="#B6E1F0" stroke="#5A3712" stroke-width="1.5"/>
+          <line x1="167" y1="178" x2="167" y2="192" stroke="#5A3712" stroke-width="1"/>
+          <line x1="160" y1="185" x2="174" y2="185" stroke="#5A3712" stroke-width="1"/>
+          <!-- 烟囱 -->
+          <rect x="158" y="135" width="10" height="22" fill="#8C5028" stroke="#5A3712" stroke-width="1.5"/>
+        </g>
+        <!-- 烟 -->
+        <circle cx="163" cy="125" r="5" fill="#fff" opacity=".75">
+          <animate attributeName="cy" values="125;105;85" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".75;.4;0" dur="4s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="167" cy="115" r="6" fill="#fff" opacity=".7">
+          <animate attributeName="cy" values="115;95;75" dur="4s" repeatCount="indefinite" begin="-1.5s"/>
+          <animate attributeName="opacity" values=".7;.3;0" dur="4s" repeatCount="indefinite" begin="-1.5s"/>
+        </circle>
+
+        <!-- 苹果树（带立体感） -->
+        <g filter="url(#aShadow)">
+          <rect x="240" y="195" width="10" height="35" fill="url(#aWood)"/>
+          <line x1="245" y1="200" x2="245" y2="225" stroke="#5A3712" stroke-width="1" opacity=".5"/>
+          <!-- 叶蓬，多层 -->
+          <circle cx="245" cy="190" r="36" fill="url(#aLeaf)"/>
+          <circle cx="225" cy="180" r="22" fill="url(#aLeaf)" opacity=".95"/>
+          <circle cx="265" cy="180" r="24" fill="url(#aLeaf)" opacity=".95"/>
+          <circle cx="245" cy="170" r="26" fill="url(#aLeaf)" opacity=".95"/>
+          <!-- 叶蓬高光 -->
+          <ellipse cx="232" cy="170" rx="14" ry="6" fill="#fff" opacity=".2"/>
+          <!-- 苹果（立体球） -->
+          <g>
+            <circle cx="225" cy="200" r="6.5" fill="url(#aApple)"/>
+            <circle cx="223" cy="198" r="1.6" fill="#fff" opacity=".7"/>
+          </g>
+          <g>
+            <circle cx="262" cy="186" r="7" fill="url(#aApple)"/>
+            <circle cx="260" cy="184" r="1.6" fill="#fff" opacity=".7"/>
+          </g>
+          <g>
+            <circle cx="248" cy="208" r="6.5" fill="url(#aApple)"/>
+            <circle cx="246" cy="206" r="1.6" fill="#fff" opacity=".7"/>
+          </g>
+        </g>
+
+        <!-- 菜地 -->
+        <g>
+          <ellipse cx="60" cy="245" rx="22" ry="6" fill="#7A4F1B"/>
+          <path d="M48 240 Q54 230 60 240 Q66 230 72 240" stroke="#3FA34D" stroke-width="2.4" fill="none"/>
+          <ellipse cx="56" cy="237" rx="3" ry="4.5" fill="#FF6B6B"/>
+          <ellipse cx="64" cy="237" rx="3" ry="4.5" fill="#FF6B6B"/>
+        </g>
+        <g>
+          <ellipse cx="320" cy="248" rx="20" ry="5" fill="#7A4F1B"/>
+          <ellipse cx="316" cy="244" rx="3" ry="5" fill="#FFC23F"/>
+          <ellipse cx="324" cy="244" rx="3" ry="5" fill="#FFC23F"/>
+        </g>
+      </svg>
+    </div>
+    <div class="body">
+      <span class="badge" style="background:#FF8C42">方案 A</span>
+      <h2>立体渐变风</h2>
+      <div class="desc">大量径向渐变模拟体积感，物体看起来"软软的、立体的"，类似 3D 渲染。视觉精致度最高，有现代手游 UI 的高级感。</div>
+      <ul class="features">
+        <li>每个物体都有渐变体积感（树是球、苹果是球）</li>
+        <li>软阴影 filter 让物体"漂浮"在岛上</li>
+        <li>沙滩、草地、屋顶都有高光面</li>
+        <li>整体配色明亮但不刺眼</li>
+      </ul>
+      <div class="cost">
+        <span class="label">精致度</span>
+        <span class="stars">★★★★★</span>
+      </div>
+      <div class="cost" style="border-top:none;padding-top:6px">
+        <span class="label">改造工作量</span>
+        <span class="stars">★★★★<span class="off">★</span></span>
+      </div>
+      <button class="pick-btn" onclick="pick('A','立体渐变风')">就要这个 A</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       方案 B：厚描边卡通风（Adventure Time / Disney 现代）
+       ════════════════════════════════════════════ -->
+  <div class="scheme" style="--accent:#22A05B;--btn1:#22C55E;--btn2:#15803D">
+    <div class="canvas" style="--sky1:#FFE9C8;--sky2:#FFC990;--sea:#5BB8DD">
+      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="bSand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFE0B2"/>
+            <stop offset="100%" stop-color="#E0A878"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 太阳 -->
+        <circle cx="340" cy="60" r="34" fill="#FFC23F" stroke="#3D2812" stroke-width="3.5"/>
+        <g stroke="#3D2812" stroke-width="3" stroke-linecap="round">
+          <line x1="340" y1="14" x2="340" y2="22"/>
+          <line x1="340" y1="98" x2="340" y2="106"/>
+          <line x1="294" y1="60" x2="302" y2="60"/>
+          <line x1="378" y1="60" x2="386" y2="60"/>
+          <line x1="306" y1="26" x2="312" y2="32"/>
+          <line x1="368" y1="88" x2="374" y2="94"/>
+          <line x1="306" y1="94" x2="312" y2="88"/>
+          <line x1="368" y1="32" x2="374" y2="26"/>
+        </g>
+        <!-- 太阳脸 -->
+        <circle cx="332" cy="55" r="2" fill="#3D2812"/>
+        <circle cx="348" cy="55" r="2" fill="#3D2812"/>
+        <path d="M332 65 Q340 70 348 65" stroke="#3D2812" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="324" cy="64" r="3" fill="#FF9F8C" opacity=".7"/>
+        <circle cx="356" cy="64" r="3" fill="#FF9F8C" opacity=".7"/>
+
+        <!-- 云朵（带描边） -->
+        <g fill="#fff" stroke="#3D2812" stroke-width="2.5" stroke-linejoin="round">
+          <path d="M50 60 Q50 40 70 42 Q72 30 90 36 Q110 30 110 50 Q120 50 118 64 Q90 70 60 66 Q50 72 50 60 Z"/>
+        </g>
+
+        <!-- 远山 -->
+        <path d="M0 180 Q60 150 120 175 Q180 195 240 165 Q300 145 360 175 L400 170 L400 200 L0 200 Z" fill="#88BFD8" stroke="#3D2812" stroke-width="2"/>
+
+        <!-- 岛阴影 -->
+        <ellipse cx="200" cy="270" rx="160" ry="14" fill="#000" opacity="0.25"/>
+        <!-- 沙滩 -->
+        <path d="M50 250 Q90 275 200 275 Q310 275 350 250 Q310 240 200 240 Q90 240 50 250 Z" fill="url(#bSand)" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 草地 -->
+        <path d="M70 230 Q110 175 200 175 Q290 175 330 230 Q300 250 200 250 Q100 250 70 230 Z" fill="#7DD16B" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 草地纹理：小草 -->
+        <g stroke="#3D2812" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M100 220 L100 215 M97 218 L97 214 M103 218 L103 214"/>
+          <path d="M280 218 L280 213 M277 216 L277 212 M283 216 L283 212"/>
+        </g>
+
+        <!-- 木屋（厚黑描边） -->
+        <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+          <rect x="100" y="170" width="80" height="60" rx="3" fill="#E8B97C"/>
+          <line x1="100" y1="190" x2="180" y2="190" stroke="#7A4F1B" stroke-width="1.5"/>
+          <line x1="100" y1="210" x2="180" y2="210" stroke="#7A4F1B" stroke-width="1.5"/>
+          <polygon points="92,172 188,172 140,128" fill="#E07050"/>
+          <!-- 屋顶花纹 -->
+          <line x1="98" y1="160" x2="182" y2="160" stroke="#3D2812" stroke-width="2"/>
+          <line x1="105" y1="148" x2="175" y2="148" stroke="#3D2812" stroke-width="2"/>
+          <!-- 门 -->
+          <path d="M125 230 L125 200 Q125 188 140 188 Q155 188 155 200 L155 230 Z" fill="#7A4F1B"/>
+          <circle cx="150" cy="215" r="2" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+          <!-- 窗户带十字 -->
+          <rect x="106" y="178" width="14" height="14" fill="#A8E0F0"/>
+          <line x1="113" y1="178" x2="113" y2="192" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="106" y1="185" x2="120" y2="185" stroke="#3D2812" stroke-width="1.5"/>
+          <rect x="160" y="178" width="14" height="14" fill="#A8E0F0"/>
+          <line x1="167" y1="178" x2="167" y2="192" stroke="#3D2812" stroke-width="1.5"/>
+          <line x1="160" y1="185" x2="174" y2="185" stroke="#3D2812" stroke-width="1.5"/>
+          <!-- 烟囱 -->
+          <rect x="158" y="135" width="10" height="22" fill="#8C5028"/>
+          <rect x="156" y="132" width="14" height="6" fill="#5A3712"/>
+        </g>
+        <!-- 烟（描边圆圈） -->
+        <circle cx="163" cy="120" r="5" fill="#fff" stroke="#3D2812" stroke-width="2" opacity=".85">
+          <animate attributeName="cy" values="120;100;80" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".85;.5;0" dur="4s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="168" cy="108" r="6" fill="#fff" stroke="#3D2812" stroke-width="2" opacity=".8">
+          <animate attributeName="cy" values="108;88;68" dur="4s" repeatCount="indefinite" begin="-1.5s"/>
+          <animate attributeName="opacity" values=".8;.4;0" dur="4s" repeatCount="indefinite" begin="-1.5s"/>
+        </circle>
+
+        <!-- 苹果树（厚描边） -->
+        <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+          <rect x="240" y="195" width="10" height="38" fill="#A06B3C"/>
+          <!-- 叶蓬：多个圆组合 -->
+          <circle cx="245" cy="190" r="36" fill="#5BBE5B"/>
+          <circle cx="225" cy="180" r="22" fill="#7DD16B"/>
+          <circle cx="265" cy="180" r="24" fill="#7DD16B"/>
+          <circle cx="245" cy="168" r="26" fill="#7DD16B"/>
+        </g>
+        <!-- 苹果（描边） -->
+        <g stroke="#3D2812" stroke-width="2">
+          <circle cx="225" cy="200" r="7" fill="#E94B6A"/>
+          <circle cx="223" cy="198" r="1.5" fill="#fff" stroke="none"/>
+          <line x1="225" y1="193" x2="225" y2="190" stroke-width="1.5"/>
+          <path d="M225 191 Q229 188 232 191" fill="#3FA34D"/>
+
+          <circle cx="262" cy="186" r="7" fill="#E94B6A"/>
+          <circle cx="260" cy="184" r="1.5" fill="#fff" stroke="none"/>
+          <line x1="262" y1="179" x2="262" y2="176" stroke-width="1.5"/>
+
+          <circle cx="248" cy="208" r="7" fill="#E94B6A"/>
+          <circle cx="246" cy="206" r="1.5" fill="#fff" stroke="none"/>
+          <line x1="248" y1="201" x2="248" y2="198" stroke-width="1.5"/>
+        </g>
+
+        <!-- 树有眼睛（拟人化） -->
+        <circle cx="238" cy="178" r="3" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="252" cy="178" r="3" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="238" cy="178" r="1.2" fill="#3D2812"/>
+        <circle cx="252" cy="178" r="1.2" fill="#3D2812"/>
+        <path d="M242 184 Q245 187 248 184" stroke="#3D2812" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+        <!-- 菜地 -->
+        <g stroke="#3D2812" stroke-width="2" stroke-linejoin="round">
+          <ellipse cx="60" cy="245" rx="22" ry="6" fill="#8C5028"/>
+          <path d="M48 240 Q54 228 60 240 Q66 228 72 240" stroke="#2A6A18" stroke-width="2.5" fill="none"/>
+          <ellipse cx="56" cy="237" rx="3.5" ry="5" fill="#FF6B6B"/>
+          <ellipse cx="64" cy="237" rx="3.5" ry="5" fill="#FF6B6B"/>
+          <ellipse cx="320" cy="248" rx="20" ry="5" fill="#8C5028"/>
+          <ellipse cx="316" cy="244" rx="3.5" ry="5.5" fill="#FFC23F"/>
+          <ellipse cx="324" cy="244" rx="3.5" ry="5.5" fill="#FFC23F"/>
+        </g>
+
+        <!-- 小蝴蝶（飞动） -->
+        <g>
+          <g transform="translate(0 0)">
+            <ellipse cx="-4" cy="0" rx="5" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+            <ellipse cx="4" cy="0" rx="5" ry="7" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+            <line x1="0" y1="-3" x2="0" y2="5" stroke="#3D2812" stroke-width="1.5"/>
+          </g>
+          <animateMotion dur="10s" repeatCount="indefinite" path="M180 100 Q220 80 260 110 Q300 90 340 130 Q300 110 180 100"/>
+        </g>
+      </svg>
+    </div>
+    <div class="body">
+      <span class="badge" style="background:#22A05B">方案 B</span>
+      <h2>厚描边卡通风</h2>
+      <div class="desc">所有物体都有黑色厚描边，颜色饱和，像素 Pop 系列卡通片或 Disney 现代风。物体有可爱表情（树会笑、太阳有脸），最童趣。</div>
+      <ul class="features">
+        <li>厚黑描边让画面"跳出来"，识别度极高</li>
+        <li>太阳和苹果树都有<strong>表情</strong>，小朋友最爱</li>
+        <li>装饰细节：屋顶花纹、窗格、小草、蝴蝶</li>
+        <li>颜色饱和但用棕色描边压住不刺眼</li>
+      </ul>
+      <div class="cost">
+        <span class="label">精致度</span>
+        <span class="stars">★★★★<span class="off">★</span></span>
+      </div>
+      <div class="cost" style="border-top:none;padding-top:6px">
+        <span class="label">改造工作量</span>
+        <span class="stars">★★★<span class="off">★</span><span class="off">★</span></span>
+      </div>
+      <button class="pick-btn" onclick="pick('B','厚描边卡通风')">就要这个 B</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       方案 C：水彩绘本风（吉卜力 / Eric Carle）
+       ════════════════════════════════════════════ -->
+  <div class="scheme" style="--accent:#7C5BCC;--btn1:#A893E8;--btn2:#5C42A0">
+    <div class="canvas" style="--sky1:#FFE6D6;--sky2:#FFCFAB;--sea:#9DD8E8">
+      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <!-- 水彩纸纹理 filter -->
+          <filter id="cWater" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
+            <feColorMatrix values="0 0 0 0 0.96
+                                   0 0 0 0 0.92
+                                   0 0 0 0 0.84
+                                   0 0 0 0.06 0"/>
+            <feComposite in2="SourceGraphic" operator="in"/>
+            <feMerge>
+              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode/>
+            </feMerge>
+          </filter>
+          <!-- 边缘晕染 -->
+          <filter id="cBleed" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="0.6" result="blur"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7"/>
+            <feDisplacementMap in="blur" scale="2"/>
+          </filter>
+          <radialGradient id="cSun" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFEFC8"/>
+            <stop offset="60%" stop-color="#FFC97A"/>
+            <stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="cLeaf" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#A8D87A"/>
+            <stop offset="100%" stop-color="#5C9148"/>
+          </linearGradient>
+          <linearGradient id="cWood" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#D4A06C"/>
+            <stop offset="50%" stop-color="#B07A3E"/>
+            <stop offset="100%" stop-color="#8C5028"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 水彩晕染天空底色 -->
+        <rect x="0" y="0" width="400" height="300" fill="#fff" opacity="0"/>
+        <ellipse cx="120" cy="80" rx="180" ry="80" fill="#FFE6CC" opacity=".5" filter="url(#cBleed)"/>
+        <ellipse cx="320" cy="50" rx="140" ry="60" fill="#FFC990" opacity=".5" filter="url(#cBleed)"/>
+
+        <!-- 太阳柔光 -->
+        <circle cx="340" cy="60" r="60" fill="url(#cSun)" opacity=".9"/>
+        <circle cx="340" cy="60" r="22" fill="#FFD672" filter="url(#cBleed)"/>
+
+        <!-- 远山（柔边） -->
+        <path d="M0 180 Q60 145 120 175 Q180 200 240 160 Q300 140 360 175 L400 170 L400 200 L0 200 Z" fill="#A8C2D4" opacity=".55" filter="url(#cBleed)"/>
+
+        <!-- 飞鸟（简笔水彩） -->
+        <path d="M120 70 Q126 64 132 70 Q138 64 144 70" stroke="#5C42A0" stroke-width="1.5" fill="none" opacity=".7"/>
+        <path d="M150 90 Q156 84 162 90" stroke="#5C42A0" stroke-width="1.5" fill="none" opacity=".7"/>
+
+        <!-- 岛体阴影 -->
+        <ellipse cx="200" cy="270" rx="160" ry="14" fill="#7A4F1B" opacity="0.18" filter="url(#cBleed)"/>
+        <!-- 沙滩 -->
+        <path d="M50 250 Q90 275 200 275 Q310 275 350 250 Q310 240 200 240 Q90 240 50 250 Z" fill="#F0CC9C" filter="url(#cBleed)"/>
+        <!-- 沙滩水彩斑点 -->
+        <ellipse cx="120" cy="258" rx="20" ry="5" fill="#D4A06C" opacity=".4"/>
+        <ellipse cx="280" cy="258" rx="22" ry="6" fill="#D4A06C" opacity=".4"/>
+
+        <!-- 草地 -->
+        <path d="M70 230 Q110 175 200 175 Q290 175 330 230 Q300 250 200 250 Q100 250 70 230 Z" fill="#9CC872" filter="url(#cBleed)"/>
+        <!-- 草地暗部 -->
+        <path d="M80 240 Q140 220 200 235 Q260 220 320 240" stroke="#5C9148" stroke-width="3" fill="none" opacity=".4"/>
+        <!-- 散落小花 -->
+        <g>
+          <circle cx="105" cy="225" r="2" fill="#fff"/><circle cx="105" cy="225" r="1" fill="#FFD86A"/>
+          <circle cx="295" cy="222" r="2" fill="#fff"/><circle cx="295" cy="222" r="1" fill="#FFD86A"/>
+          <circle cx="155" cy="235" r="2" fill="#FF9DBC"/><circle cx="155" cy="235" r="0.8" fill="#fff"/>
+          <circle cx="245" cy="232" r="2" fill="#FF9DBC"/><circle cx="245" cy="232" r="0.8" fill="#fff"/>
+        </g>
+
+        <!-- 木屋（水彩边缘） -->
+        <g filter="url(#cBleed)">
+          <rect x="100" y="170" width="80" height="60" fill="url(#cWood)"/>
+          <line x1="105" y1="190" x2="178" y2="190" stroke="#7A4F1B" stroke-width="1.5" opacity=".6"/>
+          <line x1="105" y1="210" x2="178" y2="210" stroke="#7A4F1B" stroke-width="1.5" opacity=".6"/>
+          <polygon points="92,172 188,172 140,128" fill="#C84B2C"/>
+          <!-- 屋顶水彩明暗 -->
+          <polygon points="92,172 140,172 140,128" fill="#fff" opacity=".15"/>
+          <polygon points="140,172 188,172 140,128" fill="#7A2018" opacity=".25"/>
+          <!-- 门 -->
+          <path d="M125 230 L125 198 Q125 188 140 188 Q155 188 155 198 L155 230 Z" fill="#5A3712"/>
+          <circle cx="151" cy="215" r="1.6" fill="#FFE672"/>
+          <!-- 窗 -->
+          <rect x="107" y="178" width="14" height="14" fill="#B6E1F0"/>
+          <rect x="107" y="178" width="14" height="14" fill="none" stroke="#5A3712" stroke-width="1.2"/>
+          <line x1="114" y1="178" x2="114" y2="192" stroke="#5A3712" stroke-width="1"/>
+          <line x1="107" y1="185" x2="121" y2="185" stroke="#5A3712" stroke-width="1"/>
+          <rect x="159" y="178" width="14" height="14" fill="#B6E1F0"/>
+          <rect x="159" y="178" width="14" height="14" fill="none" stroke="#5A3712" stroke-width="1.2"/>
+          <line x1="166" y1="178" x2="166" y2="192" stroke="#5A3712" stroke-width="1"/>
+          <line x1="159" y1="185" x2="173" y2="185" stroke="#5A3712" stroke-width="1"/>
+          <!-- 烟囱 -->
+          <rect x="158" y="135" width="10" height="22" fill="#8C5028"/>
+        </g>
+        <!-- 烟（柔化） -->
+        <ellipse cx="164" cy="120" rx="6" ry="5" fill="#fff" opacity=".7" filter="url(#cBleed)">
+          <animate attributeName="cy" values="120;100;80" dur="5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".7;.4;0" dur="5s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- 苹果树（水彩） -->
+        <g filter="url(#cBleed)">
+          <rect x="240" y="195" width="10" height="38" fill="url(#cWood)"/>
+          <!-- 叶蓬 -->
+          <ellipse cx="245" cy="190" rx="38" ry="32" fill="url(#cLeaf)"/>
+          <ellipse cx="226" cy="180" rx="22" ry="20" fill="#A8D87A" opacity=".9"/>
+          <ellipse cx="265" cy="183" rx="24" ry="22" fill="#A8D87A" opacity=".9"/>
+          <ellipse cx="245" cy="168" rx="26" ry="22" fill="#7BC050" opacity=".95"/>
+          <!-- 叶蓬暗部 -->
+          <path d="M220 195 Q240 215 270 200" stroke="#5C9148" stroke-width="3" fill="none" opacity=".5"/>
+        </g>
+        <!-- 苹果（水彩 + 高光） -->
+        <g>
+          <ellipse cx="225" cy="200" rx="6" ry="7" fill="#E94B6A" filter="url(#cBleed)"/>
+          <ellipse cx="223" cy="197" rx="2" ry="1.5" fill="#fff" opacity=".75"/>
+          <line x1="225" y1="194" x2="225" y2="191" stroke="#5C3D17" stroke-width="1.2"/>
+          <path d="M225 191 Q229 188 232 192" fill="#5C9148"/>
+
+          <ellipse cx="262" cy="186" rx="7" ry="8" fill="#E94B6A" filter="url(#cBleed)"/>
+          <ellipse cx="260" cy="183" rx="2" ry="1.5" fill="#fff" opacity=".75"/>
+
+          <ellipse cx="248" cy="210" rx="6" ry="7" fill="#E94B6A" filter="url(#cBleed)"/>
+          <ellipse cx="246" cy="207" rx="2" ry="1.5" fill="#fff" opacity=".75"/>
+        </g>
+
+        <!-- 菜地（水彩） -->
+        <g filter="url(#cBleed)">
+          <ellipse cx="60" cy="245" rx="22" ry="6" fill="#7A4F1B"/>
+          <path d="M48 240 Q54 230 60 240 Q66 230 72 240" stroke="#3FA34D" stroke-width="2.4" fill="none"/>
+          <ellipse cx="56" cy="237" rx="3" ry="4.5" fill="#FF6B6B"/>
+          <ellipse cx="64" cy="237" rx="3" ry="4.5" fill="#FF6B6B"/>
+          <ellipse cx="320" cy="248" rx="20" ry="5" fill="#7A4F1B"/>
+          <ellipse cx="316" cy="244" rx="3" ry="5" fill="#FFC23F"/>
+          <ellipse cx="324" cy="244" rx="3" ry="5" fill="#FFC23F"/>
+        </g>
+
+        <!-- 飘落树叶（动） -->
+        <g>
+          <ellipse cx="0" cy="0" rx="3" ry="5" fill="#A8D87A" opacity=".8">
+            <animateMotion dur="9s" repeatCount="indefinite" path="M270 165 Q280 200 260 230 Q280 260 270 290"/>
+            <animateTransform attributeName="transform" type="rotate" from="0" to="720" dur="9s" repeatCount="indefinite"/>
+          </ellipse>
+        </g>
+      </svg>
+    </div>
+    <div class="body">
+      <span class="badge" style="background:#7C5BCC">方案 C</span>
+      <h2>水彩绘本风</h2>
+      <div class="desc">用 SVG filter 模拟水彩晕染、纸纹和柔化边缘，色调温暖怀旧，像翻开一本绘本。最有"艺术感"和"治愈感"，适合教育博览会的高端定位。</div>
+      <ul class="features">
+        <li>水彩晕染滤镜让边缘自然柔化（非死板线条）</li>
+        <li>同色叠层模拟笔触层次</li>
+        <li>装饰：散落小花、飞鸟、飘落树叶</li>
+        <li>整体偏暖、低饱和、不"塑料感"</li>
+      </ul>
+      <div class="cost">
+        <span class="label">精致度</span>
+        <span class="stars">★★★★★</span>
+      </div>
+      <div class="cost" style="border-top:none;padding-top:6px">
+        <span class="label">改造工作量</span>
+        <span class="stars">★★★★★</span>
+      </div>
+      <button class="pick-btn" onclick="pick('C','水彩绘本风')">就要这个 C</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>怎么选？</strong> 同样的素材（小屋+苹果树+菜地）我画了三种风格做<strong>等价对比</strong>。<br><br>
+  · <strong>A 立体渐变</strong> 适合：想要"现代精致"、"高级感"、"像高质量手游 UI"的方向。改造工作量适中，全部用渐变实现。<br>
+  · <strong>B 厚描边卡通</strong> 适合：想要"小朋友一眼喜欢"、"识别度最高"、"有性格"的方向。最童趣（树有表情、太阳有脸），改造最快。<br>
+  · <strong>C 水彩绘本</strong> 适合：想要"艺术感"、"治愈"、"教育博览会高端定位"。改造工作量最大（每个元素都要套水彩 filter），但最不像"代码画的"。<br><br>
+  挑一个我就把首页 5 个岛 + banner 全部按这个风格重画。也可以混搭（比如 A+B：立体渐变 + 角色表情）。
+</div>
+
+<script>
+function pick(k, name){
+  alert('已记录你选 '+k+' · '+name+'\n\n下一步：我把首页 5 个岛 + 健康岛/阅读岛 banner 全部按 '+k+' 风格重画。');
+}
+</script>
+</body>
+</html>

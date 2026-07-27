@@ -1,0 +1,20 @@
+# 浏览器兼容性配置
+# 用于 Autoprefixer 和 Babel 确定目标浏览器
+# 
+# 参考数据:
+# - 中国教育系统常用设备: iPad (Safari), Windows PC (Chrome/Edge)
+# - 建议支持: 最近 2 个主要版本 + 使用率 > 1%
+
+# 桌面浏览器
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+
+# 移动端 (学校常用 iPad)
+iOS >= 13
+ChromeAndroid >= 90
+
+# 不再支持的浏览器（明确排除）
+not IE 11
+not dead

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>朗读小游戏 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'KaiTi','STKaiti','PingFang SC','Microsoft YaHei',serif;-webkit-font-smoothing:antialiased;color:#3D2812}
+
+  body{
+    background-color:#F5E6D3;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(200,150,80,.15), transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(139,90,43,.03) 8px, rgba(139,90,43,.03) 10px);
+    overflow-x:hidden;min-height:100vh;
+  }
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(245,230,211,0.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(139,90,43,0.1);border-bottom:2px solid #D4A76A}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#C41E3A,#8B0000);color:#FFEBC0;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(196,30,58,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#5D4037;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#B8860B}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#FFF8E1;box-shadow:0 3px 10px rgba(139,90,43,0.12);border:1.5px solid #D4A76A}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#C41E3A,#8B0000);color:#FFEBC0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#3D2812}
+  .stu-info .meta{font-size:11px;color:#8D6E63;letter-spacing:.5px}
+
+  .wrap{max-width:900px;margin:0 auto;padding:24px 24px 80px}
+
+  /* ── 宣纸卡片 ── */
+  .paper-card{
+    background: linear-gradient(180deg,#FFFDF5 0%,#FDF5E6 50%,#FAEBD7 100%);
+    border:3px solid #D4A76A;border-radius:8px;
+    box-shadow:0 4px 0 #B8860B, 0 8px 20px rgba(139,90,43,.2);
+    padding:28px 24px;position:relative;
+  }
+  .paper-card::before{
+    content:'';position:absolute;inset:8px;border:1px solid rgba(212,167,106,.3);
+    border-radius:4px;pointer-events:none;
+  }
+
+  /* ── 关卡选择 ── */
+  .level-title{text-align:center;margin-bottom:24px}
+  .level-title h1{font-size:32px;font-weight:900;color:#8B0000;letter-spacing:4px}
+  .level-title .brush{display:block;width:120px;height:4px;margin:8px auto 0;background:linear-gradient(90deg,transparent,#C41E3A,transparent)}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media (max-width:768px){.levels{grid-template-columns:1fr;gap:14px}}
+  .level-card{
+    background:linear-gradient(180deg,#FFFDF5,#FDF5E6);border:3px solid #D4A76A;
+    border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;
+    transition:all .25s;position:relative;
+  }
+  .level-card:hover{transform:translateY(-6px);box-shadow:0 12px 28px rgba(139,90,43,.25);border-color:#C41E3A}
+  .level-card .e{font-size:56px;line-height:1;margin-bottom:10px}
+  .level-card .ln{font-size:20px;font-weight:900;color:#5D4037;letter-spacing:2px;margin-bottom:6px}
+  .level-card .ld{font-size:12px;color:#8D6E63;font-weight:700}
+  .level-card .ldiff{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:800}
+  .level-card .ldiff.easy{background:#E8F5E9;color:#2E7D32}
+  .level-card .ldiff.medium{background:#FFF8E1;color:#E65100}
+  .level-card .ldiff.hard{background:#FFEBEE;color:#C62828}
+
+  /* ── 游戏主界面 ── */
+  .game-area{}
+  .game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .game-header .timer{
+    background:#C41E3A;color:#FFEBC0;font-weight:900;font-size:18px;padding:8px 18px;
+    border-radius:24px;letter-spacing:1px;box-shadow:0 3px 8px rgba(196,30,58,.3);
+  }
+  .game-header .score{
+    background:#D4A76A;color:#FFFDF5;font-weight:900;font-size:18px;padding:8px 18px;
+    border-radius:24px;letter-spacing:1px;
+  }
+
+  .target-poem{
+    text-align:center;margin-bottom:24px;padding:20px 24px;
+    background:linear-gradient(135deg,#FFF8E1,#FFEBC0);border-radius:12px;
+    border:2px solid #D4A76A;
+  }
+  .target-poem .label{font-size:11px;color:#8D6E63;font-weight:800;letter-spacing:2px;margin-bottom:8px}
+  .target-poem .verse{
+    font-size:28px;font-weight:900;color:#5D4037;letter-spacing:4px;line-height:1.8;
+    font-family:'KaiTi','STKaiti','STSong',serif;
+  }
+  @media (max-width:768px){.target-poem .verse{font-size:20px;letter-spacing:2px}}
+
+  /* 字块散落区 */
+  .word-pool{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:24px;
+    min-height:80px;padding:16px;
+    background:linear-gradient(180deg,#FDF5E6,#FAEBD7);border-radius:12px;
+    border:2px dashed #D4A76A;
+  }
+  .word-block{
+    width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#FFFDF5,#F5E6D3);border:2px solid #B8860B;
+    border-radius:8px;font-size:22px;font-weight:900;color:#3D2812;
+    cursor:pointer;transition:all .15s;box-shadow:0 3px 0 #8B6914, 0 4px 8px rgba(0,0,0,.1);
+    font-family:'KaiTi','STKaiti','STSong',serif;user-select:none;
+  }
+  .word-block:hover{transform:translateY(-3px);box-shadow:0 6px 0 #8B6914, 0 8px 14px rgba(0,0,0,.15)}
+  .word-block.selected{background:#FFEBC0;border-color:#C41E3A;transform:translateY(-3px);box-shadow:0 6px 0 #8B0000, 0 8px 14px rgba(196,30,58,.25);color:#8B0000}
+  .word-block.used{opacity:.3;pointer-events:none;transform:none;box-shadow:0 2px 0 #ccc}
+
+  /* 答题区域 */
+  .answer-area{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;
+    min-height:72px;padding:16px;
+    background:#FFF8E1;border-radius:12px;border:2px solid #D4A76A;
+    margin-bottom:16px;
+  }
+  .answer-slot{
+    width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+    background:#FFEBC0;border:2px solid #C41E3A;border-radius:8px;
+    font-size:22px;font-weight:900;color:#8B0000;
+    box-shadow:0 3px 0 #8B0000;font-family:'KaiTi','STKaiti','STSong',serif;
+    cursor:pointer;
+  }
+  .answer-placeholder{
+    width:52px;height:52px;border:2px dashed #D4A76A;border-radius:8px;
+    background:rgba(255,255,255,.5);
+  }
+
+  .game-actions{display:flex;gap:12px;justify-content:center}
+  .game-btn{
+    padding:12px 28px;border-radius:24px;font-weight:900;font-size:15px;letter-spacing:2px;
+    border:none;cursor:pointer;font-family:inherit;transition:transform .15s;
+  }
+  .game-btn:hover{transform:translateY(-2px)}
+  .game-btn.submit{background:linear-gradient(135deg,#C41E3A,#8B0000);color:#FFEBC0;box-shadow:0 4px 12px rgba(196,30,58,.3)}
+  .game-btn.clear{background:#FFF8E1;border:2px solid #D4A76A;color:#5D4037;box-shadow:0 4px 10px rgba(139,90,43,.15)}
+  .game-btn.back{background:#F5E6D3;border:2px solid #D4A76A;color:#8D6E63}
+
+  /* ── 结果页 ── */
+  .result-area{text-align:center}
+  .result-area .score-big{font-size:72px;font-weight:900;color:#C41E3A;line-height:1;animation:scorePop .6s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes scorePop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  .result-area .score-label{font-size:14px;color:#8D6E63;font-weight:800;letter-spacing:2px;margin-top:4px}
+  .result-area .compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;text-align:left}
+  .result-area .compare-col{}
+  .result-area .compare-title{font-size:14px;font-weight:800;color:#5D4037;margin-bottom:8px;letter-spacing:1px}
+  .result-area .compare-verse{font-size:18px;font-weight:900;line-height:2;letter-spacing:2px}
+  .result-area .compare-verse.correct{color:#2E7D32}
+  .result-area .compare-verse.wrong{color:#C62828}
+  .result-area .culture-box{
+    margin-top:20px;padding:16px;background:linear-gradient(135deg,#FFF8E1,#FDF5E6);
+    border-radius:12px;border:2px solid #D4A76A;text-align:left;
+  }
+  .result-area .culture-box h4{font-size:14px;color:#8B0000;font-weight:900;letter-spacing:2px;margin-bottom:8px}
+  .result-area .culture-box p{font-size:13px;color:#5D4037;line-height:1.8}
+
+  .result-actions{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+
+  /* ── 排行榜弹窗 ── */
+  .veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .veil.show{display:flex}
+  .modal{
+    background:linear-gradient(180deg,#FFFDF5,#FDF5E6);border-radius:16px;
+    width:520px;max-width:100%;padding:28px;max-height:85vh;overflow-y:auto;
+    border:3px solid #D4A76A;box-shadow:0 24px 60px rgba(0,0,0,.3);
+    animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal h3{font-size:22px;font-weight:900;color:#8B0000;letter-spacing:3px;text-align:center;margin-bottom:16px}
+  .modal .close-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#8D6E63}
+  .rank-table{width:100%;border-collapse:collapse}
+  .rank-table th{background:#F5E6D3;padding:10px;font-size:12px;font-weight:800;color:#5D4037;letter-spacing:1px;border-bottom:2px solid #D4A76A}
+  .rank-table td{padding:10px;font-size:13px;border-bottom:1px solid #FAEBD7;text-align:center}
+  .rank-table .rank-1{background:#FFD54F;font-weight:900;color:#5D4037}
+  .rank-table .rank-2{background:#E0E0E0;font-weight:900;color:#5D4037}
+  .rank-table .rank-3{background:#FFCC80;font-weight:900;color:#5D4037}
+  .rank-tabs{display:flex;gap:8px;margin-bottom:14px;justify-content:center}
+  .rank-tab{padding:8px 16px;border-radius:12px;border:2px solid #D4A76A;background:#FFFDF5;color:#5D4037;font-weight:800;font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+  .rank-tab.active{background:#C41E3A;color:#FFEBC0;border-color:#8B0000}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#8B0000;color:#FFEBC0;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(139,0,0,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>💙 素养岛 · 朗读小游戏</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar" id="stuAvatar">林</div>
+      <div class="stu-info">
+        <div class="name" id="stuName">林**</div>
+        <div class="meta" id="stuMeta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth&&UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #D4A76A;background:#FFF8E1;color:#5D4037;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 关卡选择 -->
+  <div id="levelScreen">
+    <div class="paper-card">
+      <div class="level-title">
+        <h1>📜 朗读小游戏</h1>
+        <span class="brush"></span>
+      </div>
+      <p style="text-align:center;color:#8D6E63;font-weight:800;font-size:13px;letter-spacing:1px;margin-bottom:20px">
+        将下方散落的字块按正确顺序排列，还原古诗词！
+      </p>
+      <div class="levels">
+        <div class="level-card" onclick="startGame('easy')">
+          <div class="e">🟢</div>
+          <div class="ln">五言绝句</div>
+          <div class="ld">5 个字一句</div>
+          <span class="ldiff easy">简单</span>
+        </div>
+        <div class="level-card" onclick="startGame('medium')">
+          <div class="e">🟡</div>
+          <div class="ln">七言律诗</div>
+          <div class="ld">7 个字一句</div>
+          <span class="ldiff medium">中等</span>
+        </div>
+        <div class="level-card" onclick="startGame('hard')">
+          <div class="e">🔴</div>
+          <div class="ln">词曲长篇</div>
+          <div class="ld">10+ 个字一句</div>
+          <span class="ldiff hard">困难</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 游戏界面 -->
+  <div id="gameScreen" style="display:none">
+    <div class="game-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="game-btn back" onclick="backToLevel()" style="padding:8px 16px;font-size:13px">◀ 返回</button>
+      </div>
+      <div class="timer" id="timerDisplay">⏱ 00:00</div>
+      <div class="score" id="gameScore">⭐ 0</div>
+    </div>
+
+    <div class="paper-card">
+      <div class="target-poem">
+        <div class="label">—— 请朗读并还原以下诗句 ——</div>
+        <div class="verse" id="targetVerse"></div>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:#8D6E63;font-weight:800;margin-bottom:12px;letter-spacing:1px">
+        ▼ 点击字块选择，再点一次取消 ▼
+      </div>
+
+      <!-- 答题区 -->
+      <div class="answer-area" id="answerArea"></div>
+
+      <!-- 字块区 -->
+      <div style="text-align:center;font-size:12px;color:#8D6E63;font-weight:800;margin:16px 0 8px;letter-spacing:1px">
+        ▼ 散落的字块 ▼
+      </div>
+      <div class="word-pool" id="wordPool"></div>
+
+      <div class="game-actions">
+        <button class="game-btn clear" onclick="clearAnswer()">🔄 清空</button>
+        <button class="game-btn submit" onclick="submitAnswer()">✅ 提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果界面 -->
+  <div id="resultScreen" style="display:none">
+    <div class="paper-card">
+      <div class="result-area">
+        <div class="score-big" id="finalScore">100</div>
+        <div class="score-label">分</div>
+        <div style="margin-top:8px;color:#8D6E63;font-weight:800;font-size:14px" id="resultMsg"></div>
+
+        <div class="compare" id="compareArea"></div>
+
+        <div class="culture-box" id="cultureBox"></div>
+
+        <div class="result-actions">
+          <button class="game-btn back" onclick="backToLevel()">📜 换一题</button>
+          <button class="game-btn submit" onclick="openRanking()">🏆 排行榜</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 排行榜弹窗 -->
+<div class="veil" id="rankVeil">
+  <div class="modal" style="position:relative">
+    <button class="close-btn" onclick="closeRanking()">✕</button>
+    <h3>🏆 诗词排行榜</h3>
+    <div class="rank-tabs" id="rankTabs">
+      <button class="rank-tab active" onclick="switchRankTab('class')">👥 本班</button>
+      <button class="rank-tab" onclick="switchRankTab('school')">🏫 全校</button>
+    </div>
+    <div id="rankTableArea"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 工具 ============
+function getToken(){ return (window.UserAuth&&UserAuth.getToken)?UserAuth.getToken():sessionStorage.getItem('bs_session_token')||''; }
+function getIdCard(){
+  if(window.UserAuth&&UserAuth.getIdCard) return UserAuth.getIdCard();
+  if(window.UserAuth&&UserAuth.getCurrentIdCard) return UserAuth.getCurrentIdCard();
+  return 'demo_001';
+}
+async function api(path, opts={}){
+  const token = getToken();
+  const headers = opts.headers||{};
+  if(token) headers['Authorization'] = 'Bearer '+token;
+  const res = await fetch(location.origin+path,{...opts,headers});
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+function goHome(){ location.href='island-homepage.html'; }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ============ 游戏状态 ============
+let gameLevel = 'easy';
+let currentPoem = null;
+let selectedWords = [];
+let availablePool = [];
+let timerInterval = null;
+let startTime = 0;
+let elapsedSec = 0;
+
+// ============ 关卡选择 → 开始游戏 ============
+async function startGame(level){
+  gameLevel = level;
+  try{
+    const data = await api('/api/reading-aloud/poems?level='+level);
+    const poems = data.poems||data.rows||data||[];
+    if(!Array.isArray(poems)||!poems.length){
+      showToast('暂无该难度诗词');
+      return;
+    }
+    currentPoem = poems[Math.floor(Math.random()*poems.length)];
+    initGameUI();
+  }catch(e){
+    showToast('加载失败：'+e.message);
+    // 兜底：使用内置诗词
+    const fallback = {
+      easy: [{verse:'床前明月光',title:'静夜思',author:'李白',culture:'《静夜思》是唐代大诗人李白的代表作之一，短短二十字，表达了游子对故乡的深深思念。'}],
+      medium: [{verse:'春蚕到死丝方尽',title:'无题',author:'李商隐',culture:'李商隐以"春蚕"和"蜡炬"为喻，表达了至死不渝的深情与奉献精神。"丝"与"思"谐音，一语双关。'}],
+      hard: [{verse:'大江东去浪淘尽',title:'念奴娇',author:'苏轼',culture:'苏轼被贬黄州时所作，以磅礴气势描绘长江的壮阔，借古抒怀，表达了豁达的人生态度。"浪淘尽"暗喻时光流逝，英雄不再。'}]
+    };
+    const pool = fallback[level]||fallback.easy;
+    currentPoem = pool[Math.floor(Math.random()*pool.length)];
+    initGameUI();
+  }
+}
+
+function initGameUI(){
+  selectedWords = [];
+  const chars = currentPoem.verse.replace(/\s/g,'').split('');
+  availablePool = [...chars].sort(()=>Math.random()-.5);
+  elapsedSec = 0;
+
+  document.getElementById('levelScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  document.getElementById('resultScreen').style.display = 'none';
+
+  document.getElementById('targetVerse').textContent = currentPoem.verse;
+  document.getElementById('gameScore').textContent = '⭐ 0';
+  updateTimer();
+  renderWordPool();
+  renderAnswerArea();
+
+  if(timerInterval) clearInterval(timerInterval);
+  startTime = Date.now();
+  timerInterval = setInterval(()=>{
+    elapsedSec = Math.floor((Date.now()-startTime)/1000);
+    updateTimer();
+  }, 200);
+}
+
+function updateTimer(){
+  const m = String(Math.floor(elapsedSec/60)).padStart(2,'0');
+  const s = String(elapsedSec%60).padStart(2,'0');
+  document.getElementById('timerDisplay').textContent = '⏱ '+m+':'+s;
+}
+
+function renderWordPool(){
+  const pool = document.getElementById('wordPool');
+  pool.innerHTML = availablePool.map((ch,i)=>{
+    const used = selectedWords.includes(ch) &&
+      selectedWords.filter(w=>w===ch).length >=
+      availablePool.filter((_,j)=>availablePool[j]===ch&&!selectedWords.includes(ch+'@'+j)).length;
+    // Simpler approach: track by index
+    const selIdx = selectedWords.findIndex(w=>w===ch&&!availablePool.some((a,ai)=>a===ch&&ai===i&&selectedWords.includes(a+'@'+ai)));
+    return `<div class="word-block" onclick="pickWord(${i})" id="wb${i}">${ch}</div>`;
+  }).join('');
+}
+
+function renderAnswerArea(){
+  const area = document.getElementById('answerArea');
+  const totalChars = currentPoem.verse.replace(/\s/g,'').length;
+  let html = '';
+  for(let i=0;i<totalChars;i++){
+    if(i<selectedWords.length){
+      html += `<div class="answer-slot" onclick="removeWord(${i})">${selectedWords[i]}</div>`;
+    }else{
+      html += '<div class="answer-placeholder"></div>';
+    }
+  }
+  area.innerHTML = html;
+}
+
+function pickWord(idx){
+  const ch = availablePool[idx];
+  if(!ch) return;
+  const block = document.getElementById('wb'+idx);
+  if(block&&block.classList.contains('used')) return;
+  selectedWords.push(ch);
+  if(block) block.classList.add('used');
+  renderAnswerArea();
+}
+
+function removeWord(idx){
+  selectedWords.splice(idx,1);
+  // re-render word pool to reset used states
+  renderWordPool();
+  renderAnswerArea();
+}
+
+function clearAnswer(){
+  selectedWords = [];
+  renderWordPool();
+  renderAnswerArea();
+}
+
+// ============ 提交 ============
+function submitAnswer(){
+  if(!currentPoem) return;
+  const correct = currentPoem.verse.replace(/\s/g,'');
+  const answer = selectedWords.join('');
+  const isCorrect = answer === correct;
+
+  // 计分：正确+用时
+  const maxScore = 100;
+  const timePenalty = Math.min(elapsedSec, 60);
+  const score = isCorrect ? Math.max(maxScore-timePenalty, 40) : Math.max(20-answer.length, 5);
+
+  if(timerInterval) clearInterval(timerInterval);
+
+  // 提交到API
+  if(isCorrect){
+    api('/api/reading-aloud/score', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        id_card: getIdCard(),
+        poem_id: currentPoem.id||'',
+        level: gameLevel,
+        score, time_sec: elapsedSec,
+        verse: correct
+      })
+    }).catch(()=>{});
+  }
+
+  // 切换结果页
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'block';
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('resultMsg').textContent = isCorrect ? '🎉 太棒了！完美还原！' : '😅 还差一点点，继续加油！';
+
+  // 对比
+  const correctChars = correct.split('');
+  document.getElementById('compareArea').innerHTML = `
+    <div class="compare-col">
+      <div class="compare-title">✅ 正确答案</div>
+      <div class="compare-verse correct">${correct}</div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-title">📝 你的答案</div>
+      <div class="compare-verse wrong">${answer||'(空)'}</div>
+    </div>`;
+
+  // 文化背景
+  const culture = currentPoem.culture||currentPoem.background||'';
+  if(culture){
+    document.getElementById('cultureBox').innerHTML = `
+      <h4>📖 ${currentPoem.title||''} · ${currentPoem.author||''}</h4>
+      <p>${culture}</p>`;
+  }else{
+    document.getElementById('cultureBox').innerHTML = `
+      <h4>📖 ${currentPoem.title||'诗词'}</h4>
+      <p>作者：${currentPoem.author||'未知'} · 朝代：${currentPoem.dynasty||'未知'}</p>`;
+  }
+}
+
+function backToLevel(){
+  if(timerInterval) clearInterval(timerInterval);
+  document.getElementById('levelScreen').style.display = 'block';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+}
+
+// ============ 排行榜 ============
+let rankTab = 'class';
+function openRanking(){
+  document.getElementById('rankVeil').classList.add('show');
+  rankTab = 'class';
+  document.querySelectorAll('#rankTabs .rank-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  loadRanking();
+}
+function closeRanking(){ document.getElementById('rankVeil').classList.remove('show'); }
+function switchRankTab(tab){ rankTab=tab; loadRanking();
+  document.querySelectorAll('#rankTabs .rank-tab').forEach(b=>b.classList.toggle('active',b.textContent.includes(tab==='class'?'本班':'全校')));
+}
+
+async function loadRanking(){
+  const area = document.getElementById('rankTableArea');
+  area.innerHTML = '<div style="text-align:center;padding:20px;color:#8D6E63">加载中…</div>';
+  try{
+    const data = await api('/api/reading-aloud/ranking?scope='+rankTab+'&level='+gameLevel);
+    const rows = data.ranking||data.rows||data||[];
+    if(!Array.isArray(rows)||!rows.length){ area.innerHTML='<div style="text-align:center;padding:20px;color:#8D6E63">暂无排名数据</div>'; return; }
+    const rankClass = ['','rank-1','rank-2','rank-3'];
+    area.innerHTML = `
+      <table class="rank-table">
+        <thead><tr><th>排名</th><th>姓名</th><th>完成率</th><th>最佳用时</th><th>最高分</th></tr></thead>
+        <tbody>
+          ${rows.map((r,i)=>{
+            const cls = i<3?rankClass[i+1]:'';
+            return `<tr>
+              <td class="${cls}">${i+1}</td>
+              <td class="${cls}">${r.name||r.displayName||'同学'}</td>
+              <td>${r.completion_rate||r.rate||0}%</td>
+              <td>${r.best_time||r.time||0}秒</td>
+              <td>⭐ ${r.max_score||r.score||0}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }catch(e){ area.innerHTML='<div style="text-align:center;padding:20px;color:#C62828">加载失败</div>'; }
+}
+
+// ============ 初始化 ============
+(function init(){
+  if(window.UserAuth){ UserAuth.ready(()=>{
+    const info = UserAuth.getCurrentStudentInfo&&UserAuth.getCurrentStudentInfo();
+    if(!info) return;
+    document.getElementById('stuAvatar').textContent=(info.displayName||'生').charAt(0);
+    document.getElementById('stuName').textContent=info.displayName||'***';
+    document.getElementById('stuMeta').textContent=(info.grade||'')+' · '+(info.class||'');
+  });}
+})();
+</script>
+
+</body>
+</html>

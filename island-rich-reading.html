@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>满载版阅读岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#FFF8E5 0%, #FFE0B0 100%);color:#1F3A4D;padding:30px 20px 60px;min-height:100vh}
+  .head{max-width:1400px;margin:0 auto 20px}
+  .head h1{font-size:30px;font-weight:900;letter-spacing:3px;color:#3D2812}
+  .head p{margin-top:8px;font-size:14px;color:#7A4F1B;line-height:1.7}
+  .stage{max-width:1400px;margin:0 auto;background:linear-gradient(180deg,#F5D4A0 0%, #FFB890 25%, #BFE6FF 55%, #6FC8F0 90%, #2E8FBE 100%);border-radius:24px;overflow:hidden;box-shadow:0 16px 50px rgba(60,40,20,0.18);position:relative}
+  .stage svg{width:100%;display:block}
+  .legend{position:absolute;left:20px;top:20px;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-radius:16px;padding:14px 16px;font-size:12px;line-height:1.7;box-shadow:0 6px 18px rgba(0,40,80,0.18);max-width:240px}
+  .legend h3{font-size:14px;font-weight:900;color:#0E5E80;margin-bottom:8px;letter-spacing:1px}
+  .legend ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:4px}
+  .legend li{background:#F4FAFD;border:1px solid #DCEBF3;border-radius:8px;padding:2px 7px;font-size:11px;color:#0E5E80;font-weight:700}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>📖 满载版「阅读岛」</h1>
+  <p>巨型灯塔 + 露天书厅 + 故事剧场 + 书车 + 书架阶梯 + 书精灵 + 飘浮书 + 大开书雕塑 + 多个学生角色…… <strong>30+ 元素</strong></p>
+</div>
+<div class="stage">
+  <div class="legend">
+    <h3>🔍 这座岛上有……</h3>
+    <ul>
+      <li>巨型灯塔（光束）</li><li>露天书厅</li><li>故事剧场</li>
+      <li>大开书雕塑</li><li>书架阶梯</li><li>书车</li>
+      <li>书亭</li><li>书精灵</li><li>飘浮书 ×5</li>
+      <li>学生 ×4</li><li>说书人</li><li>读书椅</li>
+      <li>路灯</li><li>彩旗</li><li>书堆</li>
+      <li>木桥</li><li>蘑菇凳</li><li>蝴蝶</li><li>小鸟</li>
+      <li>沙滩贝壳</li><li>风车船</li>
+    </ul>
+  </div>
+
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFF8C8"/><stop offset="60%" stop-color="#FFC23F"/><stop offset="100%" stop-color="#FF8C42" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FD2F1"/><stop offset="100%" stop-color="#3FA8D8"/></linearGradient>
+      <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DDB6A"/><stop offset="100%" stop-color="#5FA830"/></linearGradient>
+      <linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0B2"/><stop offset="100%" stop-color="#E0A878"/></linearGradient>
+      <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A89F94"/><stop offset="100%" stop-color="#5E544A"/></linearGradient>
+
+      <symbol id="bookS" viewBox="0 0 20 28">
+        <rect x="0" y="0" width="6" height="28" fill="#E94B6A" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="7" y="0" width="6" height="28" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="0" width="6" height="28" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      </symbol>
+      <symbol id="openBook" viewBox="0 0 36 22">
+        <path d="M2 4 L18 0 L18 22 L2 18 Z" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <path d="M18 0 L34 4 L34 18 L18 22 Z" fill="#fff" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="6" y1="8" x2="14" y2="6" stroke="#7BB8DA" stroke-width=".8"/>
+        <line x1="6" y1="12" x2="14" y2="10" stroke="#7BB8DA" stroke-width=".8"/>
+        <line x1="22" y1="6" x2="30" y2="8" stroke="#7BB8DA" stroke-width=".8"/>
+        <line x1="22" y1="10" x2="30" y2="12" stroke="#7BB8DA" stroke-width=".8"/>
+      </symbol>
+      <symbol id="lantern" viewBox="0 0 16 24">
+        <line x1="8" y1="0" x2="8" y2="3" stroke="#3D2812" stroke-width="1.5"/>
+        <ellipse cx="8" cy="12" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="2" y1="12" x2="14" y2="12" stroke="#3D2812" stroke-width="1"/>
+      </symbol>
+      <symbol id="butterfly" viewBox="0 0 24 16">
+        <ellipse cx="8" cy="8" rx="6" ry="7" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <ellipse cx="16" cy="8" rx="6" ry="7" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="12" y1="3" x2="12" y2="13" stroke="#3D2812" stroke-width="2"/>
+      </symbol>
+      <symbol id="bird" viewBox="0 0 24 16">
+        <ellipse cx="10" cy="8" rx="7" ry="5" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="16" cy="6" r="3.5" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="17" cy="5" r=".8" fill="#3D2812"/>
+        <path d="M19 6 L22 5 L19 7 Z" fill="#FF8C42" stroke="#3D2812" stroke-width="1"/>
+      </symbol>
+      <symbol id="mushChair" viewBox="0 0 24 24">
+        <rect x="9" y="14" width="6" height="9" fill="#FFF6DD" stroke="#3D2812" stroke-width="1.5"/>
+        <path d="M2 14 Q2 4 12 4 Q22 4 22 14 Z" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+        <circle cx="6" cy="8" r="1.5" fill="#fff"/>
+        <circle cx="16" cy="8" r="1.5" fill="#fff"/>
+      </symbol>
+
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+        <feOffset dx="0" dy="2" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- 太阳（傍晚色） -->
+    <circle cx="1380" cy="160" r="120" fill="url(#sun)" opacity=".85"/>
+    <g stroke="#3D2812" stroke-width="3" stroke-linejoin="round">
+      <circle cx="1380" cy="160" r="50" fill="#FF9F4A"/>
+      <g stroke-linecap="round">
+        <line x1="1380" y1="80" x2="1380" y2="98"/><line x1="1380" y1="222" x2="1380" y2="240"/>
+        <line x1="1300" y1="160" x2="1318" y2="160"/><line x1="1442" y1="160" x2="1460" y2="160"/>
+        <animateTransform attributeName="transform" type="rotate" from="0 1380 160" to="360 1380 160" dur="40s" repeatCount="indefinite"/>
+      </g>
+      <circle cx="1366" cy="155" r="3" fill="#3D2812" stroke="none"/>
+      <circle cx="1394" cy="155" r="3" fill="#3D2812" stroke="none"/>
+      <path d="M1366 172 Q1380 182 1394 172" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- 云 -->
+    <g fill="#fff" stroke="#3D2812" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M120 130 Q120 110 145 112 Q150 95 175 102 Q200 95 200 120 Q220 122 215 138 Q180 142 145 138 Q120 142 120 130 Z"/>
+      <path d="M650 70 Q650 55 670 57 Q673 45 690 48 Q708 45 708 65 Q722 65 720 78 Q692 82 670 80 Q650 82 650 70 Z"/>
+    </g>
+
+    <!-- 远山 -->
+    <g opacity=".55">
+      <path d="M0 480 Q200 420 400 460 Q600 480 800 430 Q1000 410 1200 460 Q1400 480 1600 440 L1600 540 L0 540 Z" fill="#7BB8DA"/>
+    </g>
+
+    <!-- 海 -->
+    <rect x="0" y="540" width="1600" height="460" fill="url(#seaG)"/>
+    <g stroke="#fff" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round">
+      <path d="M80 700 Q120 690 160 700"/><path d="M280 770 Q320 760 360 770"/>
+      <path d="M540 720 Q580 710 620 720"/><path d="M1080 760 Q1120 750 1160 760"/>
+      <path d="M1340 700 Q1380 690 1420 700"/>
+    </g>
+
+    <!-- 风车船 -->
+    <g transform="translate(140 770)">
+      <ellipse cx="0" cy="0" rx="50" ry="6" fill="#000" opacity=".18"/>
+      <path d="M-46 -4 L46 -4 Q52 8 38 16 L-38 16 Q-52 8 -46 -4 Z" fill="#22C55E" stroke="#3D2812" stroke-width="2"/>
+      <line x1="0" y1="-4" x2="0" y2="-60" stroke="#7A4F1B" stroke-width="3"/>
+      <path d="M0 -58 L26 -42 L0 -28 Z" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+      <path d="M0 -58 L-26 -42 L0 -28 Z" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+      <animateTransform attributeName="transform" type="translate" values="140 770;144 774;140 770" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 主岛（石头基底） ═══ -->
+    <ellipse cx="800" cy="940" rx="700" ry="40" fill="#000" opacity=".22"/>
+    <path d="M120 880 Q200 940 800 940 Q1400 940 1480 880 Q1400 860 800 858 Q200 860 120 880 Z" fill="url(#sandG)" stroke="#3D2812" stroke-width="3"/>
+    <path d="M180 870 Q280 700 800 690 Q1320 700 1420 870 Q1380 880 800 880 Q220 880 180 870 Z" fill="url(#grassG)" stroke="#3D2812" stroke-width="3"/>
+
+    <!-- 沙滩贝壳 -->
+    <g transform="translate(220 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#FFD3D8" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(1380 905)">
+      <path d="M0 12 Q-10 0 0 -8 Q10 0 0 12 Z" fill="#A893E8" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- 石板路 -->
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#D4B07C" stroke-width="44" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#3D2812" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M280 880 Q420 820 560 800 Q700 780 800 770 Q900 760 1040 770 Q1200 780 1340 850" stroke="#A8835A" stroke-width="40" fill="none" stroke-linecap="round" stroke-dasharray="20 12" opacity=".5"/>
+
+    <!-- ═══ 1. 巨型灯塔（中间偏左，最高建筑） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(680 360)">
+        <!-- 岩石底座 -->
+        <ellipse cx="40" cy="370" rx="80" ry="14" fill="url(#rock)" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 主塔身（红白相间） -->
+        <rect x="10" y="60" width="60" height="320" fill="#fff" stroke="#3D2812" stroke-width="3"/>
+        <rect x="10" y="60" width="60" height="40" fill="#E94B6A" stroke="#3D2812" stroke-width="3"/>
+        <rect x="10" y="140" width="60" height="40" fill="#E94B6A" stroke="#3D2812" stroke-width="3"/>
+        <rect x="10" y="220" width="60" height="40" fill="#E94B6A" stroke="#3D2812" stroke-width="3"/>
+        <rect x="10" y="300" width="60" height="40" fill="#E94B6A" stroke="#3D2812" stroke-width="3"/>
+        <!-- 灯室 -->
+        <rect x="-2" y="38" width="84" height="14" fill="#7A4F1B" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="14" y="0" width="52" height="38" fill="#FFE672" stroke="#3D2812" stroke-width="3"/>
+        <line x1="14" y1="14" x2="66" y2="14" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="14" y1="26" x2="66" y2="26" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 屋顶 -->
+        <polygon points="6,2 74,2 40,-30" fill="#5A2018" stroke="#3D2812" stroke-width="3"/>
+        <line x1="40" y1="-30" x2="40" y2="-46" stroke="#3D2812" stroke-width="2.5"/>
+        <circle cx="40" cy="-50" r="4" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 灯光束（双向） -->
+        <path d="M82 18 L160 -28 L160 64 Z" fill="#FFEE9C" opacity=".55">
+          <animate attributeName="opacity" values=".55;.85;.55" dur="2.5s" repeatCount="indefinite"/>
+        </path>
+        <path d="M-2 18 L-80 -28 L-80 64 Z" fill="#FFEE9C" opacity=".55">
+          <animate attributeName="opacity" values=".55;.85;.55" dur="2.5s" repeatCount="indefinite" begin="-1.2s"/>
+        </path>
+        <!-- 门 -->
+        <path d="M28 380 L28 348 Q28 332 40 332 Q52 332 52 348 L52 380 Z" fill="#5A3712" stroke="#3D2812" stroke-width="2.5"/>
+        <circle cx="34" cy="362" r="1.5" fill="#FFD86A"/>
+        <!-- 阳台 -->
+        <rect x="2" y="50" width="76" height="6" fill="#A06B3C" stroke="#3D2812" stroke-width="2"/>
+        <line x1="14" y1="56" x2="14" y2="60" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="26" y1="56" x2="26" y2="60" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="40" y1="56" x2="40" y2="60" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="54" y1="56" x2="54" y2="60" stroke="#3D2812" stroke-width="1.5"/>
+        <line x1="66" y1="56" x2="66" y2="60" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 2. 露天书厅（右侧，圆形+柱子） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1080 720)">
+        <!-- 平台 -->
+        <ellipse cx="0" cy="80" rx="120" ry="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <ellipse cx="0" cy="74" rx="115" ry="10" fill="#D4B07C" stroke="#3D2812" stroke-width="2"/>
+        <!-- 6 根柱子 -->
+        <g stroke="#3D2812" stroke-width="2">
+          <rect x="-100" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <rect x="-60" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <rect x="-20" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <rect x="20" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <rect x="60" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <rect x="90" y="-40" width="10" height="115" fill="#FFF6DD"/>
+          <ellipse cx="-95" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+          <ellipse cx="-55" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+          <ellipse cx="-15" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+          <ellipse cx="25" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+          <ellipse cx="65" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+          <ellipse cx="95" cy="-40" rx="8" ry="3" fill="#E8C896"/>
+        </g>
+        <!-- 圆顶 -->
+        <path d="M-110 -38 Q-110 -90 0 -90 Q110 -90 110 -38 Z" fill="#5BC8E8" stroke="#3D2812" stroke-width="3"/>
+        <!-- 顶部圆球 -->
+        <line x1="0" y1="-90" x2="0" y2="-110" stroke="#3D2812" stroke-width="2.5"/>
+        <circle cx="0" cy="-114" r="6" fill="#FFD86A" stroke="#3D2812" stroke-width="2"/>
+        <!-- 书架（柱间） -->
+        <g stroke="#3D2812" stroke-width="2">
+          <rect x="-50" y="20" width="40" height="50" fill="#A06B3C"/>
+          <line x1="-50" y1="32" x2="-10" y2="32"/>
+          <line x1="-50" y1="46" x2="-10" y2="46"/>
+          <line x1="-50" y1="60" x2="-10" y2="60"/>
+          <use href="#bookS" x="-46" y="22" width="10" height="10"/>
+          <use href="#bookS" x="-34" y="22" width="10" height="10"/>
+          <use href="#bookS" x="-22" y="22" width="10" height="10"/>
+          <use href="#bookS" x="-46" y="36" width="10" height="10"/>
+          <use href="#bookS" x="-34" y="36" width="10" height="10"/>
+          <use href="#bookS" x="-22" y="36" width="10" height="10"/>
+          <use href="#bookS" x="-46" y="50" width="10" height="10"/>
+          <use href="#bookS" x="-34" y="50" width="10" height="10"/>
+        </g>
+        <!-- 招牌 -->
+        <rect x="-40" y="-78" width="80" height="14" fill="#fff" stroke="#3D2812" stroke-width="2" rx="2"/>
+        <text x="0" y="-67" text-anchor="middle" font-weight="900" font-size="9" fill="#3D2812">书海大讲堂</text>
+      </g>
+    </g>
+
+    <!-- ═══ 3. 故事剧场（左前小舞台） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(310 770)">
+        <!-- 舞台 -->
+        <rect x="-50" y="50" width="100" height="40" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 帷幕 -->
+        <path d="M-58 50 L-58 0 L58 0 L58 50 L40 50 Q40 28 30 50 Q20 28 10 50 Q0 28 -10 50 Q-20 28 -30 50 Q-40 28 -50 50 Z" fill="#7C5BCC" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-58" y1="0" x2="58" y2="0" stroke="#FFD86A" stroke-width="3"/>
+        <!-- 招牌 -->
+        <rect x="-30" y="-14" width="60" height="14" fill="#FF6B6B" stroke="#3D2812" stroke-width="2" rx="2"/>
+        <text x="0" y="-3" text-anchor="middle" font-weight="900" font-size="9" fill="#fff">故事剧场</text>
+        <!-- 说书人（兔子） -->
+        <g transform="translate(0 30)">
+          <ellipse cx="0" cy="14" rx="10" ry="14" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+          <circle cx="0" cy="-2" r="9" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+          <ellipse cx="-5" cy="-16" rx="3" ry="9" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+          <ellipse cx="5" cy="-16" rx="3" ry="9" fill="#fff" stroke="#3D2812" stroke-width="2"/>
+          <ellipse cx="-5" cy="-16" rx="1.5" ry="6" fill="#FFCFD6"/>
+          <ellipse cx="5" cy="-16" rx="1.5" ry="6" fill="#FFCFD6"/>
+          <circle cx="-3" cy="-3" r="1.4" fill="#3D2812"/>
+          <circle cx="3" cy="-3" r="1.4" fill="#3D2812"/>
+          <circle cx="-5" cy="2" r="2" fill="#FFCFD6" opacity=".8"/>
+          <circle cx="5" cy="2" r="2" fill="#FFCFD6" opacity=".8"/>
+          <path d="M-2 4 Q0 6 2 4" stroke="#3D2812" stroke-width="1.2" fill="none"/>
+          <!-- 举着书 -->
+          <use href="#openBook" x="-14" y="10" width="28" height="18"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 4. 大开书雕塑（右下） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1300 830)">
+        <rect x="-30" y="20" width="60" height="14" fill="#A8835A" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M-36 22 L0 14 L0 -16 L-36 -8 Z" fill="#fff" stroke="#3D2812" stroke-width="2.5"/>
+        <path d="M0 14 L36 22 L36 -8 L0 -16 Z" fill="#fff" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="0" y1="-16" x2="0" y2="14" stroke="#3D2812" stroke-width="1.5"/>
+        <g stroke="#7BB8DA" stroke-width="1" opacity=".8">
+          <line x1="-30" y1="-2" x2="-6" y2="-6"/><line x1="-30" y1="4" x2="-6" y2="0"/>
+          <line x1="-30" y1="10" x2="-6" y2="6"/>
+          <line x1="6" y1="-6" x2="30" y2="-2"/><line x1="6" y1="0" x2="30" y2="4"/>
+          <line x1="6" y1="6" x2="30" y2="10"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══ 5. 书架阶梯（左前） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(450 800)">
+        <!-- 三层书架 -->
+        <rect x="-30" y="40" width="60" height="20" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="-25" y="20" width="50" height="20" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <rect x="-20" y="0" width="40" height="20" fill="#A06B3C" stroke="#3D2812" stroke-width="2.5"/>
+        <use href="#bookS" x="-26" y="42" width="14" height="16"/>
+        <use href="#bookS" x="-10" y="42" width="14" height="16"/>
+        <use href="#bookS" x="6" y="42" width="14" height="16"/>
+        <use href="#bookS" x="-22" y="22" width="14" height="16"/>
+        <use href="#bookS" x="-6" y="22" width="14" height="16"/>
+        <use href="#bookS" x="10" y="22" width="14" height="16"/>
+        <use href="#bookS" x="-18" y="2" width="14" height="16"/>
+        <use href="#bookS" x="-2" y="2" width="14" height="16"/>
+      </g>
+    </g>
+
+    <!-- ═══ 6. 书车（中间路边） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(880 850)">
+        <!-- 车身 -->
+        <rect x="-30" y="0" width="60" height="32" fill="#FFD86A" stroke="#3D2812" stroke-width="2.5"/>
+        <!-- 书 -->
+        <use href="#bookS" x="-26" y="2" width="14" height="20"/>
+        <use href="#bookS" x="-10" y="2" width="14" height="20"/>
+        <use href="#bookS" x="6" y="2" width="14" height="20"/>
+        <!-- 招牌小旗 -->
+        <line x1="-30" y1="0" x2="-30" y2="-20" stroke="#3D2812" stroke-width="2"/>
+        <polygon points="-30,-20 -10,-16 -30,-12" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+        <!-- 轮子 -->
+        <circle cx="-20" cy="34" r="6" fill="#3D2812"/>
+        <circle cx="-20" cy="34" r="2.5" fill="#fff"/>
+        <circle cx="20" cy="34" r="6" fill="#3D2812"/>
+        <circle cx="20" cy="34" r="2.5" fill="#fff"/>
+        <!-- 把手 -->
+        <line x1="30" y1="10" x2="44" y2="6" stroke="#3D2812" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="46" cy="6" r="3" fill="#A06B3C" stroke="#3D2812" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- ═══ 7. 书亭（小卖书亭） ═══ -->
+    <g filter="url(#soft)">
+      <g transform="translate(1180 770)">
+        <rect x="0" y="20" width="80" height="60" fill="#A893E8" stroke="#3D2812" stroke-width="2.5"/>
+        <polygon points="-8,22 88,22 40,-12" fill="#FFD86A" stroke="#3D2812" stroke-width="2.5"/>
+        <line x1="-4" y1="12" x2="84" y2="12" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="34" width="52" height="30" fill="#A8E0F0" stroke="#3D2812" stroke-width="2"/>
+        <line x1="40" y1="34" x2="40" y2="64" stroke="#3D2812" stroke-width="1.5"/>
+        <rect x="14" y="-2" width="52" height="12" fill="#fff" stroke="#3D2812" stroke-width="1.5" rx="2"/>
+        <text x="40" y="7" text-anchor="middle" font-weight="900" font-size="8" fill="#3D2812">借书亭</text>
+      </g>
+    </g>
+
+    <!-- ═══ 8. 书精灵（在灯塔旁飞） ═══ -->
+    <g transform="translate(820 540)" filter="url(#soft)">
+      <!-- 帽子 -->
+      <path d="M-16 -6 Q0 -22 16 -6 L14 -16 Q0 -32 -14 -16 Z" fill="#5C42A0" stroke="#3D2812" stroke-width="2.5"/>
+      <rect x="-2" y="-30" width="4" height="14" fill="#FFD86A" stroke="#3D2812" stroke-width="1"/>
+      <circle cx="0" cy="-32" r="3" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <!-- 脸 -->
+      <circle cx="0" cy="0" r="14" fill="#FFE6D0" stroke="#3D2812" stroke-width="2.5"/>
+      <circle cx="-5" cy="-1" r="2" fill="#3D2812"/>
+      <circle cx="5" cy="-1" r="2" fill="#3D2812"/>
+      <circle cx="-5" cy="-1" r=".7" fill="#fff"/>
+      <circle cx="5" cy="-1" r=".7" fill="#fff"/>
+      <path d="M-3 6 Q0 10 3 6" stroke="#3D2812" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="-9" cy="3" r="2.5" fill="#FFB3B3" opacity=".7"/>
+      <circle cx="9" cy="3" r="2.5" fill="#FFB3B3" opacity=".7"/>
+      <!-- 翅膀（透明） -->
+      <ellipse cx="-18" cy="6" rx="6" ry="14" fill="#fff" opacity=".7" stroke="#3D2812" stroke-width="1.5">
+        <animate attributeName="rx" values="6;3;6" dur="0.6s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="18" cy="6" rx="6" ry="14" fill="#fff" opacity=".7" stroke="#3D2812" stroke-width="1.5">
+        <animate attributeName="rx" values="6;3;6" dur="0.6s" repeatCount="indefinite"/>
+      </ellipse>
+      <!-- 浮动 -->
+      <animateTransform attributeName="transform" type="translate" values="820 540;820 524;820 540" dur="3s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- ═══ 9. 飘浮书（5 本） ═══ -->
+    <g>
+      <use href="#openBook" x="0" y="0" width="40" height="24">
+        <animateMotion dur="12s" repeatCount="indefinite" path="M820 600 Q900 580 950 620 Q900 660 820 600"/>
+        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/>
+      </use>
+      <use href="#openBook" x="0" y="0" width="34" height="20">
+        <animateMotion dur="14s" repeatCount="indefinite" path="M860 700 Q940 680 990 720 Q940 760 860 700" begin="-3s"/>
+      </use>
+      <use href="#openBook" x="0" y="0" width="38" height="22">
+        <animateMotion dur="16s" repeatCount="indefinite" path="M780 660 Q700 640 660 680 Q700 720 780 660" begin="-7s"/>
+      </use>
+      <use href="#openBook" x="0" y="0" width="32" height="18">
+        <animateMotion dur="18s" repeatCount="indefinite" path="M780 580 Q720 560 700 600 Q720 640 780 580" begin="-2s"/>
+      </use>
+      <use href="#openBook" x="0" y="0" width="36" height="20">
+        <animateMotion dur="20s" repeatCount="indefinite" path="M860 540 Q940 520 980 560 Q940 600 860 540" begin="-10s"/>
+      </use>
+    </g>
+
+    <!-- ═══ 10. 学生角色 ×4 ═══ -->
+    <!-- 学生 1：剧场前听 -->
+    <g transform="translate(380 870)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#5BC8E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+    </g>
+    <!-- 学生 2：剧场前听 -->
+    <g transform="translate(330 870)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#FF6B6B" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -11 Q-8 -22 0 -22 Q8 -22 6 -11" fill="#7A4F1B"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+    </g>
+    <!-- 学生 3：露天书厅下读书 -->
+    <g transform="translate(1080 850)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#76C342" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#E94B6A"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <use href="#openBook" x="-12" y="-2" width="24" height="14"/>
+    </g>
+    <!-- 学生 4：书车旁挑书 -->
+    <g transform="translate(910 858)" filter="url(#soft)">
+      <ellipse cx="0" cy="-2" rx="7" ry="10" fill="#A893E8" stroke="#3D2812" stroke-width="2"/>
+      <circle cx="0" cy="-13" r="6" fill="#FFD8B0" stroke="#3D2812" stroke-width="1.8"/>
+      <path d="M-6 -13 Q0 -22 6 -13 L6 -16 Q0 -25 -6 -16 Z" fill="#3D2812"/>
+      <circle cx="-2" cy="-13" r="1" fill="#3D2812"/>
+      <circle cx="2" cy="-13" r="1" fill="#3D2812"/>
+      <line x1="-7" y1="-4" x2="-12" y2="-12" stroke="#FFD8B0" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <!-- ═══ 11. 路灯 ×2 ═══ -->
+    <g>
+      <line x1="540" y1="850" x2="540" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="540" y1="800" x2="568" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <use href="#lantern" x="558" y="800" width="20" height="30"/>
+    </g>
+    <g>
+      <line x1="980" y1="850" x2="980" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <line x1="980" y1="800" x2="1008" y2="800" stroke="#3D2812" stroke-width="2.5"/>
+      <use href="#lantern" x="998" y="800" width="20" height="30"/>
+    </g>
+
+    <!-- ═══ 12. 蘑菇凳 ×2 ═══ -->
+    <use href="#mushChair" x="240" y="830" width="30" height="30"/>
+    <use href="#mushChair" x="1340" y="850" width="26" height="26"/>
+
+    <!-- ═══ 13. 木桥（连接灯塔基座） ═══ -->
+    <g transform="translate(620 760)">
+      <line x1="0" y1="20" x2="80" y2="20" stroke="#A06B3C" stroke-width="6"/>
+      <line x1="0" y1="20" x2="80" y2="20" stroke="#3D2812" stroke-width="1"/>
+      <line x1="10" y1="14" x2="10" y2="26" stroke="#7A4F1B" stroke-width="2"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="#7A4F1B" stroke-width="2"/>
+      <line x1="50" y1="14" x2="50" y2="26" stroke="#7A4F1B" stroke-width="2"/>
+      <line x1="70" y1="14" x2="70" y2="26" stroke="#7A4F1B" stroke-width="2"/>
+    </g>
+
+    <!-- ═══ 14. 彩旗 ═══ -->
+    <g>
+      <line x1="780" y1="540" x2="900" y2="530" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="790,545 800,560 810,548" fill="#FF6B6B" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="820,548 830,563 840,550" fill="#5BC8E8" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="850,545 860,560 870,547" fill="#FFD86A" stroke="#3D2812" stroke-width="1.5"/>
+      <polygon points="880,542 890,557 900,544" fill="#76C342" stroke="#3D2812" stroke-width="1.5"/>
+    </g>
+
+    <!-- ═══ 15. 鸟 + 蝴蝶 ═══ -->
+    <use href="#bird" x="0" y="0" width="20" height="14">
+      <animateMotion dur="20s" repeatCount="indefinite" path="M-30 360 Q400 320 800 380 T1700 340"/>
+    </use>
+    <use href="#butterfly" x="0" y="0" width="22" height="15">
+      <animateMotion dur="14s" repeatCount="indefinite" path="M280 760 Q500 700 700 760 Q900 720 1100 770 Q1300 730 1500 760"/>
+    </use>
+
+    <!-- ═══ 招牌 ═══ -->
+    <g transform="translate(800 950)">
+      <line x1="-6" y1="-30" x2="-6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <line x1="6" y1="-30" x2="6" y2="20" stroke="#5A3712" stroke-width="3"/>
+      <rect x="-70" y="-30" width="140" height="36" fill="#FFE9B0" stroke="#3D2812" stroke-width="3" rx="6"/>
+      <text x="0" y="-12" text-anchor="middle" font-weight="900" font-size="18" fill="#3D2812" font-family="'PingFang SC',sans-serif" letter-spacing="3">📖 阅读岛</text>
+      <text x="0" y="2" text-anchor="middle" font-weight="700" font-size="9" fill="#7A4F1B" font-family="'PingFang SC',sans-serif">借书 · 听故事 · 找推荐</text>
+      <circle cx="-60" cy="-22" r="2" fill="#3D2812"/>
+      <circle cx="60" cy="-22" r="2" fill="#3D2812"/>
+    </g>
+
+    <!-- 海面波浪 -->
+    <g opacity="0.6" fill="#fff">
+      <path d="M0 970 Q80 950 160 970 T320 970 T480 970 T640 970 T800 970 T960 970 T1120 970 T1280 970 T1440 970 T1600 970 L1600 1000 L0 1000 Z"/>
+    </g>
+    <g opacity="0.85" fill="#fff">
+      <path d="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z">
+        <animate attributeName="d" dur="5s" repeatCount="indefinite"
+          values="M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 998 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z;
+                  M0 990 Q80 980 160 990 T320 990 T480 990 T640 990 T800 990 T960 990 T1120 990 T1280 990 T1440 990 T1600 990 L1600 1000 L0 1000 Z"/>
+      </path>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

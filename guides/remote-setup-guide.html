@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>远程配置操作指南 · 钉钉微应用部署 · 宝山实验小学</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#F2F5F0;color:#1F3325;line-height:1.8}
+  .wrap{max-width:800px;margin:0 auto;padding:40px 20px}
+
+  .header{background:linear-gradient(135deg,#1C2A5E,#273371);color:#FFF;border-radius:16px;padding:40px 36px;margin-bottom:28px;text-align:center}
+  .header h1{font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:8px}
+  .header .sub{font-size:13px;opacity:.7;letter-spacing:1px}
+
+  .card{background:#FFF;border-radius:14px;padding:28px 30px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #E8E3D5}
+  .card h2{font-size:17px;color:#1C2A5E;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #F0ECE0;display:flex;align-items:center;gap:8px}
+  .card h3{font-size:15px;color:#273371;margin:18px 0 10px}
+  .card p{margin-bottom:10px;font-size:14px}
+  .card ul{margin:8px 0 8px 20px}
+  .card li{margin-bottom:6px;font-size:14px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th,td{padding:10px 14px;border:1px solid #E8E3D5;font-size:13.5px;text-align:left}
+  th{background:#F7F5EE;font-weight:700;color:#1C2A5E;font-size:12px;letter-spacing:.5px}
+  td{color:#3E5E40}
+
+  .url-box{background:#F0F4EE;border:1.5px solid #C8D6C0;border-radius:10px;padding:14px 16px;font-family:'SF Mono','Consolas',monospace;font-size:13px;color:#2F5A33;word-break:break-all;margin:8px 0}
+  .code-block{background:#1C2A5E;color:#D4E6D0;border-radius:10px;padding:14px 18px;font-family:'SF Mono','Consolas',monospace;font-size:12.5px;line-height:1.7;overflow-x:auto;margin:8px 0;white-space:pre}
+
+  .tag{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-right:6px}
+  .tag-g{background:#E8F5E0;color:#2F7A2F}
+  .tag-b{background:#E0ECF5;color:#2F5A7A}
+  .tag-r{background:#FCE8E8;color:#A04040}
+  .tag-y{background:#FFF8E0;color:#8A7020}
+
+  .steps{margin:12px 0}
+  .step{display:flex;gap:14px;margin-bottom:14px}
+  .step-num{width:28px;height:28px;border-radius:50%;background:#1C2A5E;color:#FFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-body .t{font-weight:700;font-size:14px;color:#1F3325;margin-bottom:2px}
+  .step-body .d{font-size:13px;color:#5A6E55}
+
+  .note{background:#FFFBE6;border-left:4px solid #E8C84A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#6B5A20;margin:12px 0;line-height:1.7}
+  .tip{background:#E8F4FD;border-left:4px solid #4A9CE8;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#2A5A8A;margin:12px 0;line-height:1.7}
+  .warn{background:#FFF0E8;border-left:4px solid #E8844A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#7A4A2A;margin:12px 0;line-height:1.7}
+  .err{background:#FFE8E8;border-left:4px solid #E84A4A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#7A2A2A;margin:12px 0;line-height:1.7}
+
+  .checklist-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13px}
+  .checklist-item .box{width:18px;height:18px;border:2px solid #C8D6C0;border-radius:4px;flex-shrink:0;margin-top:3px}
+
+  .divider{border:none;border-top:1px dashed #D8D5C8;margin:24px 0}
+
+  .footer{text-align:center;font-size:12px;color:#9AAA95;margin-top:32px;padding:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <h1>🖥️ 远程配置操作指南</h1>
+  <div class="sub">腾讯会议远程协助 · 钉钉微应用部署 · 宝山区实验小学 · 2026-06-28</div>
+</div>
+
+<!-- ======== 1. 场景说明 ======== -->
+<div class="card">
+  <h2>📋 场景说明</h2>
+  <p>您将通过<strong>腾讯会议（屏幕共享+远程控制）</strong>协助宝林校区 / 罗泾校区的钉钉管理员，在<strong>钉钉开放平台</strong>完成微应用的创建和配置。</p>
+  <p>目标：每个校区创建自己的企业内部应用，获取 AppKey / AppSecret，配置应用首页地址和必要权限，使该校区师生可通过钉钉工作台使用奖状分发系统。</p>
+
+  <table>
+    <tr><th>校区</th><th>应用首页地址</th><th>状态</th></tr>
+    <tr><td><span class="tag tag-g">本部</span></td><td><code>https://jz.108agent.com/dingtalk-awards.html</code></td><td>✅ 已配通</td></tr>
+    <tr><td><span class="tag tag-y">宝林</span></td><td><code>https://jz.108agent.com/dingtalk-awards.html?campus=baolin</code></td><td>⏳ 待配置</td></tr>
+    <tr><td><span class="tag tag-y">罗泾</span></td><td><code>https://jz.108agent.com/dingtalk-awards.html?campus=luojing</code></td><td>⏳ 待配置</td></tr>
+  </table>
+</div>
+
+<!-- ======== 2. 会前准备 ======== -->
+<div class="card">
+  <h2>📦 会前准备（提前通知对方）</h2>
+  <p>在腾讯会议开始前，请对方确认以下事项：</p>
+
+  <div class="checklist-item"><div class="box"></div><div><strong>① 钉钉企业管理员账号</strong>——必须用<strong>该校区所属企业</strong>的管理员账号登录。不是个人账号，不是本部账号。</div></div>
+  <div class="checklist-item"><div class="box"></div><div><strong>② 电脑端操作</strong>——钉钉开放平台的后台配置在电脑浏览器上操作最方便。请对方在电脑上加入腾讯会议。</div></div>
+  <div class="checklist-item"><div class="box"></div><div><strong>③ 开启屏幕共享权限</strong>——腾讯会议中需要对方共享屏幕，必要时授予远程控制权限。</div></div>
+  <div class="checklist-item"><div class="box"></div><div><strong>④ 浏览器准备</strong>——Chrome 或 Edge，清除无关标签页（避免隐私泄露）。</div></div>
+
+  <div class="tip">
+    <strong>🔑 关键确认</strong>：对方是否知道钉钉开放平台的登录方式？<br>
+    路径：浏览器打开 <code>open-dev.dingtalk.com</code> → 右上角「登录」→ 选择「钉钉扫码」→ 用钉钉管理员账号扫码登录。
+  </div>
+</div>
+
+<!-- ======== 3. 操作顺序 ======== -->
+<div class="card">
+  <h2>🔄 操作顺序（远程控制 / 口述指导）</h2>
+
+  <h3>阶段一：进入钉钉开放平台</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="t">浏览器打开 open-dev.dingtalk.com</div>
+        <div class="d">右上角点「登录」，用钉钉扫码或账号密码登录（必须是该校区企业的管理员）。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="t">进入「应用开发」</div>
+        <div class="d">顶部导航栏 → 點擊「应用开发」，进入应用管理列表页。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="t">确认当前企业</div>
+        <div class="d">页面左上角或右上角头像下拉，确认当前选中的是<strong>该校区所属的钉钉企业组织</strong>（而不是本部或其他企业）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <strong>⚠️ 最容易出错的一步</strong>：很多管理员登录后，默认企业不是目标校区所在企业。一定要在右上角头像下拉菜单中确认/切换到正确组织。
+  </div>
+
+  <h3>阶段二：创建企业内部应用</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="t">新建应用</div>
+        <div class="d">在「应用开发」页面，点击「创建应用」→ 选择「企业内部应用」→「H5微应用」。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="t">填写应用基本信息</div>
+        <div class="d">
+          应用名称：<strong>宝山实验奖状（XX校区）</strong><br>
+          应用描述：宝山区实验小学奖状分发系统 - XX校区<br>
+          应用图标：可上传校徽或临时用纯色图标（后续可换）
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="t">配置开发信息</div>
+        <div class="d">
+          应用首页地址：<strong class="tag tag-y">宝林</strong> <code>https://jz.108agent.com/dingtalk-awards.html?campus=baolin</code><br>
+          <span style="margin-left:120px"><strong class="tag tag-y">罗泾</strong> <code>https://jz.108agent.com/dingtalk-awards.html?campus=luojing</code></span><br>
+          管理后台地址：<strong>留空</strong>（本系统无独立管理后台）<br>
+          服务器出口IP：留空或填 <code>118.25.196.70</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>💡 应用首页地址的 campus 参数绝对不能写错</strong>：<br>
+    宝林 = <code>?campus=baolin</code>，罗泾 = <code>?campus=luojing</code>。<br>
+    这个参数决定了系统如何识别学生所属校区，写错会导致学生查不到自己的奖状。
+  </div>
+
+  <h3>阶段三：获取凭证</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="t">记录三组关键凭证</div>
+        <div class="d">
+          应用创建成功后，在应用详情页 → 「凭证与基础信息」区域，找到并记录：
+          <ul>
+            <li><strong>CorpId</strong></li>
+            <li><strong>AppKey</strong></li>
+            <li><strong>AppSecret</strong>（可能需要点「查看」或扫码验证后显示）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="t">安全发送凭证</div>
+        <div class="d">
+          <strong>不要</strong>在腾讯会议聊天框明文发送 AppSecret！<br>
+          建议：通过钉钉私聊发给我，或截图后通过已建立的安全渠道发送。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>📝 凭证信息核对清单</strong>：<br>
+    □ CorpId：<code>dingxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>（通常是 ding 开头）<br>
+    □ AppKey：<code>dingxxxxxxxxxxxxx</code>（通常是 ding 开头）<br>
+    □ AppSecret：<code>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>（一串随机字符）
+  </div>
+
+  <h3>阶段四：开通权限</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-body">
+        <div class="t">进入权限管理</div>
+        <div class="d">在应用详情页左侧菜单 → 点击「权限管理」。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">10</div>
+      <div class="step-body">
+        <div class="t">搜索并开通以下权限</div>
+        <div class="d">
+          在权限搜索框中逐一搜索并申请开通：
+          <table>
+            <tr><th>权限名称</th><th>搜索关键词</th><th>用途</th></tr>
+            <tr><td>通讯录个人信息读取</td><td><code>个人信息</code> 或 <code>通讯录个人信息</code></td><td>获取用户姓名、角色</td></tr>
+            <tr><td>open_app_api_base</td><td><code>open_app_api_base</code></td><td>基础API调用权限</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">11</div>
+      <div class="step-body">
+        <div class="t">确认权限状态</div>
+        <div class="d">开通后确认权限列表这俩权限都显示「已开通」。部分权限可能需要管理员审批（钉钉会给企业管理员发通知），当场确认通过。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <strong>⚠️ 权限不足是最常见的故障原因</strong>：本部校区曾因缺少 <code>open_app_api_base</code> 权限导致用户登录报错。务必两项权限都开通后再测试。
+  </div>
+
+  <h3>阶段五：发布应用</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">12</div>
+      <div class="step-body">
+        <div class="t">版本管理与发布</div>
+        <div class="d">
+          左侧菜单 → 「版本管理与发布」→ 创建新版本 → 填写版本号（如 1.0.0）和更新说明 → 提交 → <strong>确认发布</strong>。
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">13</div>
+      <div class="step-body">
+        <div class="t">设置可见范围</div>
+        <div class="d">
+          在应用详情页 → 「应用可见范围」→ 建议选择<strong>「全部员工」</strong>或手动添加需要使用的人员/部门。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>📌 发布是必须步骤</strong>：如果不点发布，应用不会出现在员工的钉钉工作台中，测试也无法进行。
+  </div>
+
+  <h3>阶段六：验证</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">14</div>
+      <div class="step-body">
+        <div class="t">手机钉钉验证</div>
+        <div class="d">
+          请对方用手机钉钉 → 工作台 → 找到刚创建的应用图标 → 点击进入。<br>
+          应能正常加载登录页面，完成钉钉授权后进入系统。
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">15</div>
+      <div class="step-body">
+        <div class="t">测试身份识别</div>
+        <div class="d">
+          教师账号应看到上传区，家长账号应看到孩子奖状列表。<br>
+          如遇报错，截图反馈。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 4. 信息清单 ======== -->
+<div class="card">
+  <h2>📋 你需要获取的信息清单</h2>
+
+  <p>每配置完一个校区，收集以下信息并发送给我：</p>
+
+  <table>
+    <tr><th>序号</th><th>信息项</th><th>示例</th><th>用途</th></tr>
+    <tr><td>1</td><td>校区标识</td><td>baolin / luojing</td><td>确定配置写入哪个校区</td></tr>
+    <tr><td>2</td><td>CorpId</td><td>ding9553...783455b</td><td>钉钉企业标识</td></tr>
+    <tr><td>3</td><td>AppKey</td><td>dingttv0...13iekz</td><td>应用身份Key</td></tr>
+    <tr><td>4</td><td>AppSecret</td><td>0QB7CQy...Hu9p</td><td>应用密钥（最高机密）</td></tr>
+    <tr><td>5</td><td>应用首页地址确认</td><td>?campus=baolin 已填写</td><td>确认 campus 参数无误</td></tr>
+    <tr><td>6</td><td>权限开通截图</td><td>权限列表截图</td><td>确认两项权限都已开通</td></tr>
+    <tr><td>7</td><td>发布确认</td><td>已发布/版本号</td><td>确认应用已对员工可见</td></tr>
+  </table>
+
+  <div class="code-block">
+    # 发给我时参考格式：
+    校区：宝林
+    CorpId: dingxxxx...
+    AppKey: dingxxxx...
+    AppSecret: xxxx...
+    首页地址：https://jz.108agent.com/dingtalk-awards.html?campus=baolin
+    权限：通讯录个人信息读取 ✅ / open_app_api_base ✅
+    发布：已发布 v1.0.0
+  </div>
+</div>
+
+<!-- ======== 5. 常见问题 ======== -->
+<div class="card">
+  <h2>⚠️ 可能遇到的问题及处理</h2>
+
+  <table>
+    <tr><th style="width:35%">问题</th><th style="width:35%">原因</th><th>处理方式</th></tr>
+
+    <tr>
+      <td><strong>看不到「创建应用」按钮</strong></td>
+      <td>登录账号不是企业管理员，或不在正确的企业组织下</td>
+      <td>右上角头像 → 切换组织 → 确认是目标校区企业 → 确认账号有管理员权限</td>
+    </tr>
+
+    <tr>
+      <td><strong>创建应用时没有「H5微应用」选项</strong></td>
+      <td>企业未开通对应能力</td>
+      <td>点「企业内部应用」后，通常有 H5微应用 和 小程序 两个选项，选 H5微应用。如果没有，检查企业是否已完成钉钉认证</td>
+    </tr>
+
+    <tr>
+      <td><strong>AppSecret 显示为 ****** 无法复制</strong></td>
+      <td>安全遮挡</td>
+      <td>点击「查看」图标 → 钉钉扫码验证身份 → 完整密钥会显示 → 手动复制</td>
+    </tr>
+
+    <tr>
+      <td><strong>权限搜索不到「open_app_api_base」或「通讯录个人信息读取」</strong></td>
+      <td>钉钉权限搜索有时不精确</td>
+      <td>尝试搜索：<code>open</code>、<code>个人信息</code>、<code>api_base</code>，或逐页翻找「API权限」分类。实在找不到，先只开通搜得到的那一项，另一项后续处理</td>
+    </tr>
+
+    <tr>
+      <td><strong>权限申请后显示「审批中」</strong></td>
+      <td>企业设置了权限审批流程</td>
+      <td>找该企业的钉钉超级管理员审批通过。如果对方就是超级管理员，可自行在钉钉管理后台审批</td>
+    </tr>
+
+    <tr>
+      <td><strong>发布后工作台看不到应用图标</strong></td>
+      <td>可见范围未包含当前用户</td>
+      <td>检查「应用可见范围」设置 → 确认包含测试人员。另外发布后有几分钟延迟是正常的</td>
+    </tr>
+
+    <tr>
+      <td><strong>点开应用后白屏或加载失败</strong></td>
+      <td>HTTPS 证书问题或网络不通</td>
+      <td>① 浏览器直接打开 <code>https://jz.108agent.com/dingtalk-awards.html</code> 看能否访问<br>② 检查钉钉客户端版本是否过旧<br>③ 检查企业网络是否限制了外部 HTTPS 访问</td>
+    </tr>
+
+    <tr>
+      <td><strong>登录时报错「权限不足」</strong></td>
+      <td>权限未开通或未生效</td>
+      <td>回到权限管理确认两项权限都显示「已开通」。有时开通后需要等几分钟生效</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ======== 6. 操作速查卡 ======== -->
+<div class="card">
+  <h2>🗂️ 操作速查卡（一句话版）</h2>
+
+  <table>
+    <tr><th>步骤</th><th>做什么</th><th>关键注意点</th></tr>
+    <tr><td>1</td><td>打开 open-dev.dingtalk.com，钉钉扫码登录</td><td>确认右上角是目标校区企业</td></tr>
+    <tr><td>2</td><td>应用开发 → 创建应用 → H5微应用</td><td>企业内部应用，不是第三方应用</td></tr>
+    <tr><td>3</td><td>填写名称、首页地址</td><td>campus 参数不能写错：baolin / luojing</td></tr>
+    <tr><td>4</td><td>记录 CorpId / AppKey / AppSecret</td><td>AppSecret 仅发送给我，不截图到群里</td></tr>
+    <tr><td>5</td><td>权限管理 → 开通两项权限</td><td>通讯录个人信息读取 + open_app_api_base</td></tr>
+    <tr><td>6</td><td>版本管理与发布 → 创建版本 → 发布</td><td>不发布 = 白做</td></tr>
+    <tr><td>7</td><td>手机钉钉工作台 → 找到应用 → 测试</td><td>确认能正常打开和登录</td></tr>
+    <tr><td>8</td><td>把凭证信息发给我</td><td>我会更新服务器配置使其生效</td></tr>
+  </table>
+</div>
+
+<!-- ======== 7. 你这边要做的 ======== -->
+<div class="card">
+  <h2>🔧 你这边要做的（收到凭证后）</h2>
+
+  <table>
+    <tr><th>顺序</th><th>操作</th><th>文件/位置</th></tr>
+    <tr><td>①</td><td>收到凭证</td><td>钉钉私聊接收 CorpId / AppKey / AppSecret</td></tr>
+    <tr><td>②</td><td>更新配置文件</td><td><code>/srv/baoshan/宝山实验/server/campus_config.json</code>，填入对应校区的 corpId / appKey / appSecret</td></tr>
+    <tr><td>③</td><td>验证配置</td><td>检查 JSON 格式正确，campus key 对应正确</td></tr>
+    <tr><td>④</td><td>确认服务正常</td><td>配置热加载，无需重启服务<br>访问 <code>https://jz.108agent.com/dingtalk-awards.html?campus=baolin</code> 验证</td></tr>
+    <tr><td>⑤</td><td>通知对方测试</td><td>告知对方已配置完成，请用手机钉钉再次测试</td></tr>
+  </table>
+
+  <div class="tip">
+    <strong>💡 配置文件热加载</strong>：当前系统支持 <code>campus_config.json</code> 修改后自动生效，无需重启 gunicorn。如果修改后未生效，执行：<br>
+    <code>sudo systemctl reload baoshan</code> 或 <code>sudo kill -HUP $(cat /var/run/baoshan.pid)</code>
+  </div>
+</div>
+
+<div class="footer">
+  宝山区实验小学 · 数字校园项目 · 2026-06-28<br>
+  远程配置指南 v1.0
+</div>
+
+</div>
+</body>
+</html>

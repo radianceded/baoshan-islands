@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上海市宝山区实验小学教育集团 · 学习群岛</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% 100%, rgba(8,32,55,0.32), transparent 62%),
+      radial-gradient(75% 45% at 88% 14%, rgba(255,212,150,0.38), transparent 65%),
+      linear-gradient(180deg,#E8C18A 0%, #E4B284 10%, #E6C7AC 22%, #C0D7E5 40%, #8DB3D2 60%, #4A85AD 80%, #275C84 100%);
+    position:relative;
+  }
+
+  .topbar{
+    position:fixed;top:0;left:0;right:0;height:60px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;z-index:50;
+    background:linear-gradient(180deg,rgba(18,42,68,0.46),rgba(18,42,68,0.20));
+    backdrop-filter:blur(14px) saturate(140%);
+    -webkit-backdrop-filter:blur(14px) saturate(140%);
+    border-bottom:1px solid rgba(255,255,255,0.20);
+    box-shadow:0 4px 18px rgba(0,30,60,0.20);
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px}
+  .school-badge{
+    width:44px;height:44px;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;
+  }
+  .school-badge img{
+    width:100%;height:100%;object-fit:contain;
+    mix-blend-mode:multiply;
+    filter:brightness(1.25) contrast(1.05);
+  }
+  .school-name{
+    color:#fff;font-weight:700;font-size:15.5px;letter-spacing:1.8px;
+    text-shadow:0 1px 2px rgba(0,0,0,0.45),0 0 1px rgba(0,0,0,0.30);
+    line-height:1.1;
+  }
+  .school-sub{
+    color:rgba(255,255,255,0.78);font-size:9.5px;letter-spacing:1.6px;
+    margin-top:3px;text-transform:uppercase;font-weight:500;
+  }
+  .topbar-right{display:flex;align-items:center;gap:14px}
+  .logout-btn{
+    padding:7px 14px;border-radius:20px;
+    background:rgba(255,255,255,0.18);color:#fff;font-weight:700;font-size:12px;letter-spacing:1px;
+    cursor:pointer;border:1px solid rgba(255,255,255,0.4);
+    transition:background .15s;
+  }
+  .logout-btn:hover{background:rgba(255,255,255,0.32)}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+  .pill{
+    padding:7px 14px;border-radius:20px;
+    background:rgba(255,255,255,0.85);color:#0E5E80;font-weight:700;font-size:13px;
+    cursor:pointer;transition:transform .15s, box-shadow .2s;
+    box-shadow:0 4px 10px rgba(0,90,140,0.18);
+    display:inline-flex;align-items:center;gap:6px;border:none;
+  }
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,90,140,0.28)}
+  .pill.primary{background:linear-gradient(135deg,#FF9F4A,#FF6B6B);color:#fff}
+
+  .stage{position:fixed;inset:0;width:100%;height:100%;z-index:1;background:linear-gradient(180deg,#FFE9A8 0%,#FFC472 24%,#FCD7A1 42%,#9CE3F2 58%,#3FA8D8 100%)}
+  .stage .islands-bg{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+
+  .title-wrap{
+    position:absolute;top:74px;left:50%;transform:translateX(-50%);
+    text-align:center;z-index:30;pointer-events:none;
+    animation:titleIn 1s ease-out;
+  }
+  @keyframes titleIn{from{opacity:0;transform:translate(-50%,-20px)}to{opacity:1;transform:translate(-50%,0)}}
+  .main-title{
+    font-size:48px;font-weight:900;color:#fff;letter-spacing:8px;
+    text-shadow: 0 4px 0 rgba(255,140,66,.8), 0 8px 18px rgba(0,40,80,0.25);
+    line-height:1;
+  }
+  .main-title .accent{color:#FFE779;text-shadow: 0 4px 0 rgba(220,90,30,.65), 0 8px 18px rgba(0,40,80,0.25)}
+  .sub-title{
+    margin-top:8px;font-size:14px;letter-spacing:4px;
+    color:#fff;text-shadow:0 2px 6px rgba(0,40,80,0.35);font-weight:600;
+    background:rgba(255,255,255,0.18);display:inline-block;padding:4px 16px;border-radius:18px;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  .sub-title .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#FFE779;margin:0 8px;vertical-align:middle;box-shadow:0 0 0 3px rgba(255,231,121,.35)}
+
+  .hotspot{
+    position:absolute;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:20;
+    will-change:transform;
+    animation: islandBob 3.4s ease-in-out infinite;
+  }
+  .hotspot:nth-of-type(2){animation-delay:-.6s}
+  .hotspot:nth-of-type(3){animation-delay:-1.2s}
+  .hotspot:nth-of-type(4){animation-delay:-1.8s}
+  .hotspot:nth-of-type(5){animation-delay:-2.4s}
+  .hotspot:nth-of-type(6){animation-delay:-2.8s}
+  @keyframes islandBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .hotspot:hover{transform:translateY(-14px) scale(1.04);animation-play-state:paused}
+  .hotspot:active{transform:translateY(-4px) scale(.98)}
+  .signpost{
+    background:linear-gradient(180deg,#FFFBE6,#FFE2A8);
+    border:2.5px solid #8C5028;
+    color:#4F2F0E;font-weight:800;font-size:16px;letter-spacing:2px;
+    padding:5px 14px 4px;border-radius:14px;
+    box-shadow: 0 3px 0 #8C5028, 0 8px 16px rgba(0,0,0,0.22);
+    position:relative;white-space:nowrap;text-align:center;
+  }
+  .signpost::before{
+    content:'';position:absolute;width:4px;height:18px;background:#5A3712;
+    bottom:-16px;left:50%;transform:translateX(-50%);border-radius:0 0 2px 2px;
+  }
+  .signpost .desc{
+    display:block;font-size:10px;color:#7A4F1B;font-weight:700;margin-top:1px;letter-spacing:1px;
+  }
+  .signpost .pin{
+    position:absolute;top:-6px;left:-6px;width:14px;height:14px;background:#E94B6A;border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.3),inset 0 -2px 2px rgba(0,0,0,.15);
+  }
+
+  /* 顶栏数据 chip */
+  .topbar-stats{display:flex;align-items:center;gap:8px;margin-right:12px}
+  .stat-chip{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,0.85);
+    padding:5px 11px;border-radius:14px;
+    font-size:12px;font-weight:800;color:#0E5E80;letter-spacing:.5px;
+    box-shadow:0 2px 6px rgba(0,40,80,.12);
+  }
+  .stat-chip .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,0.25)}
+  .stat-chip.warm{color:#C2410C}
+  .stat-chip.warm .dot{background:#FF6B6B;box-shadow:0 0 0 3px rgba(255,107,107,.25)}
+  .stat-chip.cool{color:#22A05B}
+  @media (max-width:980px){.topbar-stats{display:none}}
+
+  .cloud{position:absolute;background:#fff;border-radius:60px;opacity:.92;animation:drift 60s linear infinite;pointer-events:none;z-index:5}
+  .cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+  .c1{width:120px;height:36px;top:60px;left:-160px;animation-duration:75s}
+  .c1::before{width:54px;height:54px;top:-26px;left:18px}
+  .c1::after{width:42px;height:42px;top:-18px;right:14px}
+  .c2{width:96px;height:30px;top:120px;left:-200px;animation-duration:90s;animation-delay:-30s;opacity:.8}
+  .c2::before{width:44px;height:44px;top:-22px;left:14px}
+  .c2::after{width:34px;height:34px;top:-14px;right:10px}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 320px))}}
+
+  .bubbles{position:fixed;left:0;right:0;bottom:0;height:240px;pointer-events:none;z-index:6;overflow:hidden}
+  .bubble{position:absolute;bottom:-20px;background:rgba(255,255,255,.45);border-radius:50%;animation:rise 7s linear infinite}
+  @keyframes rise{
+    0%{transform:translateY(0) scale(.6);opacity:0}
+    20%{opacity:.85}
+    100%{transform:translateY(-260px) scale(1.05);opacity:0}
+  }
+
+  .helper{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    z-index:40;pointer-events:none;
+    background:rgba(255,255,255,0.92);
+    color:#0E5E80;font-weight:700;font-size:14px;letter-spacing:1px;
+    padding:8px 18px;border-radius:24px;
+    box-shadow:0 6px 18px rgba(0,80,120,0.25);
+    animation:helperBob 2.4s ease-in-out infinite;
+    display:flex;align-items:center;gap:10px;
+  }
+  @keyframes helperBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
+  .finger{font-size:20px;animation:fingerPoint 1.4s ease-in-out infinite}
+  @keyframes fingerPoint{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+  /* ═══════ 过渡待机页（点击岛屿后展示 3.5 秒，吉祥物视频居中，底部提示） ═══════ */
+  .transition-veil{
+    position:fixed;inset:0;z-index:200;
+    background:linear-gradient(180deg,#FFF7E1 0%,#FFE3B0 38%,#FFD0E0 72%,#D4F0FF 100%);
+    opacity:0;visibility:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:60px 0 90px;pointer-events:none;
+    transition:opacity .45s, visibility .45s;
+    overflow:hidden;
+  }
+  .transition-veil.active{opacity:1;visibility:visible;pointer-events:all}
+  /* 顶部装饰云 */
+  .veil-cloud{position:absolute;top:8%;background:#fff;border-radius:60px;opacity:.85;animation:veilDrift 14s linear infinite;pointer-events:none}
+  .veil-cloud::before,.veil-cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+  .veil-cloud.vc1{width:140px;height:38px;left:-180px;animation-duration:18s}
+  .veil-cloud.vc1::before{width:60px;height:60px;top:-30px;left:24px}
+  .veil-cloud.vc1::after{width:46px;height:46px;top:-24px;left:80px}
+  .veil-cloud.vc2{width:110px;height:32px;top:18%;right:-180px;left:auto;animation-duration:22s;animation-delay:-6s}
+  .veil-cloud.vc2::before{width:48px;height:48px;top:-26px;left:18px}
+  @keyframes veilDrift{from{transform:translateX(0)}to{transform:translateX(110vw)}}
+  /* 飞舞星星 */
+  .veil-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .veil-star{position:absolute;font-size:22px;opacity:0;animation:veilStar 2.4s ease-out infinite}
+  @keyframes veilStar{0%{opacity:0;transform:translateY(20px) scale(.4) rotate(0)}40%{opacity:1}100%{opacity:0;transform:translateY(-180px) scale(1.2) rotate(180deg)}}
+
+  /* 顶部大标题 */
+  .veil-title{
+    position:relative;text-align:center;color:#0E5E80;
+    transform:translateY(-12px) scale(.9);opacity:0;
+    transition:transform .55s cubic-bezier(.34,1.56,.64,1) .15s, opacity .4s .15s;
+  }
+  .transition-veil.active .veil-title{transform:translateY(0) scale(1);opacity:1}
+  .veil-title .veil-going{display:block;font-size:18px;font-weight:800;letter-spacing:6px;color:#3D2812;opacity:.7;margin-bottom:6px}
+  .veil-title .veil-name{
+    display:inline-block;font-size:60px;font-weight:900;letter-spacing:4px;
+    color:#fff;-webkit-text-stroke:3px #3D2812;
+    text-shadow:0 6px 0 #3D2812, 0 10px 24px rgba(0,30,60,.2);
+    padding:6px 24px;
+  }
+  .veil-title .veil-emoji-big{display:inline-block;font-size:64px;margin-left:10px;animation:veilEmojiBob 1.4s ease-in-out infinite}
+  @keyframes veilEmojiBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+
+  /* 中间双吉祥物视频 */
+  .veil-stage{
+    position:relative;display:flex;align-items:flex-end;justify-content:center;gap:28px;
+    transform:scale(.6);opacity:0;
+    transition:transform .55s cubic-bezier(.34,1.56,.64,1) .25s, opacity .4s .25s;
+  }
+  .transition-veil.active .veil-stage{transform:scale(1);opacity:1}
+  .veil-stage .veil-mascot{
+    width:280px;height:380px;position:relative;
+    background:#fff;border:5px solid #3D2812;border-radius:24px;
+    box-shadow:0 8px 0 #3D2812, 0 22px 32px rgba(0,30,60,.3);
+    overflow:hidden;
+  }
+  .veil-stage .veil-mascot::before{
+    content:'';position:absolute;inset:6px;border-radius:18px;border:2px dashed #FFD93D;pointer-events:none;z-index:2;
+  }
+  .veil-stage .veil-mascot::after{
+    content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    width:60px;height:18px;background:#FF6B6B;border:3px solid #3D2812;border-radius:6px;z-index:3;
+    box-shadow:0 3px 0 #3D2812;
+  }
+  .veil-stage .veil-mascot.boy{animation:veilMascotL 2.6s ease-in-out infinite}
+  .veil-stage .veil-mascot.girl{animation:veilMascotR 2.6s ease-in-out infinite -1.3s}
+  @keyframes veilMascotL{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+  @keyframes veilMascotR{0%,100%{transform:translateY(0) rotate(2deg)}50%{transform:translateY(-12px) rotate(-2deg)}}
+  .veil-stage .veil-mascot video{
+    width:100%;height:100%;object-fit:contain;display:block;
+    background:transparent;border-radius:18px;
+  }
+  /* 视频缺失时占位 */
+  .veil-stage .veil-mascot.placeholder video{display:none}
+  .veil-stage .veil-mascot.placeholder{
+    background:repeating-linear-gradient(45deg,#FFF1D4,#FFF1D4 10px,#FFE0A8 10px,#FFE0A8 20px);
+    border:3px dashed #C2410C;border-radius:20px;
+    display:flex;align-items:center;justify-content:center;
+    color:#C2410C;font-weight:900;font-size:14px;text-align:center;line-height:1.6;
+    padding:14px;
+  }
+  /* 吉祥物脚下的影子 */
+  .veil-stage::after{
+    content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
+    width:520px;height:32px;border-radius:50%;
+    background:radial-gradient(ellipse at center,rgba(0,30,60,.22) 0%,rgba(0,30,60,0) 70%);
+    pointer-events:none;
+  }
+
+  /* 底部提示文字 + 进度条 */
+  .veil-foot{
+    position:relative;text-align:center;color:#3D2812;width:min(640px,86vw);
+    transform:translateY(20px);opacity:0;
+    transition:transform .55s cubic-bezier(.34,1.56,.64,1) .4s, opacity .4s .4s;
+  }
+  .transition-veil.active .veil-foot{transform:translateY(0);opacity:1}
+  .veil-tip{
+    font-size:22px;font-weight:800;letter-spacing:2px;
+    background:#fff;border:3px solid #3D2812;border-radius:24px;
+    padding:14px 32px;display:inline-block;
+    box-shadow:0 6px 0 #3D2812, 0 14px 30px rgba(0,30,60,.2);
+  }
+  .veil-tip .dots::after{
+    content:'.';display:inline-block;width:24px;text-align:left;
+    animation:veilDots 1.2s steps(4,end) infinite;
+  }
+  @keyframes veilDots{0%{content:'.'}25%{content:'..'}50%{content:'...'}75%{content:'....'}100%{content:'.'}}
+  .veil-bar{
+    margin:18px auto 0;width:380px;max-width:80vw;height:14px;
+    background:#fff;border:3px solid #3D2812;border-radius:20px;overflow:hidden;
+    box-shadow:0 4px 0 #3D2812;
+  }
+  .veil-bar-fill{
+    width:0%;height:100%;background:linear-gradient(90deg,#FF8A4C,#FFD93D,#22C55E);
+    transition:width 3.2s linear;border-radius:20px;
+  }
+  .transition-veil.active .veil-bar-fill{width:100%}
+  .veil-step{margin-top:12px;font-size:14px;color:#7A4818;font-weight:700;letter-spacing:1px;opacity:.85}
+
+  @media (max-width:768px){
+    .veil-stage .veil-mascot{width:160px;height:220px}
+    .veil-title .veil-name{font-size:36px;-webkit-text-stroke:2px #3D2812}
+    .veil-title .veil-emoji-big{font-size:40px}
+    .veil-tip{font-size:16px;padding:10px 20px}
+  }
+</style>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+<style>
+  /* ─── 身份选择全屏 overlay ─── */
+  .role-veil{position:fixed;inset:0;z-index:500;background:linear-gradient(135deg,#1F3A4D 0%,#0E5E80 100%);display:none;align-items:center;justify-content:center;padding:24px}
+  .role-veil.open{display:flex}
+  .role-modal{background:#fff;border-radius:28px;width:760px;max-width:100%;max-height:92vh;overflow:auto;padding:36px 32px;box-shadow:0 40px 80px rgba(0,30,60,.5);text-align:center}
+  .role-modal h1{font-size:28px;font-weight:900;color:#1F3A4D;letter-spacing:3px}
+  .role-modal .sub{font-size:14px;color:#7BB8DA;margin-top:8px;font-weight:700;letter-spacing:1px}
+  .role-cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}
+  .role-card{background:#F4FAFD;border:3px solid #E0EBF0;border-radius:22px;padding:26px 20px;cursor:pointer;transition:all .2s}
+  .role-card:hover{transform:translateY(-4px);border-color:#5BC8E8;box-shadow:0 12px 28px rgba(91,200,232,.2)}
+  .role-card.teacher{background:linear-gradient(135deg,#E0F4FF,#C9EBFB);border-color:#7BC8E8}
+  .role-card.parent{background:linear-gradient(135deg,#FFE7EB,#FFD3D8);border-color:#FF8E9C}
+  .role-card .emoji{font-size:54px;line-height:1}
+  .role-card .title{font-size:22px;font-weight:900;color:#1F3A4D;margin-top:10px;letter-spacing:2px}
+  .role-card .desc{font-size:12.5px;color:#5C7A8C;font-weight:700;margin-top:6px;letter-spacing:.5px}
+  .role-back{margin-top:18px;background:#F4FAFD;color:#7BB8DA;border:none;padding:8px 16px;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer}
+  .role-back:hover{background:#E0EBF0}
+
+  /* 老师子角色选择 */
+  .teacher-sub{display:none;margin-top:24px;text-align:left}
+  .teacher-sub.open{display:block}
+  .teacher-sub-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .teacher-sub-card{background:#F4FAFD;border:2px solid #DCEBF3;border-radius:16px;padding:18px;cursor:pointer;transition:all .15s}
+  .teacher-sub-card:hover{border-color:#5BC8E8;transform:translateY(-2px)}
+  .teacher-sub-card .nm{font-size:16px;font-weight:900;color:#1F3A4D}
+  .teacher-sub-card .ds{font-size:11.5px;color:#7BB8DA;margin-top:5px;font-weight:700}
+  .teacher-sub input{width:100%;padding:8px 12px;border:1.5px solid #DCEBF3;border-radius:8px;font-size:13px;color:#1F3A4D;background:#fff;margin-top:6px;font-family:inherit}
+
+  /* 家长选孩子 */
+  .parent-pick{display:none;margin-top:24px;text-align:left}
+  .parent-pick.open{display:block}
+  .parent-pick label{font-size:13px;font-weight:800;color:#1F3A4D;display:block;margin-bottom:6px;letter-spacing:1px}
+  .parent-pick .demo-kids{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+  .parent-pick .demo-kid{background:#F4FAFD;border:2px solid #DCEBF3;border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s}
+  .parent-pick .demo-kid:hover{border-color:#FF8E9C;transform:translateY(-2px)}
+  .parent-pick .demo-kid .av{width:38px;height:38px;border-radius:50%;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .parent-pick .demo-kid .meta{flex:1}
+  .parent-pick .demo-kid .nm{font-size:13.5px;font-weight:800;color:#1F3A4D}
+  .parent-pick .demo-kid .it{font-size:11px;color:#7BB8DA;font-weight:600;margin-top:2px}
+  .parent-pick .real-kid-row{display:flex;gap:10px;align-items:stretch}
+  .parent-pick .real-kid-row input{flex:1;padding:11px 14px;border:1.5px solid #DCEBF3;border-radius:12px;font-size:14px;color:#1F3A4D;font-family:inherit;outline:none;background:#fff}
+  .parent-pick .real-kid-row input:focus{border-color:#FF8E9C}
+  .parent-pick .real-kid-row button{padding:11px 18px;background:linear-gradient(135deg,#FF8E9C,#E94B6A);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px}
+  .parent-pick .real-kid-row button:hover{transform:translateY(-1px)}
+  .parent-pick .hint{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:6px}
+
+  /* 切换身份小按钮 */
+  .role-switch{padding:6px 12px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.15);color:#fff;font-weight:800;font-size:11.5px;cursor:pointer}
+  .role-switch:hover{background:rgba(255,255,255,0.25)}
+</style>
+</head>
+<body>
+
+<!-- ════════ 身份选择 overlay（无 sessionStorage 角色时显示） ════════ -->
+<div class="role-veil" id="roleVeil">
+  <div class="role-modal">
+    <h1>🌊 快乐学习群岛</h1>
+    <div class="sub">请选择你的身份继续</div>
+
+    <!-- 步骤 1：老师 vs 家长 -->
+    <div class="role-cards" id="roleStep1">
+      <div class="role-card teacher" onclick="pickRoleTeacher()">
+        <div class="emoji">👩‍🏫</div>
+        <div class="title">我是老师</div>
+        <div class="desc">总务老师 / 班主任 · 查看全班数据</div>
+      </div>
+      <div class="role-card parent" onclick="pickRoleParent()">
+        <div class="emoji">👨‍👩‍👧</div>
+        <div class="title">我是家长</div>
+        <div class="desc">只看到自己孩子的档案 / 成就 / 选餐</div>
+      </div>
+    </div>
+
+    <!-- 步骤 2-A：老师子角色 -->
+    <div class="teacher-sub" id="teacherSubStep">
+      <button class="role-back" onclick="backToStep1()">← 返回</button>
+      <h2 style="font-size:18px;font-weight:900;color:#1F3A4D;margin-top:10px;letter-spacing:2px">老师身份</h2>
+      <div class="teacher-sub-cards">
+        <div class="teacher-sub-card" onclick="confirmTeacher('general')">
+          <div class="nm">🏫 总务老师</div>
+          <div class="ds">上传周菜单 · 看全校 AB 餐统计</div>
+        </div>
+        <div class="teacher-sub-card" onclick="showClassTeacherForm()">
+          <div class="nm">📚 班主任</div>
+          <div class="ds">看自己班学生选餐明细</div>
+        </div>
+      </div>
+      <div id="classTeacherForm" style="display:none;margin-top:16px;background:#F4FAFD;border-radius:14px;padding:14px">
+        <label style="font-size:12px;font-weight:800;color:#1F3A4D;letter-spacing:1px">输入你的班级</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <input id="ctGradeInput" placeholder="年级（如：五年级）" value="五年级">
+          <input id="ctClassInput" placeholder="班级（如：1班）" value="1班">
+        </div>
+        <button onclick="confirmClassTeacher()" style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#5BC8E8,#0E5E80);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">✓ 进入</button>
+      </div>
+    </div>
+
+    <!-- 步骤 2-B：家长选孩子 -->
+    <div class="parent-pick" id="parentPickStep">
+      <button class="role-back" onclick="backToStep1()">← 返回</button>
+      <h2 style="font-size:18px;font-weight:900;color:#1F3A4D;margin-top:10px;letter-spacing:2px">请选择你的孩子</h2>
+
+      <label style="margin-top:14px">演示用学生（4 个 demo 角色）</label>
+      <div class="demo-kids" id="demoKidsList"></div>
+
+      <label>真实学生（从证书数据集里挑）</label>
+      <div class="real-kid-row">
+        <input id="realKidInput" placeholder="输入姓名（如：陈思麟 / 示例学生丙 / 程一鸣）" list="kidSuggestions">
+        <button onclick="confirmRealKid()">✓ 进入</button>
+      </div>
+      <datalist id="kidSuggestions"></datalist>
+      <div class="hint">💡 真实学生：成就岛展示真证书，其他岛使用 demo 数据演示</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="school-badge"><img src="assets/校徽.png" alt="校徽"></div>
+    <div>
+      <div class="school-name">上海市宝山区实验小学教育集团</div>
+      <div class="school-sub">Baoshan District Experimental Primary School</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill" id="homeStudentPill" title="点击退出登录">
+      <div class="stu-avatar" id="homeStuAvatar">林</div>
+      <div class="stu-info">
+        <div class="name" id="homeStuName">林**</div>
+        <div class="meta" id="homeStuMeta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" title="退出登录">退出</button>
+  </div>
+</div>
+
+<div class="title-wrap">
+  <div class="main-title">快乐<span class="accent">学习</span>群岛</div>
+  <div class="sub-title"
+       data-text-teacher="点一点你想去的小岛吧 · 开启今天的探险"
+       data-text-parent="陪孩子点开一座小岛 · 看看 TA 今天的成长"
+       data-text-admin="管理员视图 · 各岛数据均可查看"
+  >点一点你想去的小岛吧<span class="dot"></span>开启今天的探险</div>
+</div>
+
+<div class="stage">
+  <img class="islands-bg" src="assets/islands.png" alt="学习群岛">
+
+  <!-- 招牌点击区（上排：档案、活动；下排：健康、阅读、成就） -->
+  <div class="hotspot" style="left:16%; top:33%;" onclick="enterIsland('growth', '成长岛', '🩷')">
+    <div class="signpost"><span class="pin"></span>成长岛<span class="desc">领取奖状</span></div>
+  </div>
+  <div class="hotspot" style="left:50%; top:31%;" onclick="enterIsland('interest', '兴趣岛', '❤️')">
+    <div class="signpost"><span class="pin"></span>兴趣岛<span class="desc">社团+才艺</span></div>
+  </div>
+  <div class="hotspot" style="left:84%; top:33%;" onclick="enterIsland('art', '审美岛', '💜')">
+    <div class="signpost"><span class="pin"></span>审美岛<span class="desc">美术馆+影音</span></div>
+  </div>
+  <div class="hotspot" style="left:7%; top:88%;" onclick="enterIsland('health', '健康岛', '💚')">
+    <div class="signpost"><span class="pin"></span>健康岛<span class="desc">体能+午餐</span></div>
+  </div>
+  <div class="hotspot" style="left:40%; top:90%;" onclick="enterIsland('literacy', '素养岛', '💙')">
+    <div class="signpost"><span class="pin"></span>素养岛<span class="desc">阅读+朗读</span></div>
+  </div>
+  <div class="hotspot" style="left:73%; top:88%;" onclick="enterIsland('labor', '劳动岛', '🧡')">
+    <div class="signpost"><span class="pin"></span>劳动岛<span class="desc">劳动实践</span></div>
+  </div>
+
+  <!-- 数据统计移到了顶栏 -->
+</div>
+
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<div class="bubbles" id="bubbles"></div>
+
+<!-- 过渡待机页：吉祥物视频 + 底部导航提示 -->
+<div class="transition-veil" id="veil" aria-hidden="true">
+  <div class="veil-cloud vc1"></div>
+  <div class="veil-cloud vc2"></div>
+  <div class="veil-stars" id="veilStars"></div>
+
+  <div class="veil-title">
+    <span class="veil-going">小船启航中</span>
+    <span class="veil-name" id="veilName">健康岛</span>
+    <span class="veil-emoji-big" id="veilEmoji">🍎</span>
+  </div>
+
+  <div class="veil-stage">
+    <div class="veil-mascot boy">
+      <video id="veilVideoBoy" muted loop playsinline autoplay preload="auto"
+             poster="assets/mascot-boy-poster.jpg">
+        <source src="assets/mascot-boy.webm" type="video/webm">
+        <source src="assets/mascot-boy.mp4"  type="video/mp4">
+      </video>
+    </div>
+    <div class="veil-mascot girl">
+      <video id="veilVideoGirl" muted loop playsinline autoplay preload="auto"
+             poster="assets/mascot-girl-poster.jpg">
+        <source src="assets/mascot-girl.webm" type="video/webm">
+        <source src="assets/mascot-girl.mp4"  type="video/mp4">
+      </video>
+    </div>
+  </div>
+
+  <div class="veil-foot">
+    <div class="veil-tip">
+      正在前往 <span id="veilTipName">健康岛</span><span class="dots"></span>
+    </div>
+    <div class="veil-bar"><div class="veil-bar-fill"></div></div>
+    <div class="veil-step" id="veilStep">系紧救生衣 · 升起小船帆 · 出发！</div>
+  </div>
+</div>
+
+<script>
+const ISLAND_PAGE = {
+  growth:   'island-claim-awards.html',
+  interest: 'island-activity.html',
+  health:   'island-health.html',
+  labor:    'island-labor.html',
+  literacy: 'island-reading.html',
+  art:      'island-art.html'
+};
+// 过渡步骤文案池（按岛随机/对应一句）
+const VEIL_STEPS = {
+  growth  : ['正在打开荣誉档案柜…','整理可领取的奖状清单…','让每一份努力都被看见 🩷'],
+  health  : ['挑选今日最健康的午餐…','准备体测器材 + 体重秤…','营养小博士在等你 🥗'],
+  literacy: ['图书馆精灵正在选书…','给小蜗牛阅读护照盖章…','找一本合你胃口的好书 📖'],
+  interest: ['24 个社团帐篷已撑开…','无人机 / AI / 足球 / 辩论…','找到属于你的那一群伙伴 🎨'],
+  labor   : ['正在查看劳动任务清单…','整理实践记录与收获…','勤劳的小蜜蜂在等你 🧡'],
+  art     : ['画廊灯光已调至最佳…','准备欣赏同学们的佳作…','美的世界等你来探索 💜']
+};
+const VEIL_TIPS = {
+  growth  : '小提示：AI 颁奖辞会为你的奖状生成专属致辞 🎤',
+  health  : '小提示：A 餐荤多 / B 餐素多，AI 会按你的口味推 🥕',
+  literacy: '小提示：来挑战朗读小游戏，看谁是诗词小达人 🎮',
+  interest: '小提示：每个社团都有详情卡，先看再报名 🎒',
+  labor   : '小提示：记录每一次劳动实践，积累成长能量 ⚡',
+  art     : '小提示：上传你的影音作品，和同学们一起分享 🎬'
+};
+
+function enterIsland(key, name, emoji){
+  const target = ISLAND_PAGE[key];
+  if(!target){
+    toast('🏗️ 筹备中');
+    return;
+  }
+  const veil = document.getElementById('veil');
+  document.getElementById('veilName').textContent = name;
+  document.getElementById('veilTipName').textContent = name;
+  document.getElementById('veilEmoji').textContent = emoji;
+
+  // 步骤文案：3 段轮播
+  const steps = VEIL_STEPS[key] || ['出发啦…','小船全速前进…','马上到啦 🚤'];
+  const stepEl = document.getElementById('veilStep');
+  stepEl.textContent = steps[0];
+  let si = 1;
+  const stepTimer = setInterval(()=>{
+    if(si < steps.length){
+      stepEl.style.opacity = '0';
+      setTimeout(()=>{ stepEl.textContent = steps[si++]; stepEl.style.opacity = '.85'; }, 200);
+    }
+  }, 1100);
+
+  // 一句小提示
+  setTimeout(()=>{
+    const t = document.querySelector('.veil-tip');
+    if(t){
+      t.innerHTML = VEIL_TIPS[key] || '马上就到啦～';
+      t.style.background = '#FFF7E1';
+    }
+  }, 2400);
+
+  // 飞舞星星
+  spawnVeilStars();
+
+  // 显示遮罩 + 播放双吉祥物视频
+  veil.classList.add('active');
+  veil.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+  ['veilVideoBoy','veilVideoGirl'].forEach(id=>{
+    const v = document.getElementById(id);
+    if(v && v.tagName === 'VIDEO'){
+      try{ v.currentTime = 0; v.play().catch(()=>{}); }catch(_){}
+    }
+  });
+
+  // 3.5 秒后跳转
+  setTimeout(()=>{ clearInterval(stepTimer); location.href = target; }, 3500);
+}
+
+function spawnVeilStars(){
+  const host = document.getElementById('veilStars');
+  if(!host) return;
+  host.innerHTML = '';
+  const emojis = ['⭐','✨','🌟','💫','🎈','🌈'];
+  for(let i=0;i<14;i++){
+    const s = document.createElement('span');
+    s.className = 'veil-star';
+    s.textContent = emojis[i%emojis.length];
+    s.style.left = (5 + Math.random()*90) + '%';
+    s.style.bottom = (Math.random()*40) + '%';
+    s.style.animationDelay = (Math.random()*2) + 's';
+    s.style.fontSize = (16 + Math.random()*18) + 'px';
+    host.appendChild(s);
+  }
+}
+function doLogout(){
+  if(!confirm('退出登录后需要重新输入账号密码，确认退出吗？')) return;
+  if(window.UserAuth && UserAuth.signOut){
+    UserAuth.signOut();   // 清 session + 跳 login.html
+  } else {
+    // 兜底：手动清
+    ['bs_role','bs_sub_role','bs_bound_idx','bs_bound_grade','bs_bound_class','bs_kid_name','bs_session_token','bs_user_nick','bs_user_avatar'].forEach(k => sessionStorage.removeItem(k));
+    location.href = 'login.html';
+  }
+}
+
+function goAdmin(){
+  if(confirm('管理员入口仅供教师/管理员演示，要继续吗？')){
+    location.href = 'index.html';
+  }
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style,{
+    position:'fixed',left:'50%',top:'80px',transform:'translateX(-50%)',
+    background:'rgba(0,0,0,.8)',color:'#fff',padding:'10px 18px',
+    borderRadius:'20px',fontSize:'14px',zIndex:300,
+    boxShadow:'0 8px 22px rgba(0,0,0,.28)'
+  });
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+
+function spawnBubble(){
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = 6 + Math.random()*22;
+  b.style.width = b.style.height = size+'px';
+  b.style.left = Math.random()*100 + '%';
+  b.style.animationDuration = (5 + Math.random()*4) + 's';
+  document.getElementById('bubbles').appendChild(b);
+  setTimeout(()=>b.remove(), 8000);
+}
+setInterval(spawnBubble, 600);
+for(let i=0;i<8;i++) setTimeout(spawnBubble, i*180);
+
+const KEY = ['growth','interest','health','labor','literacy','art'];
+const NAME= ['成长岛','兴趣岛','健康岛','劳动岛','素养岛','审美岛'];
+const EMO = ['🩷','❤️','💚','🧡','💙','💜'];
+window.addEventListener('keydown', e=>{
+  const i = parseInt(e.key,10);
+  if(i>=1 && i<=6) enterIsland(KEY[i-1], NAME[i-1], EMO[i-1]);
+});
+
+/* 旧版身份选择 overlay 已停用（统一改走 login.html） */
+
+function _hideOverlay(){
+  const veil = document.getElementById('roleVeil');
+  if(veil) veil.classList.remove('open');
+  document.body.style.overflow = '';
+}
+function pickRoleTeacher(){
+  document.getElementById('roleStep1').style.display = 'none';
+  document.getElementById('teacherSubStep').classList.add('open');
+}
+function pickRoleParent(){
+  document.getElementById('roleStep1').style.display = 'none';
+  document.getElementById('parentPickStep').classList.add('open');
+}
+function backToStep1(){
+  document.getElementById('roleStep1').style.display = 'grid';
+  document.getElementById('teacherSubStep').classList.remove('open');
+  document.getElementById('parentPickStep').classList.remove('open');
+  document.getElementById('classTeacherForm').style.display = 'none';
+}
+function showClassTeacherForm(){
+  document.getElementById('classTeacherForm').style.display = 'block';
+}
+function confirmTeacher(sub){
+  UserAuth.signIn({role:'teacher', subRole: sub});
+  location.reload();
+}
+function confirmClassTeacher(){
+  const grade = document.getElementById('ctGradeInput').value.trim();
+  const klass = document.getElementById('ctClassInput').value.trim();
+  if(!grade || !klass){ alert('请填年级和班级'); return; }
+  UserAuth.signIn({role:'teacher', subRole:'class', boundGrade: grade, boundClass: klass});
+  location.reload();
+}
+function confirmDemoKid(idx){
+  // ROSTER 已迁到 DB —— 此入口已不再用（登录页负责真账号），保留壳防止旧 onclick 调用炸掉
+  console.warn('[homepage] confirmDemoKid 已废弃，请走 login.html');
+}
+function confirmRealKid(){
+  const name = document.getElementById('realKidInput').value.trim();
+  if(!name){ alert('请输入孩子姓名'); return; }
+  // 默认还是用 demo idx=0 提供五个岛的 mock 数据，但 kidName 是真名（成就岛/档案岛过滤用）
+  UserAuth.signIn({role:'parent', boundIdx: 0, kidName: name});
+  location.reload();
+}
+
+/* 顶栏学生切换器（与其他岛屿页面共享 sessionStorage） */
+(function(){
+  if(!window.StudentRoster) return;
+  const pill = document.getElementById('homeStudentPill');
+  if(!pill) return;
+  function applyStudent(idx, silent){
+    if(window.UserAuth && UserAuth.isTeacher && UserAuth.isTeacher()){ UserAuth.refreshPill(); return; }
+    const s = StudentRoster.get(idx);
+    if(!s){ if(window.UserAuth) UserAuth.refreshPill(); return; }
+    document.getElementById('homeStuAvatar').textContent = s.avatar;
+    document.getElementById('homeStuAvatar').style.background = `linear-gradient(135deg,${s.color},#3DB7E2)`;
+    document.getElementById('homeStuName').textContent = s.displayName;
+    document.getElementById('homeStuMeta').textContent = `${s.grade} · ${s.class}`;
+    if(!silent && typeof toast === 'function') toast(`已切换到 ${s.displayName}`);
+  }
+  StudentRoster.attachPicker(pill, { onChange: applyStudent });
+  // 进入首页后同步顶栏到 session 内当前学生
+  applyStudent(StudentRoster.getCurrentIdx(), true);
+})();
+</script>
+
+</body>
+</html>

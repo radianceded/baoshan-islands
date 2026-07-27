@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>儿童详情 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content" id="content">
+  <div class="loading"><span class="spinner"></span> 加载中...</div>
+</div>
+
+<footer class="app-footer">
+  ⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。
+</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  const urlParams = new URLSearchParams(window.location.search);
+  const childId = urlParams.get('id');
+  document.getElementById('mainNav').innerHTML = buildNav();
+
+  function buildNav() {
+    return [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']]
+      .map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+  }
+
+  if (!childId) {
+    document.getElementById('content').innerHTML = '<div class="alert alert-error">缺少儿童ID参数</div>';
+  } else {
+    loadDetail();
+  }
+
+  async function loadDetail() {
+    const child = await apiFetch(`/children/${childId}`);
+    if (!child) {
+      document.getElementById('content').innerHTML = '<div class="alert alert-error">未找到该儿童记录</div>';
+      return;
+    }
+
+    const allergies = parseJsonField(child.allergies);
+    const restrictions = parseJsonField(child.dietary_restrictions);
+    const specialNeeds = parseJsonField(child.special_needs);
+
+    document.getElementById('content').innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h2>👶 ${escHtml(child.child_code)} — ${escHtml(child.display_name || '匿名')}</h2>
+          <div class="btn-group">
+            <a href="children.html" class="btn btn-outline btn-sm">← 返回列表</a>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='children.html'" id="editBtn">编辑</button>
+          </div>
+        </div>
+
+        <h3 class="mb-1">📊 基本信息</h3>
+        <div class="detail-grid mb-2">
+          <div class="detail-item"><label>儿童编号</label><span class="value"><code>${escHtml(child.child_code)}</code></span></div>
+          <div class="detail-item"><label>姓名</label><span class="value">${escHtml(child.display_name || '-')}</span></div>
+          <div class="detail-item"><label>年龄</label><span class="value">${child.age ?? '-'} 岁</span></div>
+          <div class="detail-item"><label>性别</label><span class="value">${escHtml(child.gender || '-')}</span></div>
+          <div class="detail-item"><label>身高</label><span class="value">${formatNum(child.height_cm)} cm</span></div>
+          <div class="detail-item"><label>体重</label><span class="value">${formatNum(child.weight_kg)} kg</span></div>
+          <div class="detail-item"><label>BMI</label><span class="value">${formatNum(child.bmi)}</span></div>
+          <div class="detail-item"><label>校区</label><span class="value">${escHtml(child.campus || '-')}</span></div>
+          <div class="detail-item"><label>数据状态</label><span class="value"><span class="badge ${child.data_status === 'complete' ? 'badge-success' : 'badge-warning'}">${child.data_status === 'complete' ? '完整' : '不完整'}</span></span></div>
+        </div>
+
+        <h3 class="mb-1">🍽️ 饮食信息</h3>
+        <div class="detail-grid mb-2">
+          <div class="detail-item"><label>过敏信息</label><span class="value">${allergies.length ? allergies.map(a => `<span class="tag badge-danger" style="background:#ffebee;color:#c62828">${escHtml(a)}</span>`).join(' ') : '无'}</span></div>
+          <div class="detail-item"><label>忌口</label><span class="value">${restrictions.length ? restrictions.map(r => `<span class="tag">${escHtml(r)}</span>`).join(' ') : '无'}</span></div>
+          <div class="detail-item"><label>特殊需求</label><span class="value">${specialNeeds.length ? specialNeeds.map(s => `<span class="tag" style="background:#e8f5e9;color:#2e7d32">${escHtml(s)}</span>`).join(' ') : '无'}</span></div>
+          <div class="detail-item"><label>医生备注</label><span class="value">${escHtml(child.doctor_notes || '无')}</span></div>
+        </div>
+
+        <h3 class="mb-1">📋 推荐历史</h3>
+        <div id="recHistory" class="table-wrap">加载中...</div>
+      </div>`;
+
+    // 加载推荐历史
+    loadRecommendationHistory();
+  }
+
+  async function loadRecommendationHistory() {
+    // 搜索该儿童的推荐记录
+    const child = await apiFetch(`/children/${childId}`);
+    if (!child) return;
+
+    const data = await apiFetch(`/recommendations?page=1&page_size=100`);
+    if (!data) {
+      document.getElementById('recHistory').innerHTML = '加载失败';
+      return;
+    }
+
+    const recs = data.items.filter(r => r.child_code === child.child_code);
+    if (recs.length === 0) {
+      document.getElementById('recHistory').innerHTML = '<p class="text-sm text-secondary">暂无推荐记录</p>';
+      return;
+    }
+
+    document.getElementById('recHistory').innerHTML = `
+      <table>
+        <thead><tr><th>日期</th><th>A餐得分</th><th>B餐得分</th><th>推荐</th><th>原因</th><th>风险</th><th>确认</th></tr></thead>
+        <tbody>${recs.map(r => `
+          <tr>
+            <td>${formatDate(r.plan_date)}</td>
+            <td>${formatNum(r.score_a)}</td>
+            <td>${formatNum(r.score_b)}</td>
+            <td><span class="badge ${r.recommended_plan === 'A' ? 'badge-info' : r.recommended_plan === 'B' ? 'badge-success' : 'badge-warning'}">${r.recommended_plan === 'MANUAL' ? '需人工处理' : r.recommended_plan + '餐'}</span></td>
+            <td><small>${escHtml(r.reason || '-')}</small></td>
+            <td><small>${escHtml(r.risk_notes || '-')}</small></td>
+            <td>${r.confirmed ? '<span class="badge badge-success">已确认</span>' : '<span class="badge badge-neutral">未确认</span>'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+</script>
+</body>
+</html>
