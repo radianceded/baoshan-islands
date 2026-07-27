@@ -173,6 +173,40 @@
   .big-btn:disabled{background:#CFD8DD;color:#fff;box-shadow:none;cursor:not-allowed}
   .big-btn .ic{font-size:18px}
 
+  /* ───── 家长两周选餐：横条式工作流 ───── */
+  .meal-flow{display:grid;gap:14px}
+  .meal-flow-card{background:#fff;border:1px solid rgba(180,220,240,.7);border-radius:20px;box-shadow:0 6px 20px rgba(0,80,120,.08);overflow:hidden}
+  .meal-flow-toggle{width:100%;display:flex;align-items:center;gap:14px;padding:20px;border:0;background:#fff;color:var(--ink);text-align:left;cursor:pointer;font-family:inherit;transition:background .16s var(--ease)}
+  .meal-flow-toggle:hover{background:#F8FCFE}
+  .meal-flow-toggle:focus-visible{outline:3px solid rgba(28,147,184,.35);outline-offset:-3px}
+  .meal-flow-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:16px;flex:0 0 auto;color:#C9821B;background:#FFF1D6}
+  .meal-flow-icon.blue{color:#13718E;background:#E3F3FA}
+  .meal-flow-title{font-size:20px;font-weight:900;letter-spacing:.8px}
+  .meal-flow-note{margin-left:auto;color:#6F8DA1;font-size:12px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+  .meal-flow-chevron{margin-left:6px;color:#7BB8DA;transition:transform .2s var(--ease)}
+  .meal-flow-card.is-open .meal-flow-chevron{transform:rotate(180deg)}
+  .meal-flow-content{padding:0 20px 20px;border-top:1px solid #E2EEF4}
+  .meal-flow-content[hidden]{display:none}
+  .meal-picker-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:15px 0 12px;color:var(--ink-1);font-size:13px;font-weight:700}
+  .meal-progress{margin-left:auto;color:var(--sea-deep);font-weight:900}
+  .meal-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .meal-week-column{background:#F4FAFD;border-radius:14px;padding:14px}
+  .meal-week-heading{display:inline-flex;align-items:center;color:#fff;font-weight:900;padding:6px 12px;border-radius:10px;margin-bottom:8px;font-size:13px}
+  .pm-choice-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed #DCEBF3}
+  .pm-choice-row:last-child{border-bottom:0}
+  .pm-choice-row.is-missing{background:#FFF8EB;margin:0 -7px;padding-left:7px;padding-right:7px;border-radius:8px}
+  .pm-choice-day{flex:1;font-size:13px;font-weight:800;color:var(--ink)}
+  .pm-choice-option{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;cursor:pointer}
+  .pm-choice-option input{accent-color:var(--sea-deep)}
+  .pm-choice-option.option-a input{accent-color:#EFA133}
+  .pm-choice-option.option-b input{accent-color:var(--ocean)}
+  .meal-picker-footer{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;margin-top:16px}
+  .meal-picker-status{font-size:12px;font-weight:800;color:#6F8DA1;min-height:18px}
+  .meal-detail-content{padding-top:10px}
+  @media (max-width:760px){
+    .meal-flow-toggle{padding:16px 14px;gap:10px}.meal-flow-icon{width:42px;height:42px;border-radius:14px}.meal-flow-title{font-size:17px}.meal-flow-note{font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:116px}.meal-flow-content{padding:0 14px 14px}.meal-choice-grid{grid-template-columns:1fr}.meal-picker-footer{justify-content:stretch}.meal-picker-footer .big-btn{width:100%;justify-content:center}.meal-progress{margin-left:0}.nutrition-record{grid-template-columns:1fr;gap:7px}.nutrition-plan{justify-self:start}
+  }
+
   /* ───── AI 营养师 ───── */
   .ai-coach{
     position:relative;
@@ -443,7 +477,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     <span>快乐学习群岛</span><span class="arrow">›</span><span><i data-lucide="apple"></i> 健康岛</span>
   </div>
   <div class="topbar-right">
-    <a href="/nutrition/" target="_blank" style="display:inline-block;margin-right:12px;padding:7px 16px;border-radius:var(--r-pill);background:#4f8a5f;color:#fff;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;text-decoration:none" title="营养餐智能分配系统">🍱 营养配餐</a>
     <div class="student-pill">
       <div class="stu-avatar" id="stuAvatar">林</div>
     <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:7px 13px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
@@ -471,50 +504,63 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <div class="wrap">
 
   <!-- ═══════ 家长视图：选餐 + 每周餐食展示 ═══════ -->
-  <div class="card" data-show-for="parent" id="parent-meal-panel" style="margin-bottom:18px">
-    <div class="card-h">
-      <div class="icon orange"><i data-lucide="salad"></i></div>
-      <h2>每两周一次选餐</h2>
-      <div class="sub" id="pmWeekLabel">第 17 周（奇数） + 第 18 周（偶数）</div>
-    </div>
-
+  <div class="meal-flow" data-show-for="parent" id="parent-meal-panel" style="margin-bottom:18px">
     <input id="pmWeekOdd" type="hidden" value="17">
     <input id="pmWeekEven" type="hidden" value="18">
 
-    <!-- 菜单图（仅当前两周，各一张） -->
-    <div id="pmMenuImages" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px;max-width:100%"></div>
-
-    <!-- 10 天选择网格 -->
-    <div id="pmChoices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;max-width:100%"></div>
-
-    <div style="margin-top:18px;text-align:right">
-      <button class="big-btn" id="pmSubmit" onclick="submitParentMeals()">
-        <span class="ic">📨</span><span>提交本两周选餐</span>
+    <section class="meal-flow-card is-open" id="pmPickerCard">
+      <button class="meal-flow-toggle" id="pmPickerToggle" type="button" onclick="toggleParentMealSection('picker')" aria-controls="pmPickerContent" aria-expanded="true">
+        <span class="meal-flow-icon"><i data-lucide="salad"></i></span>
+        <span class="meal-flow-title">每两周一次选餐</span>
+        <span class="meal-flow-note" id="pmWeekLabel">第 17 周（奇数） + 第 18 周（偶数）</span>
+        <i class="meal-flow-chevron" data-lucide="chevron-down"></i>
       </button>
-    </div>
-
-    <div id="pmStatus" style="margin-top:12px;font-size:13px;font-weight:700;text-align:right;color:#7BB8DA"></div>
+      <div class="meal-flow-content" id="pmPickerContent">
+        <div class="meal-picker-meta">
+          <span>请为两个自然周各选 5 天午餐，提交后将同步给食堂。</span>
+          <span class="meal-progress" id="pmProgress">已选 0 / 10 天</span>
+        </div>
+        <div id="pmMenuImages" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px;max-width:100%"></div>
+        <div id="pmChoices" class="meal-choice-grid"></div>
+        <div class="meal-picker-footer">
+          <div id="pmStatus" class="meal-picker-status" aria-live="polite"></div>
+          <button class="big-btn" id="pmSubmit" type="button" onclick="submitParentMeals()" disabled>
+            <span class="ic">📨</span><span>提交本两周选餐</span>
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- ═══════ 家长视图：每日餐食详情（提交后显示） ═══════ -->
-  <div data-show-for="parent" id="parent-daily-panel" style="display:none;margin-bottom:18px">
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-h">
-        <div class="icon orange"><i data-lucide="clipboard-list"></i></div>
-        <h2>本周餐食详情</h2>
-        <div class="sub" id="pdWeekLabel">第 17 周（奇数）</div>
-      </div>
-      <div id="pdDaysOdd"></div>
-    </div>
-    <div class="card">
-      <div class="card-h">
-        <div class="icon blue"><i data-lucide="clipboard-list"></i></div>
-        <h2>下周餐食详情</h2>
-        <div class="sub" id="pdWeekLabel2">第 18 周（偶数）</div>
-      </div>
-      <div id="pdDaysEven"></div>
-    </div>
+  <div data-show-for="parent" id="parent-daily-panel" class="meal-flow" hidden style="margin-bottom:18px">
+    <section class="meal-flow-card" id="pdOddCard">
+      <button class="meal-flow-toggle" id="pdOddToggle" type="button" onclick="toggleParentMealSection('odd')" aria-controls="pdOddContent" aria-expanded="false">
+        <span class="meal-flow-icon"><i data-lucide="clipboard-list"></i></span>
+        <span class="meal-flow-title">本周餐食详情</span>
+        <span class="meal-flow-note" id="pdWeekLabel">第 17 周（奇数）</span>
+        <i class="meal-flow-chevron" data-lucide="chevron-down"></i>
+      </button>
+      <div class="meal-flow-content meal-detail-content" id="pdOddContent" hidden><div id="pdDaysOdd"></div></div>
+    </section>
+    <section class="meal-flow-card" id="pdEvenCard">
+      <button class="meal-flow-toggle" id="pdEvenToggle" type="button" onclick="toggleParentMealSection('even')" aria-controls="pdEvenContent" aria-expanded="false">
+        <span class="meal-flow-icon blue"><i data-lucide="clipboard-list"></i></span>
+        <span class="meal-flow-title">下周餐食详情</span>
+        <span class="meal-flow-note" id="pdWeekLabel2">第 18 周（偶数）</span>
+        <i class="meal-flow-chevron" data-lucide="chevron-down"></i>
+      </button>
+      <div class="meal-flow-content meal-detail-content" id="pdEvenContent" hidden><div id="pdDaysEven"></div></div>
+    </section>
   </div>
+
+  <!-- ═══════ 营养配餐入口 ═══════ -->
+  <a data-show-for="parent,teacher,admin" class="meal-flow-card meal-flow-toggle" href="/nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐智能推荐">
+    <span class="meal-flow-icon blue"><i data-lucide="salad"></i></span>
+    <span class="meal-flow-title">营养配餐</span>
+    <span class="meal-flow-note">查看营养推荐</span>
+    <i class="meal-flow-chevron" data-lucide="arrow-right"></i>
+  </a>
 
   <!-- ═══════ 家长视图：成长档案（屈光曲线 + 历年体测 + 体检） ═══════ -->
   <div data-show-for="parent" id="parent-growth-panel" style="margin-bottom:18px">
@@ -1575,6 +1621,49 @@ const DAY_LABELS = ['周一','周二','周三','周四','周五'];
 
 let _pmExisting = {odd:{}, even:{}};   // { odd:{1:'A',2:'B'...}, even:{...} }
 let _pmReadOnly = false;
+let _pmOpenSection = 'picker';
+
+function toggleParentMealSection(section, forceOpen){
+  _pmOpenSection = forceOpen === true ? section : (_pmOpenSection === section ? null : section);
+  const sections = {
+    picker:{card:'pmPickerCard', toggle:'pmPickerToggle', content:'pmPickerContent'},
+    odd:{card:'pdOddCard', toggle:'pdOddToggle', content:'pdOddContent'},
+    even:{card:'pdEvenCard', toggle:'pdEvenToggle', content:'pdEvenContent'},
+  };
+  Object.entries(sections).forEach(([key, ids])=>{
+    const card = document.getElementById(ids.card);
+    const toggle = document.getElementById(ids.toggle);
+    const content = document.getElementById(ids.content);
+    if(!card || !toggle || !content) return;
+    const open = _pmOpenSection === key;
+    card.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    content.hidden = !open;
+  });
+  if(window.lucide) lucide.createIcons();
+}
+
+function updateParentMealProgress(){
+  const selected = document.querySelectorAll('#pmChoices input[type="radio"]:checked').length;
+  const progress = document.getElementById('pmProgress');
+  const btn = document.getElementById('pmSubmit');
+  if(progress) progress.textContent = _pmReadOnly ? '已提交 10 / 10 天' : `已选 ${selected} / 10 天`;
+  if(btn && !_pmReadOnly) btn.disabled = selected !== 10;
+  return selected;
+}
+
+function enterNutritionRecommendations(event){
+  event.preventDefault();
+  const isParent = window.UserAuth && UserAuth.isParent && UserAuth.isParent();
+  const role = isParent ? 'parent' : 'teacher';
+  const params = new URLSearchParams({role});
+  if(isParent){
+    const bound = UserAuth.getBoundStudent && UserAuth.getBoundStudent();
+    const childCode = (bound && (bound.idCard || bound.id_card)) || sessionStorage.getItem('bs_bound_id_card');
+    if(childCode) params.set('childCode', childCode);
+  }
+  window.location.href = `/nutrition/recommendations.html?${params.toString()}`;
+}
 
 async function renderParentMealPicker(){
   const wkOdd = 17;
@@ -1589,13 +1678,13 @@ async function renderParentMealPicker(){
   // 先查"已选过"
   await loadExistingChoices(wkOdd, wkEven);
 
-  // 构建 10 天选择网格
+  // 构建两周选择网格。未选日期保持空白，避免无意中按 A 餐提交。
   const buildCol = (parity, week) => {
     const titleBg = parity === 'odd' ? '#FFD86A,#FF9F4A' : '#7BC8E8,var(--ocean)';
     const tag = parity === 'odd' ? '奇数周' : '偶数周';
     return `
-      <div style="background:#F4FAFD;border-radius:14px;padding:14px">
-        <div style="background:linear-gradient(135deg,${titleBg});color:#fff;font-weight:900;padding:6px 12px;border-radius:10px;display:inline-block;margin-bottom:10px">${tag} · 第 ${week} 周</div>
+      <div class="meal-week-column">
+        <div class="meal-week-heading" style="background:linear-gradient(135deg,${titleBg})">${tag} · 第 ${week} 周</div>
         ${DAY_LABELS.map((d,i)=>{
           const prev = _pmExisting[parity][i+1];
           const aSel = prev === 'A' ? 'checked' : '';
@@ -1603,13 +1692,13 @@ async function renderParentMealPicker(){
           const lock = _pmReadOnly ? 'disabled' : '';
           const tag2 = prev ? `<span style="color:var(--sea-deep);font-weight:800;font-size:11px;margin-left:6px">✓ 已选 ${prev}餐</span>` : '';
           return `
-            <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed #DCEBF3">
-              <span style="flex:1;font-size:13px;font-weight:700;color:#1F3A4D">${d}${tag2}</span>
-              <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
-                <input type="radio" name="pm_${parity}_${i+1}" value="A" ${aSel} ${lock} style="accent-color:#EFA133"> A 餐
+            <div class="pm-choice-row" data-choice-row="pm_${parity}_${i+1}">
+              <span class="pm-choice-day">${d}${tag2}</span>
+              <label class="pm-choice-option option-a" style="cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
+                <input type="radio" name="pm_${parity}_${i+1}" value="A" ${aSel} ${lock}> A 餐
               </label>
-              <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
-                <input type="radio" name="pm_${parity}_${i+1}" value="B" ${bSel} ${lock} style="accent-color:var(--ocean)"> B 餐
+              <label class="pm-choice-option option-b" style="cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
+                <input type="radio" name="pm_${parity}_${i+1}" value="B" ${bSel} ${lock}> B 餐
               </label>
             </div>
           `;
@@ -1618,20 +1707,28 @@ async function renderParentMealPicker(){
     `;
   };
   document.getElementById('pmChoices').innerHTML = buildCol('odd', wkOdd) + buildCol('even', wkEven);
+  document.querySelectorAll('#pmChoices input[type="radio"]').forEach(input=>{
+    input.addEventListener('change', ()=>{
+      const row = document.querySelector(`[data-choice-row="${input.name}"]`);
+      if(row) row.classList.remove('is-missing');
+      updateParentMealProgress();
+    });
+  });
 
-  // 已提交 → 锁住选择，展示每日餐食详情
+  // 已提交后仍保留横条入口，供家长查看已选内容。
   const btn = document.getElementById('pmSubmit');
   if(_pmReadOnly){
     btn.style.display = 'none';
     const status = document.getElementById('pmStatus');
-    if(status){ status.textContent = '✅ 已提交教务处，不可修改'; status.style.color = 'var(--sea-deep)'; }
-    // 展示每日餐食
+    if(status){ status.textContent = '已提交，不可修改'; status.style.color = 'var(--sea-deep)'; }
     renderDailyMeals();
   } else {
     btn.style.display = '';
     btn.innerHTML = '<span class="ic">📨</span><span>提交本两周选餐</span>';
     btn.onclick = submitParentMeals;
   }
+  updateParentMealProgress();
+  toggleParentMealSection(_pmOpenSection, _pmOpenSection !== null);
 }
 
 async function loadExistingChoices(wkOdd, wkEven){
@@ -1654,13 +1751,6 @@ async function loadExistingChoices(wkOdd, wkEven){
     }
     const total = Object.keys(_pmExisting.odd).length + Object.keys(_pmExisting.even).length;
     _pmReadOnly = total >= 10;   // 全部 10 天都有 → 锁住
-    // 已有选餐记录 → 展示每日餐食详情
-    if(total > 0 && _pmReadOnly){
-      document.getElementById('pmSubmit').style.display = 'none';
-      document.getElementById('pmChoices').style.display = 'none';
-      document.getElementById('pmMenuImages').style.display = 'none';
-      renderDailyMeals();
-    }
   } catch(e){ console.warn('[loadExistingChoices]', e.message); }
 }
 
@@ -1692,13 +1782,20 @@ async function submitParentMeals(){
   const wkOdd = parseInt(document.getElementById('pmWeekOdd').value, 10);
   const wkEven = parseInt(document.getElementById('pmWeekEven').value, 10);
   const choices = { odd:{}, even:{} };
-  let total = 0;
+  const missing = [];
   for(const parity of ['odd','even']){
     for(let d=1; d<=5; d++){
       const sel = document.querySelector(`input[name="pm_${parity}_${d}"]:checked`);
-      if(sel){ choices[parity][d] = sel.value; total++; }
-      else { choices[parity][d] = 'A'; total++; }  // 默认 A 餐
+      if(sel){ choices[parity][d] = sel.value; }
+      else { missing.push(`pm_${parity}_${d}`); }
     }
+  }
+  if(missing.length){
+    missing.forEach(name=>document.querySelector(`[data-choice-row="${name}"]`)?.classList.add('is-missing'));
+    status.textContent = `还差 ${missing.length} 天未选择，请补齐后再提交`;
+    status.style.color = '#C2410C';
+    document.querySelector(`[data-choice-row="${missing[0]}"]`)?.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
   }
   status.textContent = '⏳ 正在提交…';
   status.style.color = '#7BB8DA';
@@ -1723,11 +1820,11 @@ async function submitParentMeals(){
       status.style.color = 'var(--sea-deep)';
       _pmReadOnly = true;
       _pmExisting = choices;
-      // 隐藏选餐UI，展示每日餐食详情
-      document.getElementById('pmSubmit').style.display = 'none';
-      document.getElementById('pmChoices').style.display = 'none';
-      document.getElementById('pmMenuImages').style.display = 'none';
       renderDailyMeals();
+      document.querySelectorAll('#pmChoices input[type="radio"]').forEach(input=>{ input.disabled = true; });
+      document.getElementById('pmSubmit').style.display = 'none';
+      updateParentMealProgress();
+      toggleParentMealSection('odd', true);
     } else {
       status.textContent = '❌ ' + (data.error || '提交失败');
       status.style.color = '#C2410C';
@@ -1742,7 +1839,7 @@ async function submitParentMeals(){
 async function renderDailyMeals(){
   const panel = document.getElementById('parent-daily-panel');
   if(!panel) return;
-  panel.style.display = '';
+  panel.hidden = false;
 
   const wkOdd = 17, wkEven = 18;
   const $ = id=>document.getElementById(id);
@@ -1781,6 +1878,7 @@ async function renderDailyMeals(){
   }
   if($('pdDaysOdd')) $('pdDaysOdd').innerHTML = odd;
   if($('pdDaysEven')) $('pdDaysEven').innerHTML = even;
+  toggleParentMealSection(_pmOpenSection, _pmOpenSection !== null);
 }
 
 /* ───── 单日营养分析 + 晚餐建议 ───── */
