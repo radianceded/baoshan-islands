@@ -2,6 +2,32 @@
 
 // API 基础路径
 const API_BASE = window.NUTRITION_API_BASE || '/api/nutrition';
+const NUTRITION_CONTEXT = new URLSearchParams(window.location.search);
+const NUTRITION_ROLE = NUTRITION_CONTEXT.get('role') || localStorage.getItem('nutrition_role') || 'teacher';
+const NUTRITION_CHILD_CODE = NUTRITION_CONTEXT.get('childCode') || '';
+
+function nutritionHealthIslandUrl() {
+  const params = new URLSearchParams({ role: NUTRITION_ROLE });
+  if (NUTRITION_ROLE === 'parent' && NUTRITION_CHILD_CODE) params.set('kid', NUTRITION_CHILD_CODE);
+  return `/island-health.html?${params.toString()}`;
+}
+
+function addNutritionBackButton() {
+  const header = document.querySelector('.app-header');
+  if (!header || header.querySelector('.nutrition-back-link')) return;
+  const link = document.createElement('a');
+  link.className = 'nutrition-back-link';
+  link.href = nutritionHealthIslandUrl();
+  link.textContent = '‹ 返回健康岛';
+  link.setAttribute('aria-label', '返回健康岛');
+  link.style.cssText = 'display:inline-flex;align-items:center;margin-right:14px;padding:7px 12px;border:1px solid rgba(255,255,255,.55);border-radius:8px;color:inherit;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap;';
+  link.onmouseenter = () => { link.style.background = 'rgba(255,255,255,.16)'; };
+  link.onmouseleave = () => { link.style.background = 'transparent'; };
+  header.prepend(link);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNutritionBackButton);
+else addNutritionBackButton();
 
 // ============================================================
 // API 请求封装
@@ -10,7 +36,12 @@ const API_BASE = window.NUTRITION_API_BASE || '/api/nutrition';
 async function apiFetch(path, options = {}) {
   const url = API_BASE + path;
   const config = {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Role': NUTRITION_ROLE,
+      ...(NUTRITION_CHILD_CODE ? {'X-Nutrition-Child-Code': NUTRITION_CHILD_CODE} : {}),
+      ...(options.headers || {})
+    },
     ...options,
   };
   try {

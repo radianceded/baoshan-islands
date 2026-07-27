@@ -16,7 +16,7 @@
   <div class="card">
     <div class="card-header">
       <h2>🤖 自动分配结果</h2>
-      <div class="btn-group">
+      <div class="btn-group" id="recommendationActions">
         <a href="review.html" class="btn btn-outline btn-sm">📋 人工复核</a>
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">📤 导出CSV</button>
         <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 导出JSON</button>
@@ -63,9 +63,15 @@
 
 <script src="common.js"></script>
 <script>
-  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  const ROLE = NUTRITION_ROLE;
   let currentPage = 1;
-  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+  const navItems = ROLE === 'parent' ? [['recommendations.html','孩子的营养推荐']] : [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']];
+  document.getElementById('mainNav').innerHTML = navItems.map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+  if (ROLE === 'parent') {
+    document.getElementById('recommendationActions').style.display = 'none';
+    document.getElementById('filterCampus').style.display = 'none';
+    document.getElementById('runBtn').style.display = 'none';
+  }
 
   document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
   loadResults();
@@ -106,7 +112,7 @@
             <td><small>${escHtml(r.reason||'-')}</small></td>
             <td>${r.risk_notes ? `<small class="text-warning">${escHtml(r.risk_notes)}</small>` : '-'}</td>
             <td>${r.confirmed ? '<span class="badge badge-success">已确认</span>' : '<span class="badge badge-neutral">待确认</span>'}</td>
-            <td>${!r.confirmed ? `<button class="btn btn-outline btn-sm" onclick="quickConfirm(${r.id})">确认</button>` : ''}</td>
+            <td>${ROLE !== 'parent' && !r.confirmed ? `<button class="btn btn-outline btn-sm" onclick="quickConfirm(${r.id})">确认</button>` : ''}</td>
           </tr>
         `).join('') || '<tr><td colspan="10" class="text-center">暂无推荐结果，请先执行推荐</td></tr>'}</tbody>
       </table>`;

@@ -44,6 +44,13 @@ def _check_perm(permission: str):
     return None
 
 
+def _check_recommend_read():
+    """家长仅可读取自己孩子的推荐；其他角色沿用完整推荐读取权限。"""
+    role = _get_role()
+    permission = "recommend:read_own" if role == "parent" else "recommend:read"
+    return _check_perm(permission)
+
+
 def _log(action: str, target_type: str, target_id: str, summary: str):
     """记录审计日志"""
     try:
@@ -468,7 +475,7 @@ def run_recommendation():
 
 @nutrition_bp.route("/recommendations", methods=["GET"])
 def list_recommendations():
-    err = _check_perm("recommend:read")
+    err = _check_recommend_read()
     if err:
         return err
 
@@ -484,6 +491,12 @@ def list_recommendations():
         recommended_plan=recommended_plan, campus=campus,
         page=page, page_size=page_size
     )
+    if _get_role() == "parent":
+        child_code = (request.headers.get("X-Nutrition-Child-Code") or "").strip()
+        if not child_code:
+            return jsonify({"total": 0, "page": page, "page_size": page_size, "items": []})
+        result["items"] = [item for item in result["items"] if item.get("child_code") == child_code]
+        result["total"] = len(result["items"])
     return jsonify(result)
 
 
@@ -549,11 +562,23 @@ def export_recommendations():
 
 @nutrition_bp.route("/recommendations/stats", methods=["GET"])
 def recommendation_stats():
-    err = _check_perm("recommend:read")
+    err = _check_recommend_read()
     if err:
         return err
 
     plan_date = request.args.get("plan_date", date.today().isoformat())
+    if _get_role() == "parent":
+        child_code = (request.headers.get("X-Nutrition-Child-Code") or "").strip()
+        own = models.list_recommendations(plan_date=plan_date, page=1, page_size=10000)["items"]
+        own = [item for item in own if item.get("child_code") == child_code]
+        return jsonify({
+            "plan_date": plan_date,
+            "total": len(own),
+            "a_count": sum(item.get("recommended_plan") == "A" for item in own),
+            "b_count": sum(item.get("recommended_plan") == "B" for item in own),
+            "manual_count": sum(item.get("recommended_plan") == "MANUAL" for item in own),
+            "confirmed_count": sum(bool(item.get("confirmed")) for item in own),
+        })
     stats = models.get_recommendation_stats(plan_date)
     return jsonify(stats)
 
