@@ -6,7 +6,7 @@ Flask API 路由 — 儿童营养餐智能分配系统
 import json
 import traceback
 from datetime import date, datetime
-from flask import Blueprint, request, jsonify, g, Response
+from flask import Blueprint, request, jsonify, g, Response, current_app
 
 try:
     from . import models
@@ -27,12 +27,22 @@ nutrition_bp = Blueprint("nutrition", __name__, url_prefix="/api/nutrition")
 
 def _get_role():
     """从请求上下文获取当前用户角色（复用现有认证）"""
-    # 尝试从现有宝山认证获取
     role = getattr(g, "user_role", None)
     if role:
         return role
-    # 开发模式或未配置认证时默认 admin
-    return request.headers.get("X-User-Role", "admin")
+    if current_app.config.get("NUTRITION_ALLOW_DEMO_HEADERS", False):
+        return request.headers.get("X-User-Role", "none")
+    return "none"
+
+
+def _get_bound_child_code():
+    """读取服务端认证绑定的孩子；独立 demo 可显式允许旧测试头。"""
+    child_code = (getattr(g, "nutrition_child_code", None) or "").strip()
+    if child_code:
+        return child_code
+    if current_app.config.get("NUTRITION_ALLOW_DEMO_HEADERS", False):
+        return (request.headers.get("X-Nutrition-Child-Code") or "").strip()
+    return ""
 
 
 def _check_perm(permission: str):
@@ -486,34 +496,41 @@ def list_recommendations():
     page = int(request.args.get("page", 1))
     page_size = min(int(request.args.get("page_size", 50)), 200)
 
+    child_code = _get_bound_child_code() if _get_role() == "parent" else None
     result = models.list_recommendations(
         plan_date=plan_date, confirmed=confirmed,
         recommended_plan=recommended_plan, campus=campus,
+        child_code=child_code or None,
         page=page, page_size=page_size
     )
-    if _get_role() == "parent":
-        child_code = (request.headers.get("X-Nutrition-Child-Code") or "").strip()
-        if not child_code:
-            return jsonify({"total": 0, "page": page, "page_size": page_size, "items": []})
-        result["items"] = [item for item in result["items"] if item.get("child_code") == child_code]
-        result["total"] = len(result["items"])
+    if _get_role() == "parent" and not child_code:
+        return jsonify({"total": 0, "page": page, "page_size": page_size, "items": []})
     return jsonify(result)
 
 
 @nutrition_bp.route("/recommendations/<int:rec_id>", methods=["GET"])
 def get_recommendation(rec_id):
-    err = _check_perm("recommend:read")
+    err = _check_recommend_read()
     if err:
         return err
 
     conn = models.get_db()
+    params = {"id": rec_id}
+    own_scope = ""
+    if _get_role() == "parent":
+        child_code = _get_bound_child_code()
+        if not child_code:
+            conn.close()
+            return jsonify({"error": "推荐记录不存在"}), 404
+        own_scope = " AND nc.child_code = :child_code"
+        params["child_code"] = child_code
     row = conn.execute(
-        """SELECT nr.*, nc.child_code, nc.display_name, nc.age, nc.gender,
+        f"""SELECT nr.*, nc.child_code, nc.display_name, nc.age, nc.gender,
                   nc.height_cm, nc.weight_kg, nc.bmi, nc.data_status, nc.campus
            FROM nutrition_recommendations nr
            JOIN nutrition_children nc ON nr.child_id = nc.id
-           WHERE nr.id = :id""",
-        {"id": rec_id}
+           WHERE nr.id = :id{own_scope}""",
+        params
     ).fetchone()
     conn.close()
     if not row:
@@ -568,9 +585,11 @@ def recommendation_stats():
 
     plan_date = request.args.get("plan_date", date.today().isoformat())
     if _get_role() == "parent":
-        child_code = (request.headers.get("X-Nutrition-Child-Code") or "").strip()
-        own = models.list_recommendations(plan_date=plan_date, page=1, page_size=10000)["items"]
-        own = [item for item in own if item.get("child_code") == child_code]
+        child_code = _get_bound_child_code()
+        own = models.list_recommendations(
+            plan_date=plan_date, child_code=child_code or None,
+            page=1, page_size=10000
+        )["items"] if child_code else []
         return jsonify({
             "plan_date": plan_date,
             "total": len(own),

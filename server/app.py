@@ -158,7 +158,9 @@ DISABLE_DEMO = os.environ.get('DISABLE_DEMO', '').lower() in ('1', 'true', 'yes'
 
 # 项目根目录
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, 'student_data.db')
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
+app.config['NUTRITION_ALLOW_DEMO_HEADERS'] = not DISABLE_DEMO
 # 儿童营养餐智能分配系统
 import sys as _sys_nutrition
 _sys_nutrition.path.insert(0, os.path.join(BASE_DIR, "nutrition"))
@@ -178,7 +180,7 @@ try:
     _startup_db.execute('''CREATE TABLE IF NOT EXISTS user_bindings(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         dingtalk_unionid TEXT UNIQUE,
-        role TEXT NOT NULL DEFAULT ''parent'',
+        role TEXT NOT NULL DEFAULT 'parent',
         sub_role TEXT,
         bound_id_card TEXT,
         bound_grade TEXT,
@@ -212,14 +214,14 @@ try:
         student_id TEXT NOT NULL,
         student_name TEXT,
         grade TEXT, class_name TEXT, campus TEXT DEFAULT '',
-        source TEXT NOT NULL CHECK(source IN (''zhixin_jiejie'',''mentor'',''system'',''ai_alert'')),
-        type TEXT NOT NULL CHECK(type IN (''self_report'',''teacher_observation'',''ai_alert'',''escalation'')),
+        source TEXT NOT NULL CHECK(source IN ('zhixin_jiejie','mentor','system','ai_alert')),
+        type TEXT NOT NULL CHECK(type IN ('self_report','teacher_observation','ai_alert','escalation')),
         severity INTEGER NOT NULL CHECK(severity BETWEEN 1 AND 5),
         content TEXT NOT NULL,
         tags TEXT,
         recorded_by TEXT,
-        visibility TEXT DEFAULT ''1,2'',
-        status TEXT DEFAULT ''open'' CHECK(status IN (''open'',''tracking'',''resolved'')),
+        visibility TEXT DEFAULT '1,2',
+        status TEXT DEFAULT 'open' CHECK(status IN ('open','tracking','resolved')),
         linked_event_id INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )''')
@@ -298,8 +300,6 @@ def _rate_check(key, limit=UPLOAD_RATE_PER_MIN, window=60):
 @app.errorhandler(413)
 def _too_large(e):
     return jsonify({'error': f'文件过大(单次上传 ≤ {MAX_UPLOAD_MB} MB)'}), 413
-
-DB_PATH = os.path.join(BASE_DIR, 'student_data.db')
 
 # ==================== 隐私保护 - 姓名去敏 ====================
 
@@ -995,6 +995,16 @@ def _current_user():
                 }
             return {'role':'parent','sub_role':None,'bound_id_card':(pk['kid_id_card'] if pk else None),'bound_grade':(pk['kid_grade'] if pk else None),'bound_class':(pk['kid_class'] if pk else None),'identity':f"dt:{uid}"}
     return {'role':'none','sub_role':None,'bound_id_card':None,'bound_grade':None,'bound_class':None,'identity':f"ip:{request.remote_addr}"}
+
+@app.before_request
+def _bridge_nutrition_auth():
+    """把平台认证结果注入营养蓝图，避免信任营养页面自报的角色。"""
+    if not request.path.startswith('/api/nutrition/'):
+        return None
+    user = _current_user()
+    g.user_role = user['role']
+    g.nutrition_child_code = user.get('bound_id_card')
+    return None
 
 def _require_can_see(id_card):
     """家长只能看自己绑定的孩子；老师/管理员通行"""
@@ -2477,18 +2487,43 @@ def submit_meal_choices():
     }
     """
     u = _current_user()
+    if u['role'] != 'parent':
+        return jsonify({'error':'仅家长可提交选餐'}), 403
+
     data = request.get_json() or {}
-    id_card = data.get('studentIdCard') or u['bound_id_card']
+    id_card = u['bound_id_card']
     student_name = data.get('studentName')   # demo 模式下没真实 id_card 时用 name
+    if not id_card and not DISABLE_DEMO:
+        return jsonify({'error':'家长账号尚未绑定学生'}), 403
+    if not id_card:
+        id_card = data.get('studentIdCard')
     if not id_card and not student_name:
         return jsonify({'error':'studentIdCard 或 studentName 必填'}), 400
-    if u['role'] == 'parent' and u['bound_id_card'] and id_card and u['bound_id_card'] != id_card:
-        return jsonify({'error':'家长只能为自己孩子选餐'}), 403
     week_odd = data.get('week_odd')
     week_even = data.get('week_even')
     choices = data.get('choices') or {}
     if not week_odd or not week_even:
         return jsonify({'error':'week_odd 与 week_even 必填'}), 400
+    try:
+        week_odd = int(week_odd)
+        week_even = int(week_even)
+    except (TypeError, ValueError):
+        return jsonify({'error':'week_odd 与 week_even 必须是整数'}), 400
+
+    normalized_choices = {}
+    required_days = {1, 2, 3, 4, 5}
+    for parity in ('odd', 'even'):
+        normalized_choices[parity] = {}
+        for day, choice in (choices.get(parity) or {}).items():
+            try:
+                day = int(day)
+            except (TypeError, ValueError):
+                return jsonify({'error':'选餐日期必须为周一至周五'}), 400
+            if day not in required_days or choice not in ('A', 'B'):
+                return jsonify({'error':'选餐内容无效'}), 400
+            normalized_choices[parity][day] = choice
+        if set(normalized_choices[parity]) != required_days:
+            return jsonify({'error':'请完整选择奇偶周共 10 天的餐食'}), 400
 
     _ensure_meal_tables()
     db = get_db()
@@ -2505,14 +2540,10 @@ def submit_meal_choices():
     sname = s['name']; sgrade = s['grade_name']; sclass = s['class_name']
     saved = 0
     for parity, week in (('odd', week_odd), ('even', week_even)):
-        for wd, c in (choices.get(parity) or {}).items():
-            try: wd = int(wd)
-            except: continue
-            if not (1 <= wd <= 5): continue
-            if c not in ('A','B'): continue
+        for wd, c in normalized_choices[parity].items():
             db.execute('''INSERT INTO meal_choices(id_card, name, grade_name, class_name, week_number, parity, weekday, choice, chosen_by)
                           VALUES(?,?,?,?,?,?,?,?,?)''',
-                       (id_card, sname, sgrade, sclass, int(week), parity, wd, c, u['identity']))
+                       (id_card, sname, sgrade, sclass, week, parity, wd, c, u['identity']))
             saved += 1
     db.commit()
     return jsonify({'saved': saved, 'message': f'共保存 {saved} 条选餐记录'})
@@ -2523,7 +2554,10 @@ def get_student_meal_choices(id_card):
     _ensure_meal_tables()
     db = get_db()
     if id_card.startswith('name:'):
-        # demo: 用学生姓名查（家长账号还没有真实学籍号）
+        u = _current_user()
+        if DISABLE_DEMO or u['role'] != 'parent' or u.get('bound_id_card'):
+            return jsonify({'error':'无权限'}), 403
+        # 仅显式 demo 模式可按姓名查；正式账号必须使用绑定学籍号
         name = id_card[5:]
         cur = db.execute('SELECT week_number, parity, weekday, choice, created_at FROM meal_choices WHERE name=? ORDER BY week_number DESC, parity, weekday', (name,))
     else:
@@ -2550,13 +2584,11 @@ def list_meal_choices():
     if u['role'] == 'parent':
         bound_id = u.get('bound_id_card')
         if bound_id:
-            row = db.execute('SELECT name FROM students WHERE id_card = ?', (bound_id,)).fetchone()
-            if row:
-                where.append('name = ?')
-                params.append(row['name'])
+            where.append('id_card = ?')
+            params.append(bound_id)
         else:
             return jsonify({'choices': [], 'total': 0})
-    else:
+    elif u['role'] in ('teacher', 'admin'):
         if week:
             where.append('week_number = ?')
             params.append(int(week))
@@ -2569,6 +2601,8 @@ def list_meal_choices():
         if name:
             where.append('name = ?')
             params.append(name)
+    else:
+        return jsonify({'error':'无权限'}), 403
 
     sql = 'SELECT * FROM meal_choices'
     if where:

@@ -1623,6 +1623,16 @@ let _pmExisting = {odd:{}, even:{}};   // { odd:{1:'A',2:'B'...}, even:{...} }
 let _pmReadOnly = false;
 let _pmOpenSection = 'picker';
 
+function mealChoiceAuthHeaders(){
+  const token = sessionStorage.getItem('bs_session_token');
+  if(token) return {'Authorization': `Bearer ${token}`};
+  const headers = {'X-Demo-Role': (UserAuth.getRole && UserAuth.getRole()) || sessionStorage.getItem('bs_role') || 'parent'};
+  const boundId = UserAuth.getBoundIdCard && UserAuth.getBoundIdCard()
+    || sessionStorage.getItem('bs_bound_id_card');
+  if(boundId) headers['X-Demo-Kid'] = boundId;
+  return headers;
+}
+
 function toggleParentMealSection(section, forceOpen){
   _pmOpenSection = forceOpen === true ? section : (_pmOpenSection === section ? null : section);
   const sections = {
@@ -1734,12 +1744,18 @@ async function renderParentMealPicker(){
 async function loadExistingChoices(wkOdd, wkEven){
   _pmExisting = {odd:{}, even:{}};
   _pmReadOnly = false;
+  const bound = UserAuth.getBoundStudent && UserAuth.getBoundStudent();
+  const boundId = UserAuth.getBoundIdCard && UserAuth.getBoundIdCard()
+    || (bound && (bound.idCard || bound.id_card));
   const kid = UserAuth.getKidName && UserAuth.getKidName()
-    || (UserAuth.getBoundStudent && UserAuth.getBoundStudent() || {}).displayName
+    || (bound || {}).displayName
     || new URLSearchParams(location.search).get('kidName');
-  if(!kid){ console.warn('[loadExistingChoices] no kid name'); return; }
+  const lookup = boundId || (kid ? `name:${kid}` : '');
+  if(!lookup){ console.warn('[loadExistingChoices] no bound student'); return; }
   try {
-    const r = await fetch('/api/meal-choices/student/' + encodeURIComponent('name:' + kid));
+    const r = await fetch('/api/meal-choices/student/' + encodeURIComponent(lookup), {
+      headers: mealChoiceAuthHeaders(),
+    });
     if(!r.ok) return;
     const data = await r.json();
     for(const c of (data.choices || [])){
@@ -1811,7 +1827,7 @@ async function submitParentMeals(){
     };
     const r = await fetch('/api/meal-choices', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json', ...mealChoiceAuthHeaders()},
       body: JSON.stringify(body),
     });
     const data = await r.json();
@@ -1851,7 +1867,9 @@ async function renderDailyMeals(){
 
   const renderDayCard = (parity, wk, dayIdx, dayLabel) => {
     const choice = (_pmExisting[parity] || {})[dayIdx+1] || 'A';
-    const fb = (FALLBACK_MEALS[dayLabel] || {})[choice] || { title: `${choice} 餐`, dishes: ['🍱 菜单待更新'], cal: 0, protein: 0, fat: 0, vc: 0 };
+    const fb = (((ALL_WEEKS[wk] || {})[dayLabel] || {})[choice])
+      || (FALLBACK_MEALS[dayLabel] || {})[choice]
+      || { title: `${choice} 餐`, dishes: ['🍱 菜单待更新'], cal: 0, protein: 0, fat: 0, vc: 0 };
     const color = choice === 'A' ? '#EFA133' : 'var(--ocean)';
     const key = `${parity}_${dayIdx+1}`;
     window._dailyMealData[key] = { parity, wk, dayLabel, choice, ...fb };

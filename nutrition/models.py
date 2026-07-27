@@ -561,7 +561,7 @@ def save_recommendations(results: list) -> int:
 
 
 def list_recommendations(plan_date=None, confirmed=None, recommended_plan=None,
-                          campus=None, page=1, page_size=50) -> dict:
+                          campus=None, child_code=None, page=1, page_size=50) -> dict:
     conn = get_db()
     conditions = ["nc.is_deleted = 0"]
     params = {}
@@ -578,6 +578,9 @@ def list_recommendations(plan_date=None, confirmed=None, recommended_plan=None,
     if campus:
         conditions.append("nc.campus = :campus")
         params["campus"] = campus
+    if child_code:
+        conditions.append("nc.child_code = :child_code")
+        params["child_code"] = child_code
 
     where = " AND ".join(conditions)
 

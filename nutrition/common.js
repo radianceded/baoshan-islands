@@ -35,11 +35,21 @@ else addNutritionBackButton();
 
 async function apiFetch(path, options = {}) {
   const url = API_BASE + path;
+  const token = sessionStorage.getItem('bs_session_token');
+  const authHeaders = token
+    ? {'Authorization': `Bearer ${token}`}
+    : {
+        'X-Demo-Role': NUTRITION_ROLE,
+        'X-User-Role': NUTRITION_ROLE,
+        ...(NUTRITION_CHILD_CODE ? {
+          'X-Demo-Kid': NUTRITION_CHILD_CODE,
+          'X-Nutrition-Child-Code': NUTRITION_CHILD_CODE,
+        } : {}),
+      };
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Role': NUTRITION_ROLE,
-      ...(NUTRITION_CHILD_CODE ? {'X-Nutrition-Child-Code': NUTRITION_CHILD_CODE} : {}),
+      ...authHeaders,
       ...(options.headers || {})
     },
     ...options,
