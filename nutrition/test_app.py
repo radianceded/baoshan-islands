@@ -15,6 +15,7 @@ except ImportError:
     from routes import init_app as init_nutrition
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.config["NUTRITION_ALLOW_DEMO_HEADERS"] = True
 
 # 注册营养餐模块
 init_nutrition(app)
