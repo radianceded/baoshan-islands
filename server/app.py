@@ -22,6 +22,11 @@ from urllib import error as urllib_error
 from flask import Flask, jsonify, request, g, make_response, send_from_directory, session
 from flask_cors import CORS
 
+try:
+    from .club_courses import COURSES, COURSES_BY_ID, SEMESTER as CLUB_SEMESTER
+except ImportError:
+    from club_courses import COURSES, COURSES_BY_ID, SEMESTER as CLUB_SEMESTER
+
 # ==================== 启动时自动加载 server/.env ====================
 def _load_env_file():
     """无需 python-dotenv：手动解析 server/.env,
@@ -1487,7 +1492,7 @@ def del_custom_student(id_str):
     db.commit()
     return jsonify({'message': '已删除'})
 
-# ==================== 社团（活动岛） ====================
+# ==================== 社团抢课（活动岛） ====================
 
 # 简单分类规则：按关键字猜类别（art / sport / tech / subject）
 def _club_category(name):
@@ -1528,50 +1533,180 @@ def _club_emoji(name, cat):
     if '戏' in n: return '🎭'
     return {'sport':'⚽','tech':'🤖','art':'🎨','subject':'📚'}.get(cat,'🎯')
 
+def _ensure_club_signups_table():
+    """仅保存抢课结果；课程目录继续使用只读配置，避免污染历史 clubs 表。"""
+    db = get_db()
+    db.execute('''CREATE TABLE IF NOT EXISTS club_signups(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT NOT NULL,
+        course_id TEXT NOT NULL,
+        semester TEXT NOT NULL,
+        registered_by TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(student_id, course_id, semester)
+    )''')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_course ON club_signups(course_id, semester)')
+    db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_student ON club_signups(student_id, semester)')
+    db.commit()
+
+
+def _club_course_payload(course, count=0, include_counts=False):
+    cat = _club_category(course['name'])
+    capacity = course['capacity']
+    payload = {
+        key: value for key, value in course.items()
+        if key != 'capacity'
+    }
+    payload.update({
+        'remaining': max(0, capacity - count),
+        'full': count >= capacity,
+        'cat': cat,
+        'ic': _club_emoji(course['name'], cat),
+        'time': course['weekday'],
+    })
+    if include_counts:
+        payload.update({
+            'capacity': capacity,
+            'count': count,
+            'max': capacity,
+        })
+    else:
+        payload.pop('remaining')
+    return payload
+
+
+def _club_signup_user():
+    user = _current_user()
+    if user['role'] != 'parent' or not user['bound_id_card']:
+        return None, (jsonify({
+            'success': False,
+            'error': '请先以家长身份登录并绑定学生后再抢课',
+        }), 401)
+    return user, None
+
+
 @app.route('/api/clubs', methods=['GET'])
 def list_clubs():
-    """所有社团目录（按 clubs 表 distinct，附报名人数）"""
+    """本学期可抢课程目录，附实时报名人数与剩余名额。"""
+    _ensure_club_signups_table()
     db = get_db()
-    cur = db.execute('''SELECT club_name AS name, teacher, location, COUNT(*) AS count
-                        FROM clubs
-                        GROUP BY club_name, teacher, location
-                        ORDER BY count DESC''')
+    include_counts = _current_user()['role'] in ('teacher', 'admin')
+    counts = {
+        row['course_id']: row['count']
+        for row in db.execute(
+            '''SELECT course_id, COUNT(*) AS count
+               FROM club_signups
+               WHERE semester = ?
+               GROUP BY course_id''',
+            (CLUB_SEMESTER,)
+        ).fetchall()
+    }
     items = []
-    for r in cur.fetchall():
-        cat = _club_category(r['name'])
-        items.append({
-            'name': r['name'] or '未命名',
-            'teacher': r['teacher'] or '',
-            'location': r['location'] or '',
-            'count': r['count'],
-            'max': max(20, r['count']),     # demo：上限 = 当前人数 + buffer
-            'cat': cat,
-            'ic': _club_emoji(r['name'], cat),
-            'time': '周三下午 15:30-16:30',  # 拓展课统一时间
-        })
-    return jsonify({'clubs': items, 'total': len(items)})
+    campus = (request.args.get('campus') or '').strip()
+    for course in COURSES:
+        if campus and campus != course['campus']:
+            continue
+        items.append(_club_course_payload(
+            course,
+            counts.get(course['id'], 0),
+            include_counts=include_counts,
+        ))
+    return jsonify({'clubs': items, 'total': len(items), 'semester': CLUB_SEMESTER})
 
 @app.route('/api/clubs/signups', methods=['GET'])
 def club_signups():
-    """根据学生 / 班级查报名记录"""
+    """当前绑定学生在本学期的抢课结果。"""
+    user, error = _club_signup_user()
+    if error:
+        return error
+    _ensure_club_signups_table()
     db = get_db()
-    student_name = request.args.get('name')
-    grade = request.args.get('grade')
-    klass = request.args.get('class')
-    where = []
-    params = []
-    if student_name:
-        where.append('student_name = ?'); params.append(student_name)
-    if grade:
-        where.append('grade = ?'); params.append(grade)
-    if klass:
-        where.append('class_name = ?'); params.append(klass)
-    sql = 'SELECT club_name, teacher, location, student_name, grade, class_name FROM clubs'
-    if where:
-        sql += ' WHERE ' + ' AND '.join(where)
-    sql += ' LIMIT 500'
-    rows = [dict(r) for r in db.execute(sql, params).fetchall()]
-    return jsonify({'signups': rows})
+    rows = db.execute(
+        '''SELECT course_id, created_at
+           FROM club_signups
+           WHERE student_id = ? AND semester = ?
+           ORDER BY created_at, id''',
+        (user['bound_id_card'], CLUB_SEMESTER)
+    ).fetchall()
+    signups = []
+    for row in rows:
+        course = COURSES_BY_ID.get(row['course_id'])
+        if course:
+            signups.append({**course, 'created_at': row['created_at']})
+    return jsonify({'signups': signups, 'semester': CLUB_SEMESTER})
+
+
+@app.route('/api/clubs/signups', methods=['POST'])
+def create_club_signup():
+    """原子抢占一个课程名额。"""
+    user, error = _club_signup_user()
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    course_id = (data.get('course_id') or '').strip()
+    course = COURSES_BY_ID.get(course_id)
+    if not course:
+        return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
+
+    _ensure_club_signups_table()
+    db = get_db()
+    try:
+        db.execute('BEGIN IMMEDIATE')
+        exists = db.execute(
+            '''SELECT 1 FROM club_signups
+               WHERE student_id = ? AND course_id = ? AND semester = ?''',
+            (user['bound_id_card'], course_id, CLUB_SEMESTER)
+        ).fetchone()
+        if exists:
+            db.rollback()
+            return jsonify({'success': False, 'error': '该学生已报名这门课程'}), 409
+
+        count = db.execute(
+            'SELECT COUNT(*) AS count FROM club_signups WHERE course_id = ? AND semester = ?',
+            (course_id, CLUB_SEMESTER)
+        ).fetchone()['count']
+        if count >= course['capacity']:
+            db.rollback()
+            return jsonify({'success': False, 'error': '课程名额已满'}), 409
+
+        db.execute(
+            '''INSERT INTO club_signups(student_id, course_id, semester, registered_by)
+               VALUES(?, ?, ?, ?)''',
+            (user['bound_id_card'], course_id, CLUB_SEMESTER, user['identity'])
+        )
+        db.commit()
+    except sqlite3.Error:
+        db.rollback()
+        app.logger.exception('club signup failed')
+        return jsonify({'success': False, 'error': '抢课繁忙，请稍后重试'}), 503
+
+    return jsonify({
+        'success': True,
+        'message': '报名成功',
+        'course': _club_course_payload(course, count + 1),
+    }), 201
+
+
+@app.route('/api/clubs/signups/<course_id>', methods=['DELETE'])
+def delete_club_signup(course_id):
+    """取消当前绑定学生的一条课程报名。"""
+    user, error = _club_signup_user()
+    if error:
+        return error
+    if course_id not in COURSES_BY_ID:
+        return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
+
+    _ensure_club_signups_table()
+    db = get_db()
+    cursor = db.execute(
+        '''DELETE FROM club_signups
+           WHERE student_id = ? AND course_id = ? AND semester = ?''',
+        (user['bound_id_card'], course_id, CLUB_SEMESTER)
+    )
+    db.commit()
+    if cursor.rowcount == 0:
+        return jsonify({'success': False, 'error': '没有找到该课程的报名记录'}), 404
+    return jsonify({'success': True, 'message': '已取消报名'})
 
 # ==================== 证书奖项（带扫描件） ====================
 

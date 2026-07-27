@@ -121,11 +121,11 @@
 <div class="banner">
   <img class="banner-img" src="assets/活动岛.png" alt="活动岛">
   <div class="banner-text">
-    <h1>🎨 活动岛</h1>
-    <p data-text-teacher="报社团 · 上才艺 · 玩到嗨"
-       data-text-parent="孩子参加哪些社团 · 推荐报哪个"
-    >报社团 · 上才艺 · 玩到嗨</p>
-    <span class="tag"><span class="dot"></span>本学期 <strong id="bannerClubCount">24</strong> 个社团 · 已开放报名</span>
+    <h1>🎨 社团抢课</h1>
+    <p data-text-teacher="看课程 · 查名额 · 管报名"
+       data-text-parent="为孩子选择本学期社团课程"
+    >选课程 · 抢名额 · 开启新兴趣</p>
+    <span class="tag"><span class="dot"></span>2025 学年第二学期 · <strong id="bannerClubCount">34</strong> 门课程</span>
   </div>
 </div>
 
@@ -152,10 +152,11 @@
       <div class="card">
         <div class="card-h">
           <div class="icon">🎪</div>
-          <h2>社团报名</h2>
-          <div class="sub" id="club-count">共 28 个</div>
+          <h2>社团抢课</h2>
+          <div class="sub" id="club-count">共 34 门</div>
         </div>
 
+        <div class="cat-tabs" id="campusTabs"></div>
         <div class="cat-tabs" id="catTabs"></div>
         <div class="club-grid" id="clubGrid"></div>
       </div>
@@ -167,7 +168,7 @@
         <div class="card-h" style="margin-bottom:10px">
           <div class="icon" style="background:#fff;border:2px solid #A893E8">⭐</div>
           <h2>我已报名</h2>
-          <div class="sub" style="color:#5C42A0" id="myCount">2 个</div>
+          <div class="sub" style="color:#5C42A0" id="myCount">0 门</div>
         </div>
         <div class="my-list" id="myList"></div>
       </div>
@@ -195,14 +196,29 @@ const CATS = [
   {key:'subject', name:'学科', ic:'📚'},
 ];
 
-/* CLUBS 已迁到 DB —— /api/clubs 返回真实社团目录（来自 clubs 表 674 条报名记录派生） */
+/* 课程目录来自学校最终汇总表，报名人数与当前学生报名结果来自 API。 */
 let CLUBS = [];
 let currentCat = 'all';
+let currentCampus = 'all';
 let signed = new Set();
+
+function authHeaders(json=false){
+  const headers = {};
+  const token = sessionStorage.getItem('bs_session_token');
+  if(token) headers.Authorization = 'Bearer ' + token;
+  // 本地账号 / URL demo 模式没有 Bearer；生产环境 DISABLE_DEMO 会忽略这些头。
+  if(!token && sessionStorage.getItem('bs_role')){
+    headers['X-Demo-Role'] = sessionStorage.getItem('bs_role');
+    const kid = sessionStorage.getItem('bs_bound_id_card');
+    if(kid) headers['X-Demo-Kid'] = kid;
+  }
+  if(json) headers['Content-Type'] = 'application/json';
+  return headers;
+}
 
 async function loadClubsFromDB(){
   try {
-    const r = await fetch('/api/clubs');
+    const r = await fetch('/api/clubs', {headers: authHeaders()});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const d = await r.json();
     CLUBS = (d.clubs || []).map(c => ({...c, loc: c.location}));
@@ -214,9 +230,42 @@ async function loadClubsFromDB(){
   }
 }
 
+async function loadMySignups(){
+  try {
+    const r = await fetch('/api/clubs/signups', {headers: authHeaders()});
+    if(r.status === 401){
+      signed = new Set();
+      return false;
+    }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    signed = new Set((d.signups || []).map(s => s.id));
+    return true;
+  } catch(e){
+    console.warn('[clubs] 报名记录拉取失败：', e.message);
+    signed = new Set();
+    return false;
+  }
+}
+
+function renderCampuses(){
+  const campuses = [
+    {key:'all', name:'全部校区'},
+    {key:'西校区', name:'西校区'},
+    {key:'东校区', name:'东校区'},
+  ];
+  document.getElementById('campusTabs').innerHTML = campuses.map(c => {
+    const count = c.key === 'all' ? CLUBS.length : CLUBS.filter(x => x.campus === c.key).length;
+    return `<button class="cat-tab ${c.key===currentCampus?'active':''}" onclick="setCampus('${c.key}')">
+      <span>📍 ${c.name}</span><span style="opacity:.7">(${count})</span>
+    </button>`;
+  }).join('');
+}
+
 function renderCats(){
   document.getElementById('catTabs').innerHTML = CATS.map(c=>{
-    const cnt = c.key==='all' ? CLUBS.length : CLUBS.filter(x=>x.cat===c.key).length;
+    const campusList = currentCampus === 'all' ? CLUBS : CLUBS.filter(x=>x.campus===currentCampus);
+    const cnt = c.key==='all' ? campusList.length : campusList.filter(x=>x.cat===c.key).length;
     return `<button class="cat-tab ${c.key===currentCat?'active':''}" onclick="setCat('${c.key}')">
       <span class="ic">${c.ic}</span><span>${c.name}</span><span style="opacity:.7">(${cnt})</span>
     </button>`;
@@ -224,18 +273,22 @@ function renderCats(){
 }
 
 function setCat(k){ currentCat=k; renderCats(); renderClubs(); }
+function setCampus(k){ currentCampus=k; renderCampuses(); renderCats(); renderClubs(); }
 
 function renderClubs(){
-  const list = currentCat==='all' ? CLUBS : CLUBS.filter(c=>c.cat===currentCat);
-  document.getElementById('club-count').textContent = `${list.length} 个`;
+  const list = CLUBS.filter(c =>
+    (currentCampus === 'all' || c.campus === currentCampus) &&
+    (currentCat === 'all' || c.cat === currentCat)
+  );
+  document.getElementById('club-count').textContent = `${list.length} 门`;
   document.getElementById('clubGrid').innerHTML = list.map((c,i)=>{
     const realIdx = CLUBS.indexOf(c);
     const tags = [];
-    if(c.hot) tags.push('<span class="tag hot">🔥 热门</span>');
-    if(c.new) tags.push('<span class="tag new">🆕 新</span>');
+    tags.push(`<span class="tag">${c.campus}</span>`);
     tags.push(`<span class="tag">${c.time}</span>`);
-    const isSigned = signed.has(c.name);
-    const full = c.count>=c.max;
+    const isSigned = signed.has(c.id);
+    const full = Boolean(c.full);
+    const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
     return `
       <div class="club-card" onclick="showClubDetail(${realIdx})">
         <div class="top">
@@ -247,11 +300,11 @@ function renderClubs(){
         </div>
         <div class="tags">${tags.join('')}</div>
         <div class="signup">
-          <span class="count">${c.count} / ${c.max} 人</span>
+          <span class="count">${canSeeCounts ? `${c.count} / ${c.max} 人` : (isSigned ? '已报名' : (full ? '名额已满' : '可报名'))}</span>
           ${isSigned
-            ? `<button class="signup-btn signed" onclick="event.stopPropagation();cancelSignup('${c.name}')">✓ 已报名</button>`
+            ? `<button class="signup-btn signed" onclick="event.stopPropagation();cancelSignup('${c.id}')">✓ 已报名</button>`
             : full ? `<button class="signup-btn" disabled style="background:#CFD8DD;cursor:not-allowed" onclick="event.stopPropagation()">已满</button>`
-            : `<button class="signup-btn" onclick="event.stopPropagation();signup('${c.name}')">立即报名</button>`}
+            : `<button class="signup-btn" onclick="event.stopPropagation();signup('${c.id}')">立即报名</button>`}
         </div>
       </div>
     `;
@@ -268,10 +321,11 @@ const CLUB_INTROS = {
 function showClubDetail(i){
   const c = CLUBS[i];
   if(!c) return;
-  const isSigned = signed.has(c.name);
-  const full = c.count>=c.max;
-  const pct = Math.round(c.count/c.max*100);
-  const TIPS = ['上课要带笔记本和笔','需穿运动服+运动鞋','请家长签知情同意书','需自备饮用水','可携带相机/手机记录'];
+  const isSigned = signed.has(c.id);
+  const full = Boolean(c.full);
+  const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
+  const pct = canSeeCounts ? Math.round(c.count/c.max*100) : 0;
+  const TIPS = [c.note, '报名成功后请按学校通知准时到课', '如需取消，请在本页面操作'].filter(Boolean);
   const ACT = ['月初汇报演出','期中联谊活动','参加校外比赛','作品参展','期末展示日'];
   let veil = document.getElementById('clubVeil');
   if(!veil){
@@ -288,7 +342,7 @@ function showClubDetail(i){
       <div class="icon ${c.cat}" style="width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0">${c.ic}</div>
       <div>
         <div style="font-size:22px;font-weight:900;color:#1F3A4D;letter-spacing:1px">${c.name}</div>
-        <div style="font-size:12px;color:#7BB8DA;margin-top:4px;font-weight:700">${c.teacher} 老师 · ${c.loc}</div>
+        <div style="font-size:12px;color:#7BB8DA;margin-top:4px;font-weight:700">${c.teacher} 老师 · ${c.campus} · ${c.loc}</div>
       </div>
     </div>
     <div style="background:linear-gradient(135deg,#F2EBFF,#E0D6FF);border-radius:14px;padding:14px;font-size:13.5px;line-height:1.7;color:#5C42A0;font-weight:600">
@@ -296,13 +350,16 @@ function showClubDetail(i){
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
       <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">活动时间</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.time}</div></div>
-      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">已报名</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.count} / ${c.max}</div></div>
-      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">还剩</div><div style="font-size:13px;font-weight:900;color:${c.max-c.count<5?'#E94B6A':'#22A05B'};margin-top:3px">${c.max-c.count} 个名额</div></div>
+      ${canSeeCounts
+        ? `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">已报名</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.count} / ${c.max}</div></div>
+           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">还剩</div><div style="font-size:13px;font-weight:900;color:${c.max-c.count<5?'#E94B6A':'#22A05B'};margin-top:3px">${c.max-c.count} 个名额</div></div>`
+        : `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">校区</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.campus}</div></div>
+           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">报名状态</div><div style="font-size:13px;font-weight:900;color:${full&&!isSigned?'#C2410C':'#22A05B'};margin-top:3px">${isSigned?'已报名':(full?'已满':'可报名')}</div></div>`}
     </div>
-    <div style="margin-top:14px">
+    ${canSeeCounts ? `<div style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#7BB8DA;font-weight:700;margin-bottom:6px"><span>报名进度</span><span>${pct}%</span></div>
       <div style="background:#F4FAFD;border-radius:8px;height:10px;overflow:hidden"><div style="background:linear-gradient(90deg,#A893E8,#5C42A0);height:100%;width:${pct}%;border-radius:8px"></div></div>
-    </div>
+    </div>` : ''}
     <div style="margin-top:16px">
       <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📌 报名须知</div>
       <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
@@ -318,25 +375,54 @@ function showClubDetail(i){
     <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
       <button onclick="document.getElementById('clubVeil').remove()" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button>
       ${isSigned
-        ? `<button onclick="cancelSignup('${c.name}');document.getElementById('clubVeil').remove()" style="background:#FFE0E0;color:#C2410C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">取消报名</button>`
+        ? `<button onclick="cancelSignup('${c.id}');document.getElementById('clubVeil').remove()" style="background:#FFE0E0;color:#C2410C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">取消报名</button>`
         : full
         ? `<button disabled style="background:#CFD8DD;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:not-allowed">已满员</button>`
-        : `<button onclick="signup('${c.name}');document.getElementById('clubVeil').remove()" style="background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 10px rgba(92,66,160,.4)">立即报名</button>`}
+        : `<button onclick="signup('${c.id}');document.getElementById('clubVeil').remove()" style="background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 10px rgba(92,66,160,.4)">立即报名</button>`}
     </div>
   `;
   veil.appendChild(m);
 }
 
-function signup(n){
-  signed.add(n);
-  showToast(`🎉 ${n} 报名成功！`);
-  renderClubs();
-  renderMyList();
+async function signup(courseId){
+  const course = CLUBS.find(c => c.id === courseId);
+  try {
+    const r = await fetch('/api/clubs/signups', {
+      method:'POST',
+      headers:authHeaders(true),
+      body:JSON.stringify({course_id:courseId}),
+    });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error || '报名失败');
+    signed.add(courseId);
+    await loadClubsFromDB();
+    showToast(`🎉 ${course ? course.name : '课程'} 报名成功！`);
+    renderCampuses();
+    renderCats();
+    renderClubs();
+    renderMyList();
+  } catch(e){
+    showToast(e.message);
+  }
 }
-function cancelSignup(n){
-  if(confirm('确定取消 '+n+' 的报名吗？')){
-    signed.delete(n);
-    showToast(`已取消 ${n} 的报名`);
+async function cancelSignup(courseId){
+  const course = CLUBS.find(c => c.id === courseId);
+  if(confirm('确定取消 '+(course ? course.name : '这门课程')+' 的报名吗？')){
+    try {
+      const r = await fetch('/api/clubs/signups/'+encodeURIComponent(courseId), {
+        method:'DELETE',
+        headers:authHeaders(),
+      });
+      const d = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(d.error || '取消失败');
+      signed.delete(courseId);
+      await loadClubsFromDB();
+      showToast(`已取消 ${course ? course.name : '课程'} 的报名`);
+    } catch(e){
+      showToast(e.message);
+    }
+    renderCampuses();
+    renderCats();
     renderClubs();
     renderMyList();
   }
@@ -352,22 +438,22 @@ function renderMyList(){
   const list = document.getElementById('myList');
   const cnt = document.getElementById('myCount');
   if(!list) return;
-  const names = Array.from(signed);
-  cnt.textContent = `${names.length} 个`;
-  if(!names.length){
-    list.innerHTML = '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px">还没报名任何社团 · 去左边点「报名」试试 🎯</div>';
+  const courseIds = Array.from(signed);
+  cnt.textContent = `${courseIds.length} 门`;
+  if(!courseIds.length){
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px">还没报名课程 · 请先登录并绑定学生，再从左侧抢课 🎯</div>';
     return;
   }
-  list.innerHTML = names.map(n => {
-    const c = CLUBS.find(x => x.name === n);
+  list.innerHTML = courseIds.map(courseId => {
+    const c = CLUBS.find(x => x.id === courseId);
     const ic = c ? c.ic : '🎯';
     const bg = c ? (CAT_BG[c.cat] || 'linear-gradient(135deg,#E0D6FF,#A893E8)') : 'linear-gradient(135deg,#E0D6FF,#A893E8)';
-    const meta = c ? `${c.teacher}老师 · ${c.time}` : '临时添加';
+    const meta = c ? `${c.teacher}老师 · ${c.time} · ${c.campus}` : '课程已下架';
     return `
       <div class="my-row">
         <div class="ic" style="background:${bg}">${ic}</div>
         <div>
-          <div class="nm">${n}</div>
+          <div class="nm">${c ? c.name : courseId}</div>
           <div class="tm">${meta}</div>
         </div>
         <span class="badge">已报名</span>
@@ -480,7 +566,7 @@ async function generateActivityReco(){
               ${meta ? `<div style="font-size:11px;color:#7BB8DA;margin-top:2px">${esc(meta)}</div>` : ''}
               <div style="font-size:12px;color:#5C42A0;margin-top:5px;line-height:1.5">${esc(why)}</div>
             </div>
-            ${club ? `<button onclick="signed.add('${esc(name)}'); renderClubs(); renderMyList(); showToast('已加入 ${esc(name)}')" style="background:#5C42A0;color:#fff;border:none;border-radius:12px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">报名</button>` : ''}
+            ${club ? `<button onclick="signup('${club.id}')" style="background:#5C42A0;color:#fff;border:none;border-radius:12px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">报名</button>` : ''}
           </div>
         `;
       }).join('');
@@ -566,9 +652,11 @@ function renderCalendar(){
   }).join('') || '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700">本周暂无活动安排</div>';
 }
 
-// 启动：先从 DB 拉 CLUBS，再渲染
+// 启动：等待身份就绪，再加载课程与当前学生报名记录。
 (async()=>{
-  await loadClubsFromDB();
+  if(window.UserAuth) await new Promise(resolve => UserAuth.ready(resolve));
+  await Promise.all([loadClubsFromDB(), loadMySignups()]);
+  renderCampuses();
   renderCats();
   renderClubs();
   renderMyList();
