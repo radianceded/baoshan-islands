@@ -1,9 +1,8 @@
 name: 部署到腾讯云
 
 on:
-  push:
-    branches: [main]   # 如果你用 master 改成 master
-  workflow_dispatch:    # 允许在 GitHub 网页手动触发
+  # 新仓库默认只允许手动部署，避免普通代码推送改动线上服务器。
+  workflow_dispatch:
 
 jobs:
   deploy:
