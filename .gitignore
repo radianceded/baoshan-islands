@@ -31,6 +31,7 @@ server/campus_config.json
 
 # 运行时日志与上传缓存
 logs/
+.local-run/
 assets/art-tmp/
 assets/art-works/
 assets/guide-screenshots/
