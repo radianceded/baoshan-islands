@@ -96,11 +96,33 @@ def _ensure_session_secret():
 _ensure_session_secret()
 
 # ==================== 配置 ====================
-# 默认 AI Key(百度千帆 ERNIE-5.1)—— 仅在 server/.env 没填且系统环境变量没设置时生效
-_DEFAULT_BAIDU_KEY = os.environ.get('BAIDU_AI_KEY', '')  # key 已移至环境变量，不再硬编码
-AI_API_KEY = (os.environ.get('BAIDU_AI_KEY') or _DEFAULT_BAIDU_KEY).strip()
-AI_MODEL = os.environ.get('BAIDU_AI_MODEL', 'ernie-5.1')
-AI_URL = 'https://qianfan.baidubce.com/v2/chat/completions'
+# 文本 AI：优先复用本机 DeepSeek Key；未配置时兼容原百度千帆配置。
+_DEEPSEEK_AI_KEY = os.environ.get('DEEPSEEK_API_KEY', '').strip()
+_BAIDU_AI_KEY = os.environ.get('BAIDU_AI_KEY', '').strip()
+if _DEEPSEEK_AI_KEY:
+    AI_PROVIDER = 'deepseek'
+    AI_API_KEY = _DEEPSEEK_AI_KEY
+    AI_MODEL = os.environ.get('DEEPSEEK_AI_MODEL', 'deepseek-v4-pro')
+    AI_URL = os.environ.get(
+        'DEEPSEEK_AI_URL',
+        'https://api.deepseek.com/chat/completions',
+    )
+else:
+    AI_PROVIDER = 'baidu'
+    AI_API_KEY = _BAIDU_AI_KEY
+    AI_MODEL = os.environ.get('BAIDU_AI_MODEL', 'ernie-5.1')
+    AI_URL = os.environ.get(
+        'BAIDU_AI_URL',
+        'https://qianfan.baidubce.com/v2/chat/completions',
+    )
+
+# 奖状图片识别仍使用原视觉模型；DeepSeek 文本 Key 不冒充视觉能力。
+VISION_AI_API_KEY = _BAIDU_AI_KEY
+VISION_AI_MODEL = os.environ.get('BAIDU_VISION_MODEL', 'ernie-4.5-8k-preview')
+VISION_AI_URL = os.environ.get(
+    'BAIDU_AI_URL',
+    'https://qianfan.baidubce.com/v2/chat/completions',
+)
 
 DINGTALK_AGENT_ID = os.environ.get('DINGTALK_AGENT_ID', '').strip()
 DINGTALK_APP_KEY = os.environ.get('DINGTALK_APP_KEY', '').strip()
@@ -1030,6 +1052,7 @@ def health():
         'status': 'ok' if ok_db else 'degraded',
         'db': ok_db,
         'ai_configured': bool(AI_API_KEY),
+        'ai_provider': AI_PROVIDER if AI_API_KEY else None,
         'dingtalk_configured': bool(DINGTALK_APP_KEY and DINGTALK_APP_SECRET),
         'mode': 'debug' if DEBUG else 'prod',
         'ts': int(time.time()),
@@ -1124,12 +1147,12 @@ def auth_bind():
     db.commit()
     return jsonify({'message': '绑定成功'})
 
-# ==================== AI 代理（后端持有百度 Key） ====================
+# ==================== AI 代理（后端持有 Key） ====================
 
 def _ai_call(system_prompt, user_prompt):
-    """服务端代理调用百度千帆，避免泄漏 API Key 给浏览器"""
+    """服务端代理调用 OpenAI Chat Completions 兼容接口，避免泄漏 Key。"""
     if not AI_API_KEY:
-        raise RuntimeError('服务端未配置 BAIDU_AI_KEY 环境变量')
+        raise RuntimeError('服务端未配置 AI API Key')
     body = json.dumps({
         'model': AI_MODEL,
         'messages': [
@@ -1159,14 +1182,14 @@ def _ai_call(system_prompt, user_prompt):
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
-    """前端调这个端点，不再直接调百度"""
+    """前端统一调用这个端点，不直接接触供应商 Key。"""
     payload = request.get_json() or {}
     system_prompt = payload.get('system') or ''
     user_prompt = payload.get('user') or ''
     if not user_prompt:
         return jsonify({'error': 'user prompt is required'}), 400
     if not AI_API_KEY:
-        return jsonify({'error': 'AI 服务未配置（BAIDU_AI_KEY 缺失），请联系管理员', 'configured': False}), 503
+        return jsonify({'error': 'AI 服务未配置，请联系管理员', 'configured': False}), 503
     try:
         text = _ai_call(system_prompt, user_prompt)
         return jsonify({'content': text})
@@ -1176,7 +1199,11 @@ def ai_chat():
 @app.route('/api/ai/status', methods=['GET'])
 def ai_status():
     """前端可用来判断是否需要展示"AI 不可用"状态"""
-    return jsonify({'configured': bool(AI_API_KEY), 'model': AI_MODEL if AI_API_KEY else None})
+    return jsonify({
+        'configured': bool(AI_API_KEY),
+        'provider': AI_PROVIDER if AI_API_KEY else None,
+        'model': AI_MODEL if AI_API_KEY else None,
+    })
 
 # ==================== 钉钉 SSO ====================
 
@@ -2475,28 +2502,97 @@ def upload_menu():
     db.commit()
     return jsonify({'id': new_id, 'imagePath': image_path, 'message':'已保存'})
 
-# ==================== 家长批量选餐 ====================
+# ==================== 家长 / 老师批量选餐 ====================
+
+def _meal_student_source(db):
+    """返回当前校区的学生主表；精简 demo 数据库可能没有学生表。"""
+    table = _students_table(_resolve_campus())
+    exists = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table,)
+    ).fetchone()
+    return table if exists else None
+
+
+def _find_meal_student(db, id_card):
+    table = _meal_student_source(db)
+    if table:
+        return db.execute(
+            f'''SELECT id_card, name, grade_name, class_name
+                FROM {table} WHERE id_card = ?''',
+            (id_card,)
+        ).fetchone()
+    # 本地演示库没有学生主表，只能从已有选餐身份中恢复最小信息。
+    return db.execute(
+        '''SELECT id_card, name, grade_name, class_name
+           FROM meal_choices WHERE id_card = ? LIMIT 1''',
+        (id_card,)
+    ).fetchone()
+
+
+@app.route('/api/meal-choice-students', methods=['GET'])
+def list_meal_choice_students():
+    """老师/管理员获取可管理的学生最小名单。"""
+    u = _current_user()
+    if u['role'] not in ('teacher', 'admin'):
+        return jsonify({'error':'无权限'}), 403
+    _ensure_meal_tables()
+    db = get_db()
+    students = {}
+    table = _meal_student_source(db)
+    if table:
+        rows = db.execute(
+            f'''SELECT id_card, name, grade_name, class_name
+                FROM {table} ORDER BY grade_name, class_name, name'''
+        ).fetchall()
+        for row in rows:
+            students[row['id_card']] = {
+                'idCard': row['id_card'],
+                'name': row['name'],
+                'grade': row['grade_name'] or '',
+                'class': row['class_name'] or '',
+            }
+    else:
+        for row in db.execute(
+            '''SELECT id_card, name, grade_name, class_name
+               FROM meal_choices
+               GROUP BY id_card, name, grade_name, class_name'''
+        ).fetchall():
+            students[row['id_card']] = {
+                'idCard': row['id_card'],
+                'name': row['name'],
+                'grade': row['grade_name'] or '',
+                'class': row['class_name'] or '',
+            }
+    items = sorted(
+        students.values(),
+        key=lambda item: (item['grade'], item['class'], item['name'], item['idCard'])
+    )
+    return jsonify({'students': items, 'total': len(items)})
 
 @app.route('/api/meal-choices', methods=['POST'])
 def submit_meal_choices():
     """
-    家长一次性提交 10 天（奇周 5 + 偶周 5）选餐。
+    家长为绑定孩子提交，老师/管理员可为任意真实学生提交或修改 10 天选餐。
     Body: {
       studentIdCard, week_odd, week_even,
       choices: { odd: {1:'A',2:'B',...,5:'A'}, even: {...} }
     }
     """
     u = _current_user()
-    if u['role'] != 'parent':
-        return jsonify({'error':'仅家长可提交选餐'}), 403
+    if u['role'] not in ('parent', 'teacher', 'admin'):
+        return jsonify({'error':'仅家长、老师或管理员可提交选餐'}), 403
 
     data = request.get_json() or {}
-    id_card = u['bound_id_card']
     student_name = data.get('studentName')   # demo 模式下没真实 id_card 时用 name
-    if not id_card and not DISABLE_DEMO:
-        return jsonify({'error':'家长账号尚未绑定学生'}), 403
-    if not id_card:
-        id_card = data.get('studentIdCard')
+    if u['role'] == 'parent':
+        id_card = u['bound_id_card']
+        if not id_card and not DISABLE_DEMO:
+            return jsonify({'error':'家长账号尚未绑定学生'}), 403
+        if not id_card:
+            id_card = data.get('studentIdCard')
+    else:
+        id_card = (data.get('studentIdCard') or '').strip()
     if not id_card and not student_name:
         return jsonify({'error':'studentIdCard 或 studentName 必填'}), 400
     week_odd = data.get('week_odd')
@@ -2528,8 +2624,10 @@ def submit_meal_choices():
     _ensure_meal_tables()
     db = get_db()
     if id_card:
-        s = db.execute('SELECT name, grade_name, class_name FROM students WHERE id_card=?', (id_card,)).fetchone()
+        s = _find_meal_student(db, id_card)
         if not s:
+            if u['role'] in ('teacher', 'admin') or DISABLE_DEMO:
+                return jsonify({'error':'学生不存在'}), 404
             # 没找到真实学生，用前端传的 name + 占位 demo 班级
             s = {'name': student_name or '未知', 'grade_name': data.get('grade') or 'demo', 'class_name': data.get('class') or 'demo'}
     else:
@@ -2538,6 +2636,15 @@ def submit_meal_choices():
         s = {'name': student_name, 'grade_name': data.get('grade') or 'demo', 'class_name': data.get('class') or 'demo'}
     # sqlite3.Row 不能 dict 操作；s 可能是 Row 也可能是 dict
     sname = s['name']; sgrade = s['grade_name']; sclass = s['class_name']
+    if u['role'] in ('teacher', 'admin'):
+        # “修改”同一学生同一周次时替换原记录，避免重复追加出多份答案。
+        db.execute(
+            '''DELETE FROM meal_choices
+               WHERE id_card = ?
+                 AND ((week_number = ? AND parity = 'odd')
+                   OR (week_number = ? AND parity = 'even'))''',
+            (id_card, week_odd, week_even)
+        )
     saved = 0
     for parity, week in (('odd', week_odd), ('even', week_even)):
         for wd, c in normalized_choices[parity].items():
@@ -3743,11 +3850,10 @@ os.makedirs(_CERT_UPLOAD_DIR, exist_ok=True)
 
 def _ai_vision_extract(image_base64, prompt):
     """调用百度千帆视觉模型，从奖状图片中提取结构化信息"""
-    if not AI_API_KEY:
-        raise RuntimeError('AI 服务未配置')
-    model = 'ernie-4.5-8k-preview'
+    if not VISION_AI_API_KEY:
+        raise RuntimeError('奖状图片识别需要单独配置 BAIDU_AI_KEY')
     body = json.dumps({
-        'model': model,
+        'model': VISION_AI_MODEL,
         'messages': [{
             'role': 'user',
             'content': [
@@ -3758,9 +3864,9 @@ def _ai_vision_extract(image_base64, prompt):
         'temperature': 0.1,
         'max_completion_tokens': 2048,
     }).encode('utf-8')
-    req = Request(AI_URL, data=body, method='POST', headers={
+    req = Request(VISION_AI_URL, data=body, method='POST', headers={
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {AI_API_KEY}',
+        'Authorization': f'Bearer {VISION_AI_API_KEY}',
     })
     try:
         for attempt in range(3):
@@ -5843,7 +5949,7 @@ if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 5050))
     print("================ 宝山学习群岛 API ================")
     print(f" 数据库:    {DB_PATH}")
-    print(f" AI:        {'✓ 已配置 ('+AI_MODEL+')' if AI_API_KEY else '✗ 未配置 BAIDU_AI_KEY'}")
+    print(f" AI:        {'✓ 已配置 ('+AI_PROVIDER+'/'+AI_MODEL+')' if AI_API_KEY else '✗ 未配置 AI API Key'}")
     print(f" 钉钉 SSO:  {'✓ 已配置' if (DINGTALK_APP_KEY and DINGTALK_APP_SECRET) else '✗ 未配置'}")
     print(f" 模式:      {'DEBUG' if DEBUG else 'PROD'}")
     print(f" CORS:      {','.join(CORS_ORIGINS) or '(同源)'}")
