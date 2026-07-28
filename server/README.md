@@ -35,7 +35,7 @@ pip3 install -r requirements.txt
 
 # 1. 配置环境变量
 cp server/.env.example server/.env
-vim server/.env       # 填入你的 BAIDU_AI_KEY 等
+vim server/.env       # 填入 DEEPSEEK_API_KEY（文本 AI）或 BAIDU_AI_KEY
 
 # 2. 加载 env 并启动
 set -a; source server/.env; set +a
@@ -49,7 +49,7 @@ open http://localhost:5000
 ```
 ================ 宝山学习群岛 API ================
  数据库:    .../student_data.db
- AI:        ✓ 已配置 (ernie-5.1)
+ AI:        ✓ 已配置 (deepseek/deepseek-v4-pro)
  钉钉 SSO:  ✓ 已配置
  监听:      http://localhost:5000
 ==================================================
@@ -129,7 +129,7 @@ CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "server.app:app"]
 
 ## 4. 安全清单
 
-- [x] `BAIDU_AI_KEY` 仅在服务端，不进前端代码 ✓
+- [x] `DEEPSEEK_API_KEY` / `BAIDU_AI_KEY` 仅在服务端，不进前端代码 ✓
 - [x] 学生姓名通过 `@anonymize_response` 自动脱敏 ✓
 - [x] 钉钉 SSO 后会话签名（HMAC-SHA256）✓
 - [ ] **生产环境务必更换** `SESSION_SECRET` 为长随机串

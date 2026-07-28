@@ -555,7 +555,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   </div>
 
   <!-- ═══════ 营养配餐入口 ═══════ -->
-  <a data-show-for="parent,teacher,admin" class="meal-flow-card meal-flow-toggle" href="/nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐智能推荐">
+  <a id="nutrition-entry" data-show-for="teacher,admin" class="meal-flow-card meal-flow-toggle" href="/nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐智能推荐">
     <span class="meal-flow-icon blue"><i data-lucide="salad"></i></span>
     <span class="meal-flow-title">营养配餐</span>
     <span class="meal-flow-note">查看营养推荐</span>
@@ -1361,7 +1361,7 @@ async function loadParentGrowth(){
 
   const url = idc ? '/api/students/' + encodeURIComponent(idc) + '?role=parent&kid=' + encodeURIComponent(idc)
              : kidName ? '/api/students/name/' + encodeURIComponent(kidName) : null;
-  if(!url){ panel.innerHTML = '<div style="padding:18px;color:#C2410C">⚠️ 无法识别学生</div>'; return; }
+  if(!url){ panel.style.display = 'none'; return; }
 
   // 首次调用时保存卡片模板（必须在修改 DOM 之前）
   _pgSaveTemplate();
@@ -1373,10 +1373,10 @@ async function loadParentGrowth(){
   });
   try {
     const r = await fetch(url);
-    if(!r.ok){ _pgRestoreCards(); panel.innerHTML = `<div style="padding:18px;color:#C2410C">加载失败 HTTP ${r.status}</div>`; return; }
+    if(!r.ok){ console.warn('[loadParentGrowth] HTTP', r.status); panel.style.display = 'none'; return; }
     const stu = await r.json();
     renderGrowthSimple(stu);
-  } catch(e){ _pgRestoreCards(); panel.innerHTML = `<div style="padding:18px;color:#C2410C">加载失败：${e.message}</div>`; }
+  } catch(e){ console.warn('[loadParentGrowth]', e.message); panel.style.display = 'none'; }
 }
 
 function renderGrowthSimple(stu){
@@ -1603,6 +1603,10 @@ function renderPhysicalExams(rows){
       document.querySelectorAll('[data-show-for="teacher,admin"]').forEach(el=>{
         el.style.display = 'none';
       });
+      if(UserAuth.isTeacher && UserAuth.isTeacher()){
+        const nutritionEntry = document.getElementById('nutrition-entry');
+        if(nutritionEntry) nutritionEntry.style.display = 'flex';
+      }
     });
   }
   // 初始化时给一个静态提示，不自动调 AI

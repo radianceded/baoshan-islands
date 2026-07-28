@@ -148,7 +148,7 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             },
         }
 
-    def test_anonymous_and_teacher_cannot_submit(self):
+    def test_anonymous_cannot_submit_and_teacher_can_manage_student(self):
         anonymous = self.client.post("/api/meal-choices", json=self._payload())
         teacher = self.client.post(
             "/api/meal-choices",
@@ -157,7 +157,58 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
         )
 
         self.assertEqual(anonymous.status_code, 403)
-        self.assertEqual(teacher.status_code, 403)
+        self.assertEqual(teacher.status_code, 200)
+        history = self.client.get(
+            "/api/meal-choices/student/BS002",
+            headers={"X-Demo-Role": "teacher"},
+        )
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(len(history.get_json()["choices"]), 10)
+
+        changed = self._payload()
+        changed["choices"]["odd"] = {str(day): "B" for day in range(1, 6)}
+        changed["choices"]["even"] = {str(day): "A" for day in range(1, 6)}
+        updated = self.client.post(
+            "/api/meal-choices",
+            json=changed,
+            headers={"X-Demo-Role": "teacher"},
+        )
+        self.assertEqual(updated.status_code, 200)
+        updated_history = self.client.get(
+            "/api/meal-choices/student/BS002",
+            headers={"X-Demo-Role": "teacher"},
+        ).get_json()["choices"]
+        self.assertEqual(len(updated_history), 10)
+        self.assertEqual(
+            {(item["parity"], item["choice"]) for item in updated_history},
+            {("odd", "B"), ("even", "A")},
+        )
+
+    def test_teacher_cannot_manage_unknown_student(self):
+        response = self.client.post(
+            "/api/meal-choices",
+            json=self._payload(student_id="UNKNOWN"),
+            headers={"X-Demo-Role": "teacher"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_only_teacher_can_list_manageable_students(self):
+        parent = self.client.get(
+            "/api/meal-choice-students",
+            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        )
+        teacher = self.client.get(
+            "/api/meal-choice-students",
+            headers={"X-Demo-Role": "teacher"},
+        )
+
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(teacher.status_code, 200)
+        self.assertEqual(
+            {student["idCard"] for student in teacher.get_json()["students"]},
+            {"BS001", "BS002"},
+        )
 
     def test_incomplete_submission_is_rejected(self):
         payload = self._payload()
