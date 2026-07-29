@@ -658,6 +658,76 @@ class ClubSignupRegressionTests(unittest.TestCase):
             {campus},
         )
 
+    def test_teacher_can_view_current_course_signup_students(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute(
+            """CREATE TABLE students(
+                id_card TEXT PRIMARY KEY,
+                name TEXT,
+                grade_name TEXT,
+                class_name TEXT
+            )"""
+        )
+        conn.executemany(
+            "INSERT INTO students VALUES (?, ?, ?, ?)",
+            [
+                ("BS001", "学生甲", "五年级", "1班"),
+                ("BS002", "学生乙", "五年级", "2班"),
+            ],
+        )
+        conn.commit()
+        conn.close()
+        self._signup(student_id="BS001")
+        self._signup(student_id="BS002")
+
+        response = self.client.get(
+            f"/api/clubs/{self.course['id']}/signups",
+            headers={"X-Demo-Role": "teacher"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["total"], 2)
+        self.assertEqual(data["semester"], server_app.CLUB_SEMESTER)
+        self.assertEqual(data["course"]["id"], self.course["id"])
+        self.assertEqual(data["course"]["count"], 2)
+        self.assertEqual(
+            data["students"],
+            [
+                {
+                    "studentId": "BS001",
+                    "name": "学生甲",
+                    "grade": "五年级",
+                    "class": "1班",
+                    "registeredAt": data["students"][0]["registeredAt"],
+                },
+                {
+                    "studentId": "BS002",
+                    "name": "学生乙",
+                    "grade": "五年级",
+                    "class": "2班",
+                    "registeredAt": data["students"][1]["registeredAt"],
+                },
+            ],
+        )
+
+    def test_course_signup_students_requires_teacher_and_valid_course(self):
+        anonymous = self.client.get(
+            f"/api/clubs/{self.course['id']}/signups"
+        )
+        parent = self.client.get(
+            f"/api/clubs/{self.course['id']}/signups",
+            headers=self._parent_headers(),
+        )
+        missing = self.client.get(
+            "/api/clubs/missing-course/signups",
+            headers={"X-Demo-Role": "teacher"},
+        )
+
+        self.assertEqual(anonymous.status_code, 403)
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(missing.status_code, 404)
+
     def test_signup_requires_bound_parent(self):
         anonymous = self.client.post(
             "/api/clubs/signups", json={"course_id": self.course["id"]}

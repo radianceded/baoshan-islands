@@ -1655,6 +1655,61 @@ def list_clubs():
         ))
     return jsonify({'clubs': items, 'total': len(items), 'semester': CLUB_SEMESTER})
 
+
+@app.route('/api/clubs/<course_id>/signups', methods=['GET'])
+def list_club_signup_students(course_id):
+    """老师查看指定课程在当前学期的报名学生。"""
+    user = _current_user()
+    if user['role'] != 'teacher':
+        return jsonify({'error': '仅老师可查看社团报名名单'}), 403
+    course = COURSES_BY_ID.get(course_id)
+    if not course:
+        return jsonify({'error': '课程不存在或已下架'}), 404
+
+    _ensure_club_signups_table()
+    db = get_db()
+    student_table = _students_table(_resolve_campus())
+    student_table_exists = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,)
+    ).fetchone()
+    if student_table_exists:
+        rows = db.execute(
+            f'''SELECT cs.student_id, cs.created_at,
+                       s.name, s.grade_name, s.class_name
+                FROM club_signups cs
+                LEFT JOIN {student_table} s ON s.id_card = cs.student_id
+                WHERE cs.course_id = ? AND cs.semester = ?
+                ORDER BY s.grade_name, s.class_name, s.name, cs.student_id''',
+            (course_id, CLUB_SEMESTER)
+        ).fetchall()
+    else:
+        rows = db.execute(
+            '''SELECT student_id, created_at,
+                      NULL AS name, NULL AS grade_name, NULL AS class_name
+               FROM club_signups
+               WHERE course_id = ? AND semester = ?
+               ORDER BY student_id''',
+            (course_id, CLUB_SEMESTER)
+        ).fetchall()
+
+    students = [{
+        'studentId': row['student_id'],
+        'name': row['name'] or row['student_id'],
+        'grade': row['grade_name'] or '',
+        'class': row['class_name'] or '',
+        'registeredAt': row['created_at'],
+    } for row in rows]
+    return jsonify({
+        'course': _club_course_payload(
+            course, len(students), include_counts=True
+        ),
+        'students': students,
+        'total': len(students),
+        'semester': CLUB_SEMESTER,
+    })
+
+
 @app.route('/api/clubs/signups', methods=['GET'])
 def club_signups():
     """当前绑定学生在本学期的抢课结果。"""
