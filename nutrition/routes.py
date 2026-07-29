@@ -246,8 +246,8 @@ def check_anomalies():
 def download_template():
     csv_data = generate_import_template()
     return Response(
-        csv_data,
-        mimetype="text/csv",
+        ("\ufeff" + csv_data).encode("utf-8"),
+        content_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=import_template.csv"}
     )
 
