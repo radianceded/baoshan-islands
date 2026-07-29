@@ -2,6 +2,9 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from unittest.mock import patch
 
 from flask import Flask
 
@@ -292,48 +295,285 @@ class ClubSignupRegressionTests(unittest.TestCase):
         server_app.DISABLE_DEMO = self.old_disable_demo
         self.temp_dir.cleanup()
 
-    def test_signup_requires_bound_parent_and_rejects_duplicate(self):
+    @staticmethod
+    def _parent_headers(student_id="BS001"):
+        return {"X-Demo-Role": "parent", "X-Demo-Kid": student_id}
+
+    def _signup(self, course_id=None, student_id="BS001", client=None):
+        return (client or self.client).post(
+            "/api/clubs/signups",
+            json={"course_id": course_id or self.course["id"]},
+            headers=self._parent_headers(student_id),
+        )
+
+    def _signup_count(self, course_id=None, semester=None):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            table_exists = conn.execute(
+                """SELECT 1 FROM sqlite_master
+                   WHERE type = 'table' AND name = 'club_signups'"""
+            ).fetchone()
+            if table_exists is None:
+                return 0
+            return conn.execute(
+                """SELECT COUNT(*) FROM club_signups
+                   WHERE course_id = ? AND semester = ?""",
+                (course_id or self.course["id"], semester or server_app.CLUB_SEMESTER),
+            ).fetchone()[0]
+        finally:
+            conn.close()
+
+    def test_course_catalog_exposes_counts_only_to_teacher(self):
+        self._signup()
+
+        parent_response = self.client.get(
+            "/api/clubs", headers=self._parent_headers()
+        )
+        teacher_response = self.client.get(
+            "/api/clubs", headers={"X-Demo-Role": "teacher"}
+        )
+
+        self.assertEqual(parent_response.status_code, 200)
+        self.assertEqual(teacher_response.status_code, 200)
+        parent_data = parent_response.get_json()
+        teacher_data = teacher_response.get_json()
+        self.assertEqual(parent_data["total"], len(server_app.COURSES))
+        self.assertEqual(parent_data["semester"], server_app.CLUB_SEMESTER)
+
+        parent_course = next(
+            item for item in parent_data["clubs"] if item["id"] == self.course["id"]
+        )
+        teacher_course = next(
+            item for item in teacher_data["clubs"] if item["id"] == self.course["id"]
+        )
+        for sensitive_count in ("capacity", "count", "max", "remaining"):
+            self.assertNotIn(sensitive_count, parent_course)
+        self.assertEqual(teacher_course["capacity"], self.course["capacity"])
+        self.assertEqual(teacher_course["count"], 1)
+        self.assertEqual(
+            teacher_course["remaining"], self.course["capacity"] - 1
+        )
+        self.assertFalse(teacher_course["full"])
+
+    def test_course_catalog_filters_by_campus(self):
+        campus = self.course["campus"]
+        response = self.client.get(
+            f"/api/clubs?campus={campus}", headers=self._parent_headers()
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        expected = [
+            course for course in server_app.COURSES
+            if course["campus"] == campus
+        ]
+        self.assertEqual(data["total"], len(expected))
+        self.assertTrue(data["clubs"])
+        self.assertEqual(
+            {course["campus"] for course in data["clubs"]},
+            {campus},
+        )
+
+    def test_signup_requires_bound_parent(self):
         anonymous = self.client.post(
             "/api/clubs/signups", json={"course_id": self.course["id"]}
         )
-        headers = {"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"}
-        created = self.client.post(
+        unbound_parent = self.client.post(
             "/api/clubs/signups",
             json={"course_id": self.course["id"]},
-            headers=headers,
+            headers={"X-Demo-Role": "parent"},
         )
-        duplicate = self.client.post(
+        teacher = self.client.post(
             "/api/clubs/signups",
             json={"course_id": self.course["id"]},
-            headers=headers,
+            headers={"X-Demo-Role": "teacher"},
         )
 
         self.assertEqual(anonymous.status_code, 401)
+        self.assertEqual(unbound_parent.status_code, 401)
+        self.assertEqual(teacher.status_code, 401)
+
+    def test_signup_records_bound_student_and_rejects_duplicate(self):
+        created = self._signup()
+        duplicate = self._signup()
+
         self.assertEqual(created.status_code, 201)
         self.assertEqual(duplicate.status_code, 409)
+        self.assertTrue(created.get_json()["success"])
+        self.assertEqual(created.get_json()["course"]["id"], self.course["id"])
+
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            row = conn.execute(
+                """SELECT student_id, semester, registered_by
+                   FROM club_signups WHERE course_id = ?""",
+                (self.course["id"],),
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(
+            row,
+            ("BS001", server_app.CLUB_SEMESTER, "demo:parent"),
+        )
+
+    def test_signup_rejects_unknown_course_without_writing(self):
+        response = self._signup(course_id="missing-course")
+
+        self.assertEqual(response.status_code, 404)
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            table_exists = conn.execute(
+                """SELECT 1 FROM sqlite_master
+                   WHERE type = 'table' AND name = 'club_signups'"""
+            ).fetchone()
+            count = (
+                conn.execute("SELECT COUNT(*) FROM club_signups").fetchone()[0]
+                if table_exists else 0
+            )
+        finally:
+            conn.close()
+        self.assertEqual(count, 0)
 
     def test_capacity_check_prevents_overbooking(self):
         self.course["capacity"] = 1
-        first = self.client.post(
-            "/api/clubs/signups",
-            json={"course_id": self.course["id"]},
-            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
-        )
-        second = self.client.post(
-            "/api/clubs/signups",
-            json={"course_id": self.course["id"]},
-            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS002"},
-        )
+        first = self._signup(student_id="BS001")
+        second = self._signup(student_id="BS002")
 
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 409)
+        self.assertEqual(self._signup_count(), 1)
+
+    def test_concurrent_signup_does_not_overbook(self):
+        self.course["capacity"] = 1
+        barrier = Barrier(2)
+
+        def submit(student_id):
+            client = server_app.app.test_client()
+            barrier.wait(timeout=5)
+            return self._signup(student_id=student_id, client=client).status_code
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            statuses = list(pool.map(submit, ("BS001", "BS002")))
+
+        self.assertEqual(sorted(statuses), [201, 409])
+        self.assertEqual(self._signup_count(), 1)
+
+    def test_signup_list_is_scoped_to_bound_student_and_current_semester(self):
+        second_course = server_app.COURSES[1]
+        stale_course = server_app.COURSES[2]
+        self._signup(student_id="BS001")
+        self._signup(course_id=second_course["id"], student_id="BS002")
+
         conn = sqlite3.connect(server_app.DB_PATH)
-        count = conn.execute(
-            "SELECT COUNT(*) FROM club_signups WHERE course_id = ?",
-            (self.course["id"],),
-        ).fetchone()[0]
-        conn.close()
-        self.assertEqual(count, 1)
+        try:
+            conn.execute(
+                """INSERT INTO club_signups
+                   (student_id, course_id, semester, registered_by)
+                   VALUES (?, ?, ?, ?)""",
+                ("BS001", stale_course["id"], "旧学期", "test"),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        first = self.client.get(
+            "/api/clubs/signups", headers=self._parent_headers("BS001")
+        )
+        second = self.client.get(
+            "/api/clubs/signups", headers=self._parent_headers("BS002")
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(
+            [item["id"] for item in first.get_json()["signups"]],
+            [self.course["id"]],
+        )
+        self.assertEqual(
+            [item["id"] for item in second.get_json()["signups"]],
+            [second_course["id"]],
+        )
+        self.assertEqual(
+            first.get_json()["semester"],
+            server_app.CLUB_SEMESTER,
+        )
+
+    def test_signup_list_requires_bound_parent(self):
+        anonymous = self.client.get("/api/clubs/signups")
+        unbound_parent = self.client.get(
+            "/api/clubs/signups", headers={"X-Demo-Role": "parent"}
+        )
+        teacher = self.client.get(
+            "/api/clubs/signups", headers={"X-Demo-Role": "teacher"}
+        )
+
+        self.assertEqual(anonymous.status_code, 401)
+        self.assertEqual(unbound_parent.status_code, 401)
+        self.assertEqual(teacher.status_code, 401)
+
+    def test_cancel_only_removes_bound_students_signup(self):
+        self._signup(student_id="BS001")
+
+        other_student = self.client.delete(
+            f"/api/clubs/signups/{self.course['id']}",
+            headers=self._parent_headers("BS002"),
+        )
+        removed = self.client.delete(
+            f"/api/clubs/signups/{self.course['id']}",
+            headers=self._parent_headers("BS001"),
+        )
+        removed_again = self.client.delete(
+            f"/api/clubs/signups/{self.course['id']}",
+            headers=self._parent_headers("BS001"),
+        )
+
+        self.assertEqual(other_student.status_code, 404)
+        self.assertEqual(removed.status_code, 200)
+        self.assertTrue(removed.get_json()["success"])
+        self.assertEqual(removed_again.status_code, 404)
+        self.assertEqual(self._signup_count(), 0)
+
+    def test_cancel_rejects_unknown_course_and_non_parent(self):
+        unknown = self.client.delete(
+            "/api/clubs/signups/missing-course",
+            headers=self._parent_headers(),
+        )
+        teacher = self.client.delete(
+            f"/api/clubs/signups/{self.course['id']}",
+            headers={"X-Demo-Role": "teacher"},
+        )
+
+        self.assertEqual(unknown.status_code, 404)
+        self.assertEqual(teacher.status_code, 401)
+
+    def test_demo_headers_are_ignored_when_demo_is_disabled(self):
+        server_app.DISABLE_DEMO = True
+        response = self._signup()
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(self._signup_count(), 0)
+
+    def test_database_error_rolls_back_and_returns_busy(self):
+        class FailingConnection:
+            def __init__(self):
+                self.rolled_back = False
+
+            def execute(self, sql, params=()):
+                if sql == "BEGIN IMMEDIATE":
+                    return None
+                raise sqlite3.OperationalError("database unavailable")
+
+            def rollback(self):
+                self.rolled_back = True
+
+        failing_db = FailingConnection()
+        with patch.object(server_app, "_ensure_club_signups_table"), patch.object(
+            server_app, "get_db", return_value=failing_db
+        ):
+            response = self._signup()
+
+        self.assertEqual(response.status_code, 503)
+        self.assertTrue(failing_db.rolled_back)
 
 
 if __name__ == "__main__":
