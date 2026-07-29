@@ -1594,11 +1594,15 @@ function renderPhysicalExams(rows){
     setTimeout(()=> tryLoadGrowth(), 500);
     setTimeout(()=> tryLoadGrowth(), 1500);
   }
-  // 3) 强制刷新 DOM：确保 parent-show 元素可见
+  // 3) 强制刷新 DOM：老师只隐藏家长选餐操作，餐食详情继续可见
   if(window.UserAuth && typeof UserAuth.refreshPill === 'function'){
     UserAuth.ready(()=>{
       document.querySelectorAll('[data-show-for]').forEach(el=>{
-        if(el.dataset.showFor === 'parent') el.style.display = '';
+        if(el.dataset.showFor === 'parent'){
+          const hideTeacherMealPicker = el.id === 'parent-meal-panel'
+            && !(UserAuth.isParent && UserAuth.isParent());
+          el.style.display = hideTeacherMealPicker ? 'none' : '';
+        }
       });
       document.querySelectorAll('[data-show-for="teacher,admin"]').forEach(el=>{
         el.style.display = 'none';

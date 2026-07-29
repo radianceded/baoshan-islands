@@ -965,14 +965,19 @@ def _current_user():
       ?role=teacher&sub=general            (总务老师)
       ?role=teacher&sub=class&grade=五年级&class=2班   (班主任)
     """
-    role = None if DISABLE_DEMO else (request.args.get('role') or request.headers.get('X-Demo-Role'))
+    query_role = request.args.get('role')
+    header_role = request.headers.get('X-Demo-Role')
+    role = None if DISABLE_DEMO else (query_role or header_role)
     if role in ('teacher','parent','admin'):
+        # URL demo 身份和请求头身份不能混用。否则业务查询中的 grade/class
+        # 会覆盖班主任账号的绑定范围，造成跨班读取。
+        use_query_identity = bool(query_role)
         return {
             'role': role,
-            'sub_role': request.args.get('sub') or request.headers.get('X-Demo-Sub'),
-            'bound_id_card': request.args.get('kid') or request.headers.get('X-Demo-Kid'),
-            'bound_grade': request.args.get('grade') or request.headers.get('X-Demo-Grade'),
-            'bound_class': request.args.get('class') or request.headers.get('X-Demo-Class'),
+            'sub_role': request.args.get('sub') if use_query_identity else request.headers.get('X-Demo-Sub'),
+            'bound_id_card': request.args.get('kid') if use_query_identity else request.headers.get('X-Demo-Kid'),
+            'bound_grade': request.args.get('grade') if use_query_identity else request.headers.get('X-Demo-Grade'),
+            'bound_class': request.args.get('class') if use_query_identity else request.headers.get('X-Demo-Class'),
             'identity': f'demo:{role}',
         }
 
