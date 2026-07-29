@@ -91,6 +91,66 @@ class NutritionAuthorizationTests(unittest.TestCase):
         self.assertEqual(own_response.status_code, 200)
         self.assertEqual(other_response.status_code, 404)
 
+    def test_teacher_can_list_all_recommendations_and_parent_without_child_gets_none(self):
+        teacher = self.client.get(
+            "/api/nutrition/recommendations?page_size=200",
+            headers={"X-User-Role": "teacher"},
+        )
+        unbound_parent = self.client.get(
+            "/api/nutrition/recommendations",
+            headers={"X-User-Role": "parent"},
+        )
+
+        self.assertEqual(teacher.status_code, 200)
+        self.assertEqual(teacher.get_json()["total"], 60)
+        self.assertEqual(unbound_parent.status_code, 200)
+        self.assertEqual(unbound_parent.get_json()["total"], 0)
+        self.assertEqual(unbound_parent.get_json()["items"], [])
+
+    def test_parent_recommendation_stats_are_scoped_to_bound_child(self):
+        response = self.client.get(
+            "/api/nutrition/recommendations/stats?plan_date=2026-07-27",
+            headers={
+                "X-User-Role": "parent",
+                "X-Nutrition-Child-Code": "C059",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {
+                "plan_date": "2026-07-27",
+                "total": 1,
+                "a_count": 1,
+                "b_count": 0,
+                "manual_count": 0,
+                "confirmed_count": 0,
+            },
+        )
+
+    def test_only_teacher_can_confirm_recommendation(self):
+        recommendation = nutrition_models.list_recommendations(
+            child_code="C059", page_size=1
+        )["items"][0]
+        parent = self.client.post(
+            f"/api/nutrition/recommendations/{recommendation['id']}/confirm",
+            headers={
+                "X-User-Role": "parent",
+                "X-Nutrition-Child-Code": "C059",
+            },
+        )
+        teacher = self.client.post(
+            f"/api/nutrition/recommendations/{recommendation['id']}/confirm",
+            json={"operator": "teacher-test"},
+            headers={"X-User-Role": "teacher"},
+        )
+
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(teacher.status_code, 200)
+        self.assertEqual(teacher.get_json()["confirmed"], 1)
+        self.assertEqual(teacher.get_json()["confirmed_by"], "teacher-test")
+
     def test_legacy_role_header_is_ignored_unless_explicitly_enabled(self):
         locked_app = Flask("nutrition-locked")
         locked_app.config["TESTING"] = True
@@ -151,13 +211,52 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             },
         }
 
+    @staticmethod
+    def _parent_headers(student_id="BS001"):
+        headers = {"X-Demo-Role": "parent"}
+        if student_id:
+            headers["X-Demo-Kid"] = student_id
+        return headers
+
+    @staticmethod
+    def _teacher_headers(sub_role=None, grade=None, klass=None):
+        headers = {"X-Demo-Role": "teacher"}
+        if sub_role:
+            headers["X-Demo-Sub"] = sub_role
+        if grade:
+            headers["X-Demo-Grade"] = grade
+        if klass:
+            headers["X-Demo-Class"] = klass
+        return headers
+
+    def _submit(self, payload=None, headers=None):
+        return self.client.post(
+            "/api/meal-choices",
+            json=payload or self._payload(),
+            headers=headers or self._teacher_headers(),
+        )
+
+    def _meal_rows(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            table_exists = conn.execute(
+                """SELECT 1 FROM sqlite_master
+                   WHERE type = 'table' AND name = 'meal_choices'"""
+            ).fetchone()
+            if table_exists is None:
+                return []
+            return conn.execute(
+                """SELECT id_card, name, grade_name, class_name, week_number,
+                          parity, weekday, choice, chosen_by
+                   FROM meal_choices
+                   ORDER BY id_card, week_number, parity, weekday"""
+            ).fetchall()
+        finally:
+            conn.close()
+
     def test_anonymous_cannot_submit_and_teacher_can_manage_student(self):
         anonymous = self.client.post("/api/meal-choices", json=self._payload())
-        teacher = self.client.post(
-            "/api/meal-choices",
-            json=self._payload(),
-            headers={"X-Demo-Role": "teacher"},
-        )
+        teacher = self._submit()
 
         self.assertEqual(anonymous.status_code, 403)
         self.assertEqual(teacher.status_code, 200)
@@ -171,11 +270,7 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
         changed = self._payload()
         changed["choices"]["odd"] = {str(day): "B" for day in range(1, 6)}
         changed["choices"]["even"] = {str(day): "A" for day in range(1, 6)}
-        updated = self.client.post(
-            "/api/meal-choices",
-            json=changed,
-            headers={"X-Demo-Role": "teacher"},
-        )
+        updated = self._submit(changed)
         self.assertEqual(updated.status_code, 200)
         updated_history = self.client.get(
             "/api/meal-choices/student/BS002",
@@ -196,6 +291,23 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_parent_must_be_bound_to_a_student(self):
+        response = self._submit(
+            headers=self._parent_headers(student_id=None),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self._meal_rows(), [])
+
+    def test_url_demo_parent_identity_remains_supported(self):
+        response = self.client.post(
+            "/api/meal-choices?role=parent&kid=BS001",
+            json=self._payload(student_id="BS002"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({row[0] for row in self._meal_rows()}, {"BS001"})
+
     def test_only_teacher_can_list_manageable_students(self):
         parent = self.client.get(
             "/api/meal-choice-students",
@@ -213,49 +325,86 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             {"BS001", "BS002"},
         )
 
-    def test_incomplete_submission_is_rejected(self):
-        payload = self._payload()
-        payload["choices"]["even"].pop("5")
+    def test_invalid_submissions_are_rejected_without_partial_writes(self):
+        cases = []
 
-        response = self.client.post(
-            "/api/meal-choices",
-            json=payload,
-            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        missing_week = self._payload()
+        missing_week.pop("week_even")
+        cases.append(("missing week", missing_week))
+
+        invalid_week = self._payload()
+        invalid_week["week_odd"] = "not-a-week"
+        cases.append(("invalid week", invalid_week))
+
+        incomplete = self._payload()
+        incomplete["choices"]["even"].pop("5")
+        cases.append(("incomplete", incomplete))
+
+        invalid_day = self._payload()
+        invalid_day["choices"]["odd"]["6"] = invalid_day["choices"]["odd"].pop("5")
+        cases.append(("invalid day", invalid_day))
+
+        invalid_choice = self._payload()
+        invalid_choice["choices"]["odd"]["1"] = "C"
+        cases.append(("invalid choice", invalid_choice))
+
+        for label, payload in cases:
+            with self.subTest(label=label):
+                response = self._submit(
+                    payload,
+                    headers=self._parent_headers(),
+                )
+                self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(self._meal_rows(), [])
+
+    def test_parent_submission_uses_canonical_bound_student_data(self):
+        payload = self._payload(student_id="BS002")
+        payload.update(
+            {
+                "studentName": "伪造姓名",
+                "grade": "伪造年级",
+                "class": "伪造班级",
+            }
         )
-
-        self.assertEqual(response.status_code, 400)
-        conn = sqlite3.connect(server_app.DB_PATH)
-        try:
-            table_exists = conn.execute(
-                """SELECT 1 FROM sqlite_master
-                   WHERE type = 'table' AND name = 'meal_choices'"""
-            ).fetchone()
-            count = (
-                conn.execute("SELECT COUNT(*) FROM meal_choices").fetchone()[0]
-                if table_exists else 0
-            )
-        finally:
-            conn.close()
-        self.assertEqual(count, 0)
-
-    def test_parent_submission_uses_server_bound_student(self):
-        response = self.client.post(
-            "/api/meal-choices",
-            json=self._payload(student_id="BS002"),
-            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        response = self._submit(
+            payload,
+            headers=self._parent_headers("BS001"),
         )
 
         self.assertEqual(response.status_code, 200)
-        conn = sqlite3.connect(server_app.DB_PATH)
-        ids = {row[0] for row in conn.execute("SELECT id_card FROM meal_choices")}
-        conn.close()
-        self.assertEqual(ids, {"BS001"})
+        self.assertEqual(response.get_json()["saved"], 10)
+        rows = self._meal_rows()
+        self.assertEqual(len(rows), 10)
+        self.assertEqual({row[0] for row in rows}, {"BS001"})
+        self.assertEqual({row[1] for row in rows}, {"学生甲"})
+        self.assertEqual({row[2] for row in rows}, {"五年级"})
+        self.assertEqual({row[3] for row in rows}, {"1班"})
+        self.assertEqual({row[8] for row in rows}, {"demo:parent"})
+
+    def test_parent_resubmission_replaces_same_ten_days(self):
+        self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers(),
+        )
+        changed = self._payload(student_id="BS001")
+        changed["choices"]["odd"] = {str(day): "B" for day in range(1, 6)}
+        changed["choices"]["even"] = {str(day): "A" for day in range(1, 6)}
+
+        response = self._submit(changed, headers=self._parent_headers())
+
+        self.assertEqual(response.status_code, 200)
+        rows = self._meal_rows()
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(
+            {(row[5], row[7]) for row in rows},
+            {("odd", "B"), ("even", "A")},
+        )
 
     def test_student_history_and_list_require_authorized_scope(self):
-        self.client.post(
-            "/api/meal-choices",
-            json=self._payload(student_id="BS001"),
-            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers("BS001"),
         )
 
         own = self.client.get(
@@ -276,6 +425,141 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
         self.assertEqual(other.status_code, 403)
         self.assertEqual(guessed_name.status_code, 403)
         self.assertEqual(anonymous_list.status_code, 403)
+
+    def test_parent_list_is_scoped_and_teacher_filters_work(self):
+        self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers("BS001"),
+        )
+        second = self._payload(student_id="BS002")
+        second["week_odd"] = 19
+        second["week_even"] = 20
+        self._submit(second)
+
+        parent = self.client.get(
+            "/api/meal-choices?week=19&name=学生乙",
+            headers=self._parent_headers("BS001"),
+        )
+        teacher_week = self.client.get(
+            "/api/meal-choices?week=19",
+            headers=self._teacher_headers(),
+        )
+        teacher_name = self.client.get(
+            "/api/meal-choices?name=学生甲",
+            headers=self._teacher_headers(),
+        )
+
+        self.assertEqual(parent.status_code, 200)
+        self.assertEqual(parent.get_json()["total"], 10)
+        self.assertEqual(
+            {item["id_card"] for item in parent.get_json()["choices"]},
+            {"BS001"},
+        )
+        self.assertEqual(teacher_week.get_json()["total"], 5)
+        self.assertEqual(
+            {item["id_card"] for item in teacher_week.get_json()["choices"]},
+            {"BS002"},
+        )
+        self.assertEqual(teacher_name.get_json()["total"], 10)
+        self.assertEqual(
+            {item["id_card"] for item in teacher_name.get_json()["choices"]},
+            {"BS001"},
+        )
+
+    def test_meal_statistics_require_teacher_and_aggregate_choices(self):
+        self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers("BS001"),
+        )
+        second = self._payload(student_id="BS002")
+        second["choices"]["odd"]["1"] = "B"
+        self._submit(second)
+
+        denied = self.client.get(
+            "/api/meal-stats/grade",
+            headers=self._parent_headers("BS001"),
+        )
+        grade = self.client.get(
+            "/api/meal-stats/grade?week=17",
+            headers=self._teacher_headers(),
+        )
+        class_summary = self.client.get(
+            "/api/meal-stats/class-summary?grade=五年级&week=17&parity=odd",
+            headers=self._teacher_headers(),
+        )
+
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(grade.status_code, 200)
+        grade_row = grade.get_json()["rows"][0]
+        self.assertEqual(grade_row["gradeName"], "五年级")
+        self.assertEqual(grade_row["week"], 17)
+        self.assertEqual(grade_row["1A"], 1)
+        self.assertEqual(grade_row["1B"], 1)
+
+        self.assertEqual(class_summary.status_code, 200)
+        class_row = class_summary.get_json()["rows"][0]
+        self.assertEqual(class_row["grade"], "五年级")
+        self.assertEqual(class_row["class"], "1班")
+        self.assertEqual(class_row["1A"], 1)
+        self.assertEqual(class_row["1B"], 1)
+
+    def test_class_teacher_is_locked_to_bound_class(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute(
+            "INSERT INTO students VALUES (?, ?, ?, ?)",
+            ("BS003", "学生丙", "五年级", "2班"),
+        )
+        conn.commit()
+        conn.close()
+        headers = self._teacher_headers(
+            sub_role="class", grade="五年级", klass="1班"
+        )
+
+        response = self.client.get(
+            "/api/meal-stats/class?grade=五年级&class=2班",
+            headers=headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["grade"], "五年级")
+        self.assertEqual(data["class"], "1班")
+        self.assertEqual(
+            {student["idCard"] for student in data["students"]},
+            {"BS001", "BS002"},
+        )
+
+    def test_general_teacher_can_publish_and_replace_weekly_menu(self):
+        parent = self.client.post(
+            "/api/menus/upload",
+            json={"week": 17, "parity": "odd", "notes": "家长不可发布"},
+            headers=self._parent_headers(),
+        )
+        class_teacher = self.client.post(
+            "/api/menus/upload",
+            json={"week": 17, "parity": "odd", "notes": "班主任不可发布"},
+            headers=self._teacher_headers(sub_role="class"),
+        )
+        created = self.client.post(
+            "/api/menus/upload",
+            json={"week": 17, "parity": "odd", "notes": "第一版"},
+            headers=self._teacher_headers(sub_role="general"),
+        )
+        replaced = self.client.post(
+            "/api/menus/upload",
+            json={"week": 17, "parity": "odd", "notes": "第二版"},
+            headers=self._teacher_headers(sub_role="general"),
+        )
+        listed = self.client.get("/api/menus?week=17")
+
+        self.assertEqual(parent.status_code, 403)
+        self.assertEqual(class_teacher.status_code, 403)
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(replaced.status_code, 200)
+        self.assertEqual(created.get_json()["id"], replaced.get_json()["id"])
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(len(listed.get_json()["menus"]), 1)
+        self.assertEqual(listed.get_json()["menus"][0]["notes"], "第二版")
 
 
 class ClubSignupRegressionTests(unittest.TestCase):
