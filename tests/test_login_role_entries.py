@@ -31,6 +31,11 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertIn("document.getElementById('fillExample').addEventListener", self.html)
         self.assertIn("value = '123456'", self.html)
 
+    def test_local_preview_uses_the_local_api_server(self):
+        self.assertIn("location.protocol === 'file:'", self.html)
+        self.assertIn("'http://127.0.0.1:5051'", self.html)
+        self.assertIn("fetch(`${LOCAL_API_BASE}/api/login`", self.html)
+
 
 class LoginRoleEntryTests(unittest.TestCase):
     def setUp(self):

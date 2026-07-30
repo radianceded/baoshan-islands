@@ -135,6 +135,13 @@ const ENTRY_CONFIG = {
   class_teacher: { label: '班主任老师', username: 'demo_class' },
   parent: { label: '学生家长', username: 'demo_parent' }
 };
+const LOCAL_API_BASE = (
+  location.protocol === 'file:' ||
+  (
+    ['127.0.0.1', 'localhost'].includes(location.hostname) &&
+    location.port !== '5051'
+  )
+) ? 'http://127.0.0.1:5051' : '';
 
 document.querySelectorAll('.role-entry-btn').forEach(button => {
   button.addEventListener('click', () => {
@@ -168,7 +175,7 @@ async function doLogin(e){
   btn.disabled = true;
   btn.textContent = '登录中...';
   try {
-    const r = await fetch('/api/login', {
+    const r = await fetch(`${LOCAL_API_BASE}/api/login`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({username:u, password:p, entry})
@@ -196,7 +203,7 @@ async function doLogin(e){
     if(user.role === 'parent' && (user.boundIdCard || user.bound_id_card)){
       const card = user.boundIdCard || user.bound_id_card;
       try {
-        const sr = await fetch('/api/students/' + encodeURIComponent(card) + '?role=parent&kid=' + encodeURIComponent(card));
+        const sr = await fetch(LOCAL_API_BASE + '/api/students/' + encodeURIComponent(card) + '?role=parent&kid=' + encodeURIComponent(card));
         if(sr.ok){
           const stu = await sr.json();
           sessionStorage.setItem('bs_bound_student_json', JSON.stringify(stu));
@@ -209,7 +216,7 @@ async function doLogin(e){
     location.href = 'island-homepage.html';
     return false;
   } catch(ex){
-    err.textContent = '网络错误：' + ex.message;
+    err.textContent = `网络错误：${ex.message}（接口：${LOCAL_API_BASE || location.origin}）`;
     err.classList.add('show');
     btn.disabled = false; btn.textContent = '登 录';
     return false;
