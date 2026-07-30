@@ -13,7 +13,11 @@ try:
 except ImportError:
     import security as sec
 
-DB_PATH = os.environ.get("NUTRITION_DB_PATH", os.path.join(os.path.dirname(__file__), "nutrition.db"))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.environ.get(
+    "NUTRITION_DB_PATH",
+    os.path.join(PROJECT_ROOT, "student_data.db"),
+)
 
 
 def get_db() -> sqlite3.Connection:
@@ -595,6 +599,8 @@ def list_recommendations(plan_date=None, confirmed=None, recommended_plan=None,
     params["offset"] = (page - 1) * page_size
     rows = conn.execute(f"""
         SELECT nr.*, nc.child_code, nc.display_name, nc.age, nc.gender,
+               nc.height_cm, nc.weight_kg, nc.bmi, nc.allergies,
+               nc.dietary_restrictions, nc.special_needs, nc.doctor_notes,
                nc.data_status, nc.campus
         FROM nutrition_recommendations nr
         JOIN nutrition_children nc ON nr.child_id = nc.id

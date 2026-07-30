@@ -70,8 +70,42 @@ class NutritionRoleViewTests(unittest.TestCase):
             "gtBCount",
             "gtGradeCount",
             "gtStatsScope",
+            "classMealTitle",
+            "classIncompleteOnly",
+            "ctStudentCount",
+            "ctCompleteCount",
+            "ctIncompleteCount",
+            "ctACount",
+            "ctBCount",
+            "classMealStats",
+            "parentChildTitle",
+            "parentRecommendationDate",
+            "parentRecommendationSummary",
+            "parentHealthChips",
+            "parentAiInsights",
+            "parentRiskNote",
+            "parentPlanWeeks",
+            "parentPlanStatus",
+            "parentDeadlineStatus",
+            "parentSubmitBtn",
+            "parentSubmitMessage",
+            "menuSelectionDeadline",
         ):
             self.assertIn(f'id="{element_id}"', self.recommendations_html)
+        self.assertIn("仅显示当前班主任账号绑定班级", self.recommendations_html)
+        self.assertIn("只看未完成", self.recommendations_html)
+        self.assertIn("student.isComplete", self.recommendations_html)
+        self.assertIn("系统只读取当前账号绑定孩子的数据", self.recommendations_html)
+        self.assertIn("loadParentRecommendations()", self.recommendations_html)
+        self.assertIn("buildParentMealPlan()", self.recommendations_html)
+        self.assertIn("submitRecommendedMealPlan()", self.recommendations_html)
+        self.assertIn("isParentSelectionClosed()", self.recommendations_html)
+        self.assertIn("day.mealA?.plan_name", self.recommendations_html)
+        self.assertIn("rootApiFetch('/api/meal-choices'", self.recommendations_html)
+        self.assertNotIn('id="parentRecommendationHistory"', self.recommendations_html)
+        self.assertNotIn('id="parentMealHistory"', self.recommendations_html)
+        self.assertNotIn('id="runBtn"', self.recommendations_html)
+        self.assertNotIn('id="recommendationActions"', self.recommendations_html)
 
     def test_nutrition_requests_include_teacher_scope(self):
         self.assertIn("'X-Demo-Sub': NUTRITION_SUB_ROLE", self.common_js)
@@ -91,6 +125,101 @@ class NutritionRoleViewTests(unittest.TestCase):
             "NUTRITION_PLATFORM_BASE + '/api/menus/upload'",
             self.recommendations_html,
         )
+
+
+class DemoChildSeedTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.old_manage_db_path = manage_accounts.DB
+        self.main_db_path = str(Path(self.temp_dir.name) / "student_data.db")
+        manage_accounts.DB = self.main_db_path
+
+    def tearDown(self):
+        manage_accounts.DB = self.old_manage_db_path
+        self.temp_dir.cleanup()
+
+    def test_demo_child_seed_adds_parent_visible_mock_data_idempotently(self):
+        db = manage_accounts.conn()
+        first = manage_accounts.seed_demo_child_data(db)
+        second = manage_accounts.seed_demo_child_data(db)
+
+        self.assertEqual(first, second)
+        self.assertEqual(first["child_code"], "BS_99999")
+        student = db.execute(
+            """SELECT name, gender, birth_date, grade_name, class_name, school_name
+               FROM students WHERE id_card='BS_99999'"""
+        ).fetchone()
+        self.assertIsNotNone(student)
+        self.assertEqual(
+            tuple(student),
+            ("示例学生", None, None, "三年级", "1班", "本部校区"),
+        )
+        meal_rows = db.execute(
+            """SELECT week_number, parity, weekday, choice
+               FROM meal_choices
+               WHERE id_card='BS_99999'
+               ORDER BY week_number, weekday"""
+        ).fetchall()
+        self.assertEqual(len(meal_rows), 10)
+        self.assertEqual({row["week_number"] for row in meal_rows}, {17, 18})
+        self.assertEqual({row["choice"] for row in meal_rows}, {"A", "B"})
+
+        child = db.execute(
+            """SELECT id, display_name, data_status
+               FROM nutrition_children WHERE child_code='BS_99999'"""
+        ).fetchone()
+        self.assertIsNotNone(child)
+        self.assertEqual(child[1], "示例学生")
+        self.assertEqual(child[2], "complete")
+        recommendations = db.execute(
+            """SELECT plan_date, recommended_plan
+               FROM nutrition_recommendations
+               WHERE child_id=?
+               ORDER BY plan_date""",
+            (child[0],),
+        ).fetchall()
+        db.close()
+        self.assertEqual(len(recommendations), 10)
+        self.assertEqual(
+            [row[0] for row in recommendations],
+            [
+                "2026-07-27",
+                "2026-07-28",
+                "2026-07-29",
+                "2026-07-30",
+                "2026-07-31",
+                "2026-08-03",
+                "2026-08-04",
+                "2026-08-05",
+                "2026-08-06",
+                "2026-08-07",
+            ],
+        )
+        self.assertEqual({row[1] for row in recommendations}, {"A", "B"})
+        meal_plan_db = manage_accounts.conn()
+        self.assertEqual(
+            meal_plan_db.execute(
+                """SELECT COUNT(*) FROM nutrition_meal_plans
+                   WHERE plan_date BETWEEN '2026-07-27' AND '2026-08-07'"""
+            ).fetchone()[0],
+            20,
+        )
+        meal_plan_db.close()
+        menu_db = manage_accounts.conn()
+        menus = menu_db.execute(
+            """SELECT week_number, parity, date_start, date_end,
+                      selection_deadline
+               FROM weekly_menus ORDER BY week_number"""
+        ).fetchall()
+        menu_db.close()
+        self.assertEqual(
+            [tuple(row) for row in menus],
+            [
+                (17, "odd", "2026-07-27", "2026-07-31", menus[0][4]),
+                (18, "even", "2026-08-03", "2026-08-07", menus[1][4]),
+            ],
+        )
+        self.assertTrue(all(row[4] for row in menus))
 
 
 class LoginRoleEntryTests(unittest.TestCase):
