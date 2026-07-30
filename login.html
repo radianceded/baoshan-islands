@@ -44,20 +44,21 @@
     border-radius:10px;font-size:12.5px;font-weight:700;display:none;
   }
   .err.show{display:block}
-  .demo-hint{
-    margin-top:22px;padding-top:18px;border-top:1.5px dashed #DCEBF3;
+  .role-entry{display:grid;gap:8px;margin:18px 0 10px}
+  .role-entry-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:12px 14px;border:2px solid #DCEBF3;border-radius:14px;
+    background:#F4FAFD;color:#1F3A4D;text-align:left;cursor:pointer;
+    font-family:inherit;transition:border-color .15s,background .15s,transform .15s;
   }
-  .demo-hint .title{font-size:11px;color:#5C7A8C;font-weight:800;letter-spacing:1.5px;margin-bottom:8px}
-  .demo-list{display:flex;flex-wrap:wrap;gap:6px}
-  .demo-chip{
-    background:#F4FAFD;border:1.5px solid #DCEBF3;border-radius:12px;
-    padding:5px 10px;font-size:11px;color:#5C7A8C;font-weight:700;cursor:pointer;
-    transition:all .12s;
-  }
-  .demo-chip:hover{border-color:#5BC8E8;color:#0E5E80;background:#E0F2FF}
-  .demo-chip.teacher{background:#FFF6E5;border-color:#FFD86A;color:#C2410C}
-  .demo-chip.parent{background:#FFE6EB;border-color:#FF8E9C;color:#E94B6A}
-  .pwd-hint{font-size:11px;color:#7BB8DA;margin-top:8px;font-weight:600}
+  .role-entry-btn:hover{border-color:#7BB8DA;background:#fff}
+  .role-entry-btn:active{transform:translateY(1px)}
+  .role-entry-btn:focus-visible{outline:3px solid rgba(91,200,232,.35);outline-offset:2px}
+  .role-entry-btn[aria-pressed="true"]{border-color:#0E5E80;background:#E0F2FF}
+  .role-entry-name{font-size:14px;font-weight:900;letter-spacing:.5px;white-space:nowrap}
+  .role-entry-desc{font-size:11px;color:#5C7A8C;font-weight:700;text-align:right}
+  .entry-hint{font-size:11px;color:#5C7A8C;font-weight:700;margin-bottom:16px}
+  #loginForm[hidden]{display:none}
 </style>
 <!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
 <script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
@@ -76,12 +77,29 @@
   </div>
 
   <h1>登录</h1>
-  <div class="greeting">老师 / 家长 请输入您的账号密码</div>
+  <div class="greeting">请选择身份入口，再输入对应账号密码</div>
 
-  <form id="loginForm" onsubmit="return doLogin(event)">
+  <div class="role-entry" role="group" aria-label="登录身份">
+    <button class="role-entry-btn" type="button" data-entry="general_teacher" aria-pressed="false">
+      <span class="role-entry-name">总务老师</span>
+      <span class="role-entry-desc">全校选餐与社团管理</span>
+    </button>
+    <button class="role-entry-btn" type="button" data-entry="class_teacher" aria-pressed="false">
+      <span class="role-entry-name">班主任老师</span>
+      <span class="role-entry-desc">查看和管理本班学生</span>
+    </button>
+    <button class="role-entry-btn" type="button" data-entry="parent" aria-pressed="false">
+      <span class="role-entry-name">学生家长</span>
+      <span class="role-entry-desc">查看并操作自己的孩子</span>
+    </button>
+  </div>
+  <div class="entry-hint" id="entryHint">请选择一个身份入口</div>
+
+  <form id="loginForm" onsubmit="return doLogin(event)" hidden>
+    <input id="loginEntry" type="hidden" name="entry">
     <div class="form-row">
       <label>账号</label>
-      <input id="username" type="text" autocomplete="username" placeholder="如 parent_lin / teacher_general" required>
+      <input id="username" type="text" autocomplete="username" placeholder="请输入账号" required>
     </div>
     <div class="form-row">
       <label>密码</label>
@@ -94,8 +112,28 @@
 
 <script>
 
+const ENTRY_LABELS = {
+  general_teacher: '总务老师',
+  class_teacher: '班主任老师',
+  parent: '学生家长'
+};
+
+document.querySelectorAll('.role-entry-btn').forEach(button => {
+  button.addEventListener('click', () => {
+    const entry = button.dataset.entry;
+    document.querySelectorAll('.role-entry-btn').forEach(item => {
+      item.setAttribute('aria-pressed', String(item === button));
+    });
+    document.getElementById('loginEntry').value = entry;
+    document.getElementById('entryHint').textContent = `当前入口：${ENTRY_LABELS[entry]}`;
+    document.getElementById('loginForm').hidden = false;
+    document.getElementById('username').focus();
+  });
+});
+
 async function doLogin(e){
   e.preventDefault();
+  const entry = document.getElementById('loginEntry').value;
   const u = document.getElementById('username').value.trim();
   const p = document.getElementById('password').value;
   const err = document.getElementById('errBox');
@@ -107,7 +145,7 @@ async function doLogin(e){
     const r = await fetch('/api/login', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:u, password:p})
+      body: JSON.stringify({username:u, password:p, entry})
     });
     const data = await r.json();
     if(!r.ok || !data.success){

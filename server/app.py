@@ -862,6 +862,12 @@ def _hash_pwd(p):
     """演示阶段：SHA-256 + 固定盐。生产可换 bcrypt。"""
     return hashlib.sha256(('bs_salt_2026:' + (p or '')).encode()).hexdigest()
 
+LOGIN_ENTRY_ROLES = {
+    'general_teacher': ('teacher', 'general'),
+    'class_teacher': ('teacher', 'class'),
+    'parent': ('parent', None),
+}
+
 @app.route('/api/login', methods=['POST'])
 def login():
     """账户密码登录（accounts 表）"""
@@ -869,8 +875,11 @@ def login():
     data = request.get_json() or {}
     username = (data.get('username') or '').strip()
     password = (data.get('password') or '').strip()
+    entry = (data.get('entry') or '').strip()
     if not username or not password:
         return jsonify({'success': False, 'error': '账号密码不能为空'}), 400
+    if entry and entry not in LOGIN_ENTRY_ROLES:
+        return jsonify({'success': False, 'error': '登录身份入口无效'}), 400
     db = get_db()
     row = db.execute(
         'SELECT * FROM accounts WHERE username=? AND password_hash=?',
@@ -878,6 +887,17 @@ def login():
     ).fetchone()
     if not row:
         return jsonify({'success': False, 'error': '账号或密码错误'}), 401
+    if entry:
+        expected_role, expected_sub_role = LOGIN_ENTRY_ROLES[entry]
+        role_matches = row['role'] == expected_role
+        sub_role_matches = (
+            expected_sub_role is None or row['sub_role'] == expected_sub_role
+        )
+        if not role_matches or not sub_role_matches:
+            return jsonify({
+                'success': False,
+                'error': '该账号不属于所选身份入口',
+            }), 403
     user = {
         'role':         row['role'],
         'sub_role':     row['sub_role'],
