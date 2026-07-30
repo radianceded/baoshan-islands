@@ -86,7 +86,35 @@ def upsert(c, **kw):
     ))
     c.commit()
 
-DEMO = []
+DEMO = [
+    {
+        'username': 'demo_general',
+        'password': '123456',
+        'role': 'teacher',
+        'sub_role': 'general',
+        'display_name': '示例总务老师',
+    },
+    {
+        'username': 'demo_class',
+        'password': '123456',
+        'role': 'teacher',
+        'sub_role': 'class',
+        'bound_grade': '三年级',
+        'bound_class': '1班',
+        'display_name': '示例班主任老师',
+    },
+    {
+        'username': 'demo_parent',
+        'password': '123456',
+        'role': 'parent',
+        'bound_id_card': 'DEMO001',
+        'bound_grade': '三年级',
+        'bound_class': '1班',
+        'kid_name': '示例学生',
+        'demo_idx': 0,
+        'display_name': '示例学生家长',
+    },
+]
 
 def cmd_seed(args):
     c = conn()
