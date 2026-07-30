@@ -1,3 +1,4 @@
+import io
 import os
 import sqlite3
 import tempfile
@@ -481,15 +482,42 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
         )
         grade = self.client.get(
             "/api/meal-stats/grade?week=17",
-            headers=self._teacher_headers(),
+            headers=self._teacher_headers(sub_role="general"),
         )
         class_summary = self.client.get(
             "/api/meal-stats/class-summary?grade=五年级&week=17&parity=odd",
-            headers=self._teacher_headers(),
+            headers=self._teacher_headers(sub_role="general"),
+        )
+        grade_counts = self.client.get(
+            "/api/grade-counts",
+            headers=self._teacher_headers(sub_role="general"),
+        )
+        class_teacher_grade = self.client.get(
+            "/api/meal-stats/grade?week=17",
+            headers=self._teacher_headers(
+                sub_role="class", grade="五年级", klass="1班"
+            ),
+        )
+        class_teacher_summary = self.client.get(
+            "/api/meal-stats/class-summary?week=17",
+            headers=self._teacher_headers(
+                sub_role="class", grade="五年级", klass="1班"
+            ),
+        )
+        class_teacher_grade_counts = self.client.get(
+            "/api/grade-counts",
+            headers=self._teacher_headers(
+                sub_role="class", grade="五年级", klass="1班"
+            ),
         )
 
         self.assertEqual(denied.status_code, 403)
+        self.assertEqual(class_teacher_grade.status_code, 403)
+        self.assertEqual(class_teacher_summary.status_code, 403)
+        self.assertEqual(class_teacher_grade_counts.status_code, 403)
         self.assertEqual(grade.status_code, 200)
+        self.assertEqual(grade_counts.status_code, 200)
+        self.assertEqual(grade_counts.get_json()["total"], 2)
         grade_row = grade.get_json()["rows"][0]
         self.assertEqual(grade_row["gradeName"], "五年级")
         self.assertEqual(grade_row["week"], 17)
@@ -529,6 +557,22 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             {"BS001", "BS002"},
         )
 
+    def test_class_teacher_demo_database_without_student_table_returns_empty(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute("DROP TABLE students")
+        conn.commit()
+        conn.close()
+
+        response = self.client.get(
+            "/api/meal-stats/class",
+            headers=self._teacher_headers(
+                sub_role="class", grade="三年级", klass="1班"
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["students"], [])
+
     def test_general_teacher_can_publish_and_replace_weekly_menu(self):
         parent = self.client.post(
             "/api/menus/upload",
@@ -539,6 +583,11 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             "/api/menus/upload",
             json={"week": 17, "parity": "odd", "notes": "班主任不可发布"},
             headers=self._teacher_headers(sub_role="class"),
+        )
+        unspecified_teacher = self.client.post(
+            "/api/menus/upload",
+            json={"week": 17, "parity": "odd", "notes": "未分工老师不可发布"},
+            headers=self._teacher_headers(),
         )
         created = self.client.post(
             "/api/menus/upload",
@@ -554,12 +603,37 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
 
         self.assertEqual(parent.status_code, 403)
         self.assertEqual(class_teacher.status_code, 403)
+        self.assertEqual(unspecified_teacher.status_code, 403)
         self.assertEqual(created.status_code, 200)
         self.assertEqual(replaced.status_code, 200)
         self.assertEqual(created.get_json()["id"], replaced.get_json()["id"])
         self.assertEqual(listed.status_code, 200)
         self.assertEqual(len(listed.get_json()["menus"]), 1)
         self.assertEqual(listed.get_json()["menus"][0]["notes"], "第二版")
+
+    def test_general_teacher_can_upload_menu_image(self):
+        old_upload_dir = server_app.UPLOAD_DIR
+        server_app.UPLOAD_DIR = self.temp_dir.name
+        try:
+            response = self.client.post(
+                "/api/menus/upload",
+                data={
+                    "week": "17",
+                    "parity": "odd",
+                    "dateStart": "2026-09-01",
+                    "dateEnd": "2026-09-05",
+                    "image": (io.BytesIO(b"demo image"), "menu.png"),
+                },
+                content_type="multipart/form-data",
+                headers=self._teacher_headers(sub_role="general"),
+            )
+        finally:
+            server_app.UPLOAD_DIR = old_upload_dir
+
+        self.assertEqual(response.status_code, 200)
+        image_path = response.get_json()["imagePath"]
+        self.assertTrue(image_path.endswith(".png"))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir.name, os.path.basename(image_path))))
 
 
 class ClubSignupRegressionTests(unittest.TestCase):

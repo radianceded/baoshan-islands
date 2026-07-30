@@ -3,17 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>智能推荐结果 — 营养餐智能分配系统</title>
+<title>营养配餐管理 - 宝山学习群岛</title>
 <link rel="stylesheet" href="common.css">
+<style>
+  .gt-page{display:grid;gap:18px}
+  .gt-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:4px 2px}
+  .gt-intro h2{font-size:24px;line-height:1.25;color:#24442e}
+  .gt-intro p{margin-top:5px;color:var(--text-secondary);font-size:13px}
+  .gt-week-control{display:flex;align-items:flex-end;gap:8px}
+  .gt-field{display:grid;gap:6px}
+  .gt-field label{font-size:12px;font-weight:700;color:#52665a}
+  .gt-field .form-control{min-height:40px}
+  .gt-week-control .form-control{width:108px}
+  .gt-layout{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:18px;align-items:start}
+  .gt-panel{background:var(--white);border:1px solid #dfe9e2;border-radius:12px;box-shadow:0 6px 18px rgba(52,89,61,.07)}
+  .gt-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #e7eee9}
+  .gt-panel-head h3{font-size:16px;color:#294634}
+  .gt-panel-head p{margin-top:3px;color:var(--text-secondary);font-size:12px}
+  .gt-upload-body{display:grid;gap:14px;padding:18px 20px}
+  .gt-date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .gt-file-box{position:relative;display:grid;place-items:center;min-height:132px;padding:16px;border:1.5px dashed #9ebaaa;border-radius:10px;background:#f7fbf8;text-align:center;cursor:pointer;overflow:hidden}
+  .gt-file-box:hover{border-color:var(--primary);background:#f0f7f2}
+  .gt-file-box:focus-within{outline:3px solid var(--primary-light);border-color:var(--primary)}
+  .gt-file-box input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .gt-file-title{font-size:14px;font-weight:800;color:#31523b}
+  .gt-file-help{margin-top:4px;color:#718078;font-size:11px}
+  .gt-menu-preview{display:none;position:relative;min-height:132px;border-radius:9px;overflow:hidden;background:#edf3ef}
+  .gt-menu-preview.is-visible{display:block}
+  .gt-menu-preview img{display:block;width:100%;height:180px;object-fit:cover}
+  .gt-menu-preview span{position:absolute;left:10px;bottom:10px;padding:4px 8px;border-radius:6px;background:rgba(35,59,43,.86);color:#fff;font-size:11px}
+  .gt-upload-status{min-height:20px;padding:8px 10px;border-radius:8px;background:#f5f7f5;color:#52665a;font-size:12px}
+  .gt-upload-status.is-success{background:#eaf6ed;color:#2e6c3d}
+  .gt-upload-status.is-error{background:#fff0f0;color:#a52b2b}
+  .gt-upload-body .btn{justify-content:center;min-height:42px;font-weight:700}
+  .gt-stats-area{display:grid;gap:14px}
+  .gt-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .gt-metric{padding:16px 18px;border:1px solid #dfe9e2;border-radius:10px;background:#fff}
+  .gt-metric strong{display:block;font-size:26px;line-height:1.1;color:#294634;font-variant-numeric:tabular-nums}
+  .gt-metric span{display:block;margin-top:6px;color:#65746b;font-size:12px}
+  .gt-metric.is-a{border-top:3px solid #d89532}
+  .gt-metric.is-b{border-top:3px solid #3b83a4}
+  .gt-table-panel{overflow:hidden}
+  .gt-table-tools{display:flex;align-items:center;gap:6px}
+  .gt-segment{padding:6px 10px;border:1px solid #cfdcd3;border-radius:7px;background:#fff;color:#53675a;font-size:12px;font-weight:700;cursor:pointer}
+  .gt-segment:hover{background:#f3f8f4}
+  .gt-segment.is-active{border-color:var(--primary);background:var(--primary-light);color:#315f3d}
+  .gt-table-wrap{max-height:560px;overflow:auto}
+  .gt-table{min-width:980px;font-size:12px}
+  .gt-table th{top:0;z-index:1;background:#f4f8f5;color:#4d6254}
+  .gt-table td{text-align:center;font-variant-numeric:tabular-nums}
+  .gt-table td:first-child,.gt-table th:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1}
+  .gt-table th:first-child{z-index:2;background:#f4f8f5}
+  .gt-table .gt-a{color:#8a5a15;background:#fffaf0}
+  .gt-table .gt-b{color:#24627e;background:#f2f9fc}
+  .gt-empty{display:grid;place-items:center;min-height:240px;padding:32px;text-align:center;color:#65746b}
+  .gt-empty strong{display:block;margin-bottom:5px;color:#38513f;font-size:15px}
+  .gt-skeleton{display:grid;gap:9px;padding:18px 20px}
+  .gt-skeleton span{height:34px;border-radius:7px;background:#edf2ee}
+  .gt-error{margin:18px;padding:14px;border-radius:9px;background:#fff0f0;color:#a52b2b;font-size:13px}
+  @media (max-width:960px){
+    .gt-layout{grid-template-columns:1fr}
+    .gt-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:640px){
+    .app-content{padding:14px}
+    .gt-intro{align-items:stretch;flex-direction:column}
+    .gt-week-control{align-items:stretch}
+    .gt-week-control .gt-field{flex:1}
+    .gt-week-control .form-control{width:100%}
+    .gt-date-row{grid-template-columns:1fr}
+    .gt-summary{grid-template-columns:1fr 1fr}
+    .gt-panel-head{align-items:stretch;flex-direction:column}
+  }
+</style>
 </head>
 <body>
 <header class="app-header">
-  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <h1>营养配餐</h1>
   <nav id="mainNav"></nav>
 </header>
 
 <div class="app-content">
-  <div class="card">
+  <div class="card" id="parentRecommendationView">
     <div class="card-header">
       <h2>🤖 自动分配结果</h2>
       <div class="btn-group" id="recommendationActions">
@@ -57,16 +128,143 @@
     </div>
     <div class="pagination" id="pagination"></div>
   </div>
+
+  <div id="generalTeacherView" class="hidden">
+    <div class="gt-page">
+      <div class="gt-intro">
+        <div>
+          <h2>全校营养配餐统计</h2>
+          <p>上传周菜单图片，查看各年级每天的 A/B 餐选择人数。</p>
+        </div>
+        <div class="gt-week-control">
+          <div class="gt-field">
+            <label for="gradeStatsWeek">统计周次</label>
+            <input id="gradeStatsWeek" class="form-control" type="number" min="1" max="30" value="17">
+          </div>
+          <button class="btn btn-primary" type="button" onclick="loadGradeMealStats()">更新统计</button>
+        </div>
+      </div>
+
+      <div class="gt-layout">
+        <section class="gt-panel" aria-labelledby="gtUploadTitle">
+          <div class="gt-panel-head">
+            <div>
+              <h3 id="gtUploadTitle">餐食图片</h3>
+              <p>同周次和周类型再次上传会替换原图。</p>
+            </div>
+          </div>
+          <form id="menuUploadForm" class="gt-upload-body">
+            <div class="gt-date-row">
+              <div class="gt-field">
+                <label for="menuWeek">周次</label>
+                <input id="menuWeek" class="form-control" type="number" min="1" max="30" value="17">
+              </div>
+              <div class="gt-field">
+                <label for="menuParity">周类型</label>
+                <select id="menuParity" class="form-control">
+                  <option value="odd">奇数周</option>
+                  <option value="even">偶数周</option>
+                </select>
+              </div>
+            </div>
+            <div class="gt-date-row">
+              <div class="gt-field">
+                <label for="menuDateStart">开始日期</label>
+                <input id="menuDateStart" class="form-control" type="date">
+              </div>
+              <div class="gt-field">
+                <label for="menuDateEnd">结束日期</label>
+                <input id="menuDateEnd" class="form-control" type="date">
+              </div>
+            </div>
+            <label class="gt-file-box" for="menuImage">
+              <input id="menuImage" type="file" accept="image/*" required>
+              <span>
+                <span class="gt-file-title">选择餐食图片</span>
+                <span class="gt-file-help">支持 PNG、JPG、WEBP，建议图片包含 A/B 餐信息。</span>
+              </span>
+            </label>
+            <div class="gt-menu-preview" id="menuPreview">
+              <img id="menuPreviewImage" alt="待上传的餐食图片预览">
+              <span id="menuPreviewLabel">待上传</span>
+            </div>
+            <div id="menuUploadStatus" class="gt-upload-status" aria-live="polite">尚未选择图片</div>
+            <button class="btn btn-primary" type="submit" id="menuUploadBtn">上传餐食图片</button>
+          </form>
+        </section>
+
+        <div class="gt-stats-area">
+          <section class="gt-summary" aria-label="本周选餐概览">
+            <div class="gt-metric"><strong id="gtTotalCount">0</strong><span>选餐总人次</span></div>
+            <div class="gt-metric is-a"><strong id="gtACount">0</strong><span>A餐选择人次</span></div>
+            <div class="gt-metric is-b"><strong id="gtBCount">0</strong><span>B餐选择人次</span></div>
+            <div class="gt-metric"><strong id="gtGradeCount">0</strong><span>已有数据年级</span></div>
+          </section>
+
+          <section class="gt-panel gt-table-panel" aria-labelledby="gtStatsTitle">
+            <div class="gt-panel-head">
+              <div>
+                <h3 id="gtStatsTitle">各年级 A/B 餐人数</h3>
+                <p id="gtStatsScope">第 17 周，全部周类型</p>
+              </div>
+              <div class="gt-table-tools" aria-label="周类型筛选">
+                <button class="gt-segment is-active" type="button" data-parity="all">全部</button>
+                <button class="gt-segment" type="button" data-parity="odd">奇数周</button>
+                <button class="gt-segment" type="button" data-parity="even">偶数周</button>
+              </div>
+            </div>
+            <div class="gt-table-wrap" id="gradeMealStats">
+              <div class="gt-skeleton" aria-label="正在加载统计">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="classTeacherView" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>📋 本班学生 A/B 餐选择情况</h2>
+          <div id="classMealScope" class="text-secondary"></div>
+        </div>
+        <div class="btn-group">
+          <input id="classWeekOdd" class="form-control" type="number" min="1" max="30" value="17" aria-label="奇数周周次">
+          <input id="classWeekEven" class="form-control" type="number" min="1" max="30" value="18" aria-label="偶数周周次">
+          <button class="btn btn-outline btn-sm" type="button" onclick="loadClassMealStats()">查询</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="classMealStats">
+        <div class="loading"><span class="spinner"></span> 加载中...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+<footer class="app-footer">演示系统 - 所有营养阈值均为测试配置，非医学标准。</footer>
 
 <script src="common.js"></script>
 <script>
   const ROLE = NUTRITION_ROLE;
+  const SUB_ROLE = NUTRITION_SUB_ROLE || (ROLE === 'teacher' ? 'general' : '');
   let currentPage = 1;
-  const navItems = ROLE === 'parent' ? [['recommendations.html','孩子的营养推荐']] : [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']];
+  const navItems = ROLE === 'parent'
+    ? [['recommendations.html','孩子的营养推荐']]
+    : [['recommendations.html', SUB_ROLE === 'class' ? '本班选餐统计' : '全校配餐管理']];
+  document.querySelector('.app-header h1').textContent = ROLE === 'parent'
+    ? '孩子营养推荐'
+    : SUB_ROLE === 'class'
+      ? '本班营养配餐'
+      : '全校营养配餐';
   document.getElementById('mainNav').innerHTML = navItems.map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  document.getElementById('parentRecommendationView').classList.toggle('hidden', ROLE !== 'parent');
+  document.getElementById('generalTeacherView').classList.toggle('hidden', !(ROLE === 'teacher' && SUB_ROLE === 'general'));
+  document.getElementById('classTeacherView').classList.toggle('hidden', !(ROLE === 'teacher' && SUB_ROLE === 'class'));
+
   if (ROLE === 'parent') {
     document.getElementById('recommendationActions').style.display = 'none';
     document.getElementById('filterCampus').style.display = 'none';
@@ -74,7 +272,13 @@
   }
 
   document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
-  loadResults();
+  if (ROLE === 'parent') {
+    loadResults();
+  } else if (SUB_ROLE === 'class') {
+    loadClassMealStats();
+  } else {
+    initGeneralTeacherView();
+  }
 
   async function loadResults() {
     const d = document.getElementById('filterDate').value;
@@ -131,6 +335,236 @@
         <div class="stat-card" style="border-left:4px solid #c62828"><div class="stat-value">${stats.manual_count}</div><div class="stat-label">需人工处理</div></div>
         <div class="stat-card" style="border-left:4px solid #f57f17"><div class="stat-value">${stats.confirmed_count}</div><div class="stat-label">已确认</div></div>
       </div>`;
+  }
+
+  let gtGradeRows = [];
+  let gtParityFilter = 'all';
+  let gtPreviewUrl = null;
+
+  function initGeneralTeacherView() {
+    document.getElementById('menuUploadForm').addEventListener('submit', uploadMenuImage);
+    document.getElementById('menuImage').addEventListener('change', previewSelectedMenu);
+    document.getElementById('menuWeek').addEventListener('change', loadPublishedMenu);
+    document.getElementById('menuParity').addEventListener('change', loadPublishedMenu);
+    document.getElementById('gradeStatsWeek').addEventListener('change', loadGradeMealStats);
+    document.querySelectorAll('.gt-segment').forEach(button => {
+      button.addEventListener('click', () => {
+        gtParityFilter = button.dataset.parity;
+        document.querySelectorAll('.gt-segment').forEach(item => {
+          const active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+        renderGradeMealStats();
+      });
+    });
+    loadPublishedMenu();
+    loadGradeMealStats();
+  }
+
+  function setMenuUploadStatus(message, type = '') {
+    const status = document.getElementById('menuUploadStatus');
+    status.textContent = message;
+    status.className = `gt-upload-status${type ? ` is-${type}` : ''}`;
+  }
+
+  function showMenuPreview(src, label) {
+    const preview = document.getElementById('menuPreview');
+    const image = document.getElementById('menuPreviewImage');
+    image.src = src;
+    document.getElementById('menuPreviewLabel').textContent = label;
+    preview.classList.add('is-visible');
+  }
+
+  function previewSelectedMenu() {
+    const file = document.getElementById('menuImage').files[0];
+    if (!file) {
+      loadPublishedMenu();
+      return;
+    }
+    if (gtPreviewUrl) URL.revokeObjectURL(gtPreviewUrl);
+    gtPreviewUrl = URL.createObjectURL(file);
+    showMenuPreview(gtPreviewUrl, '待上传');
+    setMenuUploadStatus(`已选择：${file.name}`);
+  }
+
+  async function loadPublishedMenu() {
+    if (ROLE !== 'teacher' || SUB_ROLE !== 'general') return;
+    const week = document.getElementById('menuWeek').value;
+    const parity = document.getElementById('menuParity').value;
+    const data = await rootApiFetch(`/api/menus?week=${encodeURIComponent(week)}`);
+    if (!data) {
+      setMenuUploadStatus('已上传菜单加载失败', 'error');
+      return;
+    }
+    const menu = (data.menus || []).find(item => item.parity === parity);
+    if (menu && menu.image_path) {
+      showMenuPreview(
+        NUTRITION_PLATFORM_BASE + '/' + menu.image_path.replace(/^\/+/, ''),
+        `已发布：第 ${week} 周`
+      );
+      setMenuUploadStatus(`当前已发布${parity === 'odd' ? '奇数周' : '偶数周'}餐食图片`, 'success');
+    } else {
+      document.getElementById('menuPreview').classList.remove('is-visible');
+      setMenuUploadStatus(`第 ${week} 周${parity === 'odd' ? '奇数周' : '偶数周'}尚未上传图片`);
+    }
+  }
+
+  async function uploadMenuImage(event) {
+    event.preventDefault();
+    if (ROLE !== 'teacher' || SUB_ROLE !== 'general') return;
+    const file = document.getElementById('menuImage').files[0];
+    if (!file) {
+      setMenuUploadStatus('请先选择餐食图片', 'error');
+      return;
+    }
+    const form = new FormData();
+    form.append('image', file);
+    form.append('week', document.getElementById('menuWeek').value);
+    form.append('parity', document.getElementById('menuParity').value);
+    form.append('dateStart', document.getElementById('menuDateStart').value);
+    form.append('dateEnd', document.getElementById('menuDateEnd').value);
+    const button = document.getElementById('menuUploadBtn');
+    button.disabled = true;
+    button.textContent = '正在上传...';
+    setMenuUploadStatus('正在上传餐食图片...');
+    try {
+      const response = await fetch(NUTRITION_PLATFORM_BASE + '/api/menus/upload', {
+        method: 'POST',
+        headers: nutritionAuthHeaders(),
+        body: form,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      document.getElementById('menuImage').value = '';
+      showSuccess('餐食图片上传成功');
+      await loadPublishedMenu();
+    } catch (error) {
+      setMenuUploadStatus(`上传失败：${error.message}`, 'error');
+      showError(error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = '上传餐食图片';
+    }
+  }
+
+  async function loadGradeMealStats() {
+    if (ROLE !== 'teacher' || SUB_ROLE !== 'general') return;
+    const week = document.getElementById('gradeStatsWeek').value;
+    const target = document.getElementById('gradeMealStats');
+    target.innerHTML = '<div class="gt-skeleton" aria-label="正在加载统计"><span></span><span></span><span></span><span></span></div>';
+    const data = await rootApiFetch(`/api/meal-stats/grade?week=${encodeURIComponent(week)}`);
+    if (!data) {
+      target.innerHTML = '<div class="gt-error">统计加载失败，请检查网络后重试。</div>';
+      return;
+    }
+    gtGradeRows = data.rows || [];
+    renderGradeMealStats();
+  }
+
+  function renderGradeMealStats() {
+    const week = document.getElementById('gradeStatsWeek').value;
+    const target = document.getElementById('gradeMealStats');
+    const rows = gtParityFilter === 'all'
+      ? gtGradeRows
+      : gtGradeRows.filter(row => row.parity === gtParityFilter);
+    const scopeLabel = gtParityFilter === 'odd' ? '奇数周' : gtParityFilter === 'even' ? '偶数周' : '全部周类型';
+    document.getElementById('gtStatsScope').textContent = `第 ${week} 周，${scopeLabel}`;
+    const aCount = rows.reduce((sum, row) =>
+      sum + [1,2,3,4,5].reduce((daySum, day) => daySum + Number(row[day + 'A'] || 0), 0), 0);
+    const bCount = rows.reduce((sum, row) =>
+      sum + [1,2,3,4,5].reduce((daySum, day) => daySum + Number(row[day + 'B'] || 0), 0), 0);
+    const gradeCount = new Set(rows.map(row => row.gradeName).filter(Boolean)).size;
+    document.getElementById('gtTotalCount').textContent = aCount + bCount;
+    document.getElementById('gtACount').textContent = aCount;
+    document.getElementById('gtBCount').textContent = bCount;
+    document.getElementById('gtGradeCount').textContent = gradeCount;
+    if (!rows.length) {
+      target.innerHTML = `
+        <div class="gt-empty">
+          <div><strong>暂无第 ${escHtml(week)} 周选餐记录</strong><span>家长完成选餐后，数据会自动汇总到这里。</span></div>
+        </div>`;
+      return;
+    }
+    const days = ['周一','周二','周三','周四','周五'];
+    target.innerHTML = `
+      <table class="gt-table">
+        <thead>
+          <tr><th>年级</th><th>周类型</th>${days.map(day => `<th colspan="2">${day}</th>`).join('')}</tr>
+          <tr><th></th><th></th>${days.map(() => '<th class="gt-a">A餐</th><th class="gt-b">B餐</th>').join('')}</tr>
+        </thead>
+        <tbody>${rows.map(row => `
+          <tr>
+            <td><strong>${escHtml(row.gradeName || '-')}</strong></td>
+            <td>${row.parity === 'odd' ? '奇数周' : '偶数周'}</td>
+            ${[1,2,3,4,5].map(day => `<td class="gt-a">${row[day + 'A'] || 0}</td><td class="gt-b">${row[day + 'B'] || 0}</td>`).join('')}
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+
+  async function loadClassMealStats() {
+    if (ROLE !== 'teacher' || SUB_ROLE !== 'class') return;
+    const grade = NUTRITION_GRADE;
+    const klass = NUTRITION_CLASS;
+    const target = document.getElementById('classMealStats');
+    document.getElementById('classMealScope').textContent = grade && klass
+      ? `${grade} ${klass}，数据范围由当前班主任账号绑定`
+      : '当前班主任账号尚未绑定年级和班级';
+    if (!grade || !klass) {
+      target.innerHTML = '<div class="alert alert-warning">账号缺少年级或班级绑定，无法查询本班选餐。</div>';
+      return;
+    }
+    const odd = document.getElementById('classWeekOdd').value;
+    const even = document.getElementById('classWeekEven').value;
+    const params = new URLSearchParams({
+      grade,
+      class: klass,
+      week_odd: odd,
+      week_even: even,
+    });
+    target.innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>';
+    const data = await rootApiFetch(`/api/meal-stats/class?${params.toString()}`);
+    if (!data) return;
+    const students = data.students || [];
+    if (!students.length) {
+      target.innerHTML = '<div class="text-center text-secondary">本班暂无学生选餐数据</div>';
+      return;
+    }
+    const choiceCell = value => value === 'A'
+      ? '<span class="badge badge-info">A</span>'
+      : value === 'B'
+        ? '<span class="badge badge-success">B</span>'
+        : '<span class="text-secondary">-</span>';
+    const aCount = students.reduce((sum, student) =>
+      sum + ['odd','even'].reduce((subtotal, parity) =>
+        subtotal + [1,2,3,4,5].filter(day => student[`${parity}_${day}`] === 'A').length, 0), 0);
+    const bCount = students.reduce((sum, student) =>
+      sum + ['odd','even'].reduce((subtotal, parity) =>
+        subtotal + [1,2,3,4,5].filter(day => student[`${parity}_${day}`] === 'B').length, 0), 0);
+    target.innerHTML = `
+      <div class="stats-grid mb-2">
+        <div class="stat-card"><div class="stat-value">${students.length}</div><div class="stat-label">本班学生</div></div>
+        <div class="stat-card"><div class="stat-value">${aCount}</div><div class="stat-label">A餐选择人次</div></div>
+        <div class="stat-card"><div class="stat-value">${bCount}</div><div class="stat-label">B餐选择人次</div></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>学生</th><th colspan="5">奇数周</th><th colspan="5">偶数周</th></tr>
+          <tr><th></th>${[...daysForClass(), ...daysForClass()].map(day => `<th>${day}</th>`).join('')}</tr>
+        </thead>
+        <tbody>${students.map(student => `
+          <tr>
+            <td><strong>${escHtml(student.displayName || '-')}</strong></td>
+            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`odd_${day}`])}</td>`).join('')}
+            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`even_${day}`])}</td>`).join('')}
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+
+  function daysForClass() {
+    return ['一','二','三','四','五'];
   }
 
   async function runRecommendation() {

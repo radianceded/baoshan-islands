@@ -1,15 +1,20 @@
 /* 儿童营养餐智能分配系统 — 公共 JS */
 
 // API 基础路径
-const API_BASE = window.NUTRITION_API_BASE || '/api/nutrition';
+const NUTRITION_PLATFORM_BASE = location.protocol === 'file:' ? 'http://127.0.0.1:5051' : '';
+const API_BASE = window.NUTRITION_API_BASE || NUTRITION_PLATFORM_BASE + '/api/nutrition';
 const NUTRITION_CONTEXT = new URLSearchParams(window.location.search);
 const NUTRITION_ROLE = NUTRITION_CONTEXT.get('role') || localStorage.getItem('nutrition_role') || 'teacher';
 const NUTRITION_CHILD_CODE = NUTRITION_CONTEXT.get('childCode') || '';
+const NUTRITION_SUB_ROLE = NUTRITION_CONTEXT.get('subRole') || sessionStorage.getItem('bs_sub_role') || '';
+const NUTRITION_GRADE = NUTRITION_CONTEXT.get('grade') || sessionStorage.getItem('bs_bound_grade') || '';
+const NUTRITION_CLASS = NUTRITION_CONTEXT.get('class') || sessionStorage.getItem('bs_bound_class') || '';
 
 function nutritionHealthIslandUrl() {
   const params = new URLSearchParams({ role: NUTRITION_ROLE });
   if (NUTRITION_ROLE === 'parent' && NUTRITION_CHILD_CODE) params.set('kid', NUTRITION_CHILD_CODE);
-  return `/island-health.html?${params.toString()}`;
+  const healthPath = location.protocol === 'file:' ? '../island-health.html' : '/island-health.html';
+  return `${healthPath}?${params.toString()}`;
 }
 
 function addNutritionBackButton() {
@@ -35,21 +40,35 @@ else addNutritionBackButton();
 
 async function apiFetch(path, options = {}) {
   const url = API_BASE + path;
+  return nutritionFetch(url, options);
+}
+
+function nutritionAuthHeaders() {
   const token = sessionStorage.getItem('bs_session_token');
-  const authHeaders = token
+  return token
     ? {'Authorization': `Bearer ${token}`}
     : {
         'X-Demo-Role': NUTRITION_ROLE,
         'X-User-Role': NUTRITION_ROLE,
+        ...(NUTRITION_SUB_ROLE ? {'X-Demo-Sub': NUTRITION_SUB_ROLE} : {}),
+        ...(NUTRITION_GRADE ? {'X-Demo-Grade': NUTRITION_GRADE} : {}),
+        ...(NUTRITION_CLASS ? {'X-Demo-Class': NUTRITION_CLASS} : {}),
         ...(NUTRITION_CHILD_CODE ? {
           'X-Demo-Kid': NUTRITION_CHILD_CODE,
           'X-Nutrition-Child-Code': NUTRITION_CHILD_CODE,
         } : {}),
       };
+}
+
+async function rootApiFetch(path, options = {}) {
+  return nutritionFetch(NUTRITION_PLATFORM_BASE + path, options);
+}
+
+async function nutritionFetch(url, options = {}) {
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders,
+      ...nutritionAuthHeaders(),
       ...(options.headers || {})
     },
     ...options,
