@@ -58,6 +58,20 @@
   .role-entry-name{font-size:14px;font-weight:900;letter-spacing:.5px;white-space:nowrap}
   .role-entry-desc{font-size:11px;color:#5C7A8C;font-weight:700;text-align:right}
   .entry-hint{font-size:11px;color:#5C7A8C;font-weight:700;margin-bottom:16px}
+  .example-login{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:14px;padding:10px 12px;border-radius:12px;background:#EAF6FB;
+    color:#365A6E;font-size:11px;font-weight:700;
+  }
+  .example-login code{color:#0E5E80;font-family:Consolas,monospace;font-weight:800}
+  .example-fill{
+    flex-shrink:0;padding:7px 10px;border:1.5px solid #5B9FBE;border-radius:9px;
+    background:#fff;color:#0E5E80;font-family:inherit;font-size:11px;font-weight:800;
+    cursor:pointer;
+  }
+  .example-fill:hover{background:#DDF1FA}
+  .example-fill:active{transform:translateY(1px)}
+  .example-fill:focus-visible{outline:3px solid rgba(91,200,232,.35);outline-offset:2px}
   #loginForm[hidden]{display:none}
 </style>
 <!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
@@ -97,6 +111,10 @@
 
   <form id="loginForm" onsubmit="return doLogin(event)" hidden>
     <input id="loginEntry" type="hidden" name="entry">
+    <div class="example-login">
+      <span>示例：<code id="exampleUsername"></code> / <code>123456</code></span>
+      <button class="example-fill" id="fillExample" type="button">填入示例</button>
+    </div>
     <div class="form-row">
       <label>账号</label>
       <input id="username" type="text" autocomplete="username" placeholder="请输入账号" required>
@@ -112,10 +130,10 @@
 
 <script>
 
-const ENTRY_LABELS = {
-  general_teacher: '总务老师',
-  class_teacher: '班主任老师',
-  parent: '学生家长'
+const ENTRY_CONFIG = {
+  general_teacher: { label: '总务老师', username: 'demo_general' },
+  class_teacher: { label: '班主任老师', username: 'demo_class' },
+  parent: { label: '学生家长', username: 'demo_parent' }
 };
 
 document.querySelectorAll('.role-entry-btn').forEach(button => {
@@ -125,10 +143,18 @@ document.querySelectorAll('.role-entry-btn').forEach(button => {
       item.setAttribute('aria-pressed', String(item === button));
     });
     document.getElementById('loginEntry').value = entry;
-    document.getElementById('entryHint').textContent = `当前入口：${ENTRY_LABELS[entry]}`;
+    document.getElementById('entryHint').textContent = `当前入口：${ENTRY_CONFIG[entry].label}`;
+    document.getElementById('exampleUsername').textContent = ENTRY_CONFIG[entry].username;
     document.getElementById('loginForm').hidden = false;
     document.getElementById('username').focus();
   });
+});
+
+document.getElementById('fillExample').addEventListener('click', () => {
+  const entry = document.getElementById('loginEntry').value;
+  document.getElementById('username').value = ENTRY_CONFIG[entry].username;
+  document.getElementById('password').value = '123456';
+  document.getElementById('password').focus();
 });
 
 async function doLogin(e){

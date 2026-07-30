@@ -1,10 +1,9 @@
-import os
-import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
 from server import app as server_app
+from server import manage_accounts
 
 
 class LoginPageEntryTests(unittest.TestCase):
@@ -26,96 +25,45 @@ class LoginPageEntryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_each_entry_shows_a_fillable_demo_account(self):
+        for username in ("demo_general", "demo_class", "demo_parent"):
+            self.assertIn(f"username: '{username}'", self.html)
+        self.assertIn("document.getElementById('fillExample').addEventListener", self.html)
+        self.assertIn("value = '123456'", self.html)
+
 
 class LoginRoleEntryTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.old_db_path = server_app.DB_PATH
-        server_app.DB_PATH = os.path.join(self.temp_dir.name, "accounts.db")
+        self.old_manage_db_path = manage_accounts.DB
+        db_path = str(Path(self.temp_dir.name) / "accounts.db")
+        server_app.DB_PATH = db_path
+        manage_accounts.DB = db_path
         server_app.app.config["TESTING"] = True
 
-        db = sqlite3.connect(server_app.DB_PATH)
-        db.execute(
-            """
-            CREATE TABLE accounts(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL,
-                sub_role TEXT,
-                bound_id_card TEXT,
-                bound_grade TEXT,
-                bound_class TEXT,
-                kid_name TEXT,
-                demo_idx INTEGER,
-                display_name TEXT,
-                dingtalk_unionid TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-        db.executemany(
-            """
-            INSERT INTO accounts(
-                username, password_hash, role, sub_role, bound_id_card,
-                bound_grade, bound_class, kid_name, display_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    "general",
-                    server_app._hash_pwd("secret"),
-                    "teacher",
-                    "general",
-                    None,
-                    None,
-                    None,
-                    None,
-                    "总务老师",
-                ),
-                (
-                    "class",
-                    server_app._hash_pwd("secret"),
-                    "teacher",
-                    "class",
-                    None,
-                    "三年级",
-                    "1班",
-                    None,
-                    "班主任老师",
-                ),
-                (
-                    "parent",
-                    server_app._hash_pwd("secret"),
-                    "parent",
-                    None,
-                    "S001",
-                    "三年级",
-                    "1班",
-                    "学生甲",
-                    "学生家长",
-                ),
-            ],
-        )
-        db.commit()
+        db = manage_accounts.conn()
+        for account in manage_accounts.DEMO:
+            manage_accounts.upsert(db, **account)
         db.close()
         self.client = server_app.app.test_client()
 
     def tearDown(self):
         server_app.DB_PATH = self.old_db_path
+        manage_accounts.DB = self.old_manage_db_path
         self.temp_dir.cleanup()
 
     def login(self, username, entry=None):
-        payload = {"username": username, "password": "secret"}
+        payload = {"username": username, "password": "123456"}
         if entry is not None:
             payload["entry"] = entry
         return self.client.post("/api/login", json=payload)
 
     def test_each_entry_accepts_its_matching_account(self):
         cases = [
-            ("general", "general_teacher", "teacher", "general"),
-            ("class", "class_teacher", "teacher", "class"),
-            ("parent", "parent", "parent", None),
+            ("demo_general", "general_teacher", "teacher", "general"),
+            ("demo_class", "class_teacher", "teacher", "class"),
+            ("demo_parent", "parent", "parent", None),
         ]
         for username, entry, role, sub_role in cases:
             with self.subTest(entry=entry):
@@ -126,7 +74,7 @@ class LoginRoleEntryTests(unittest.TestCase):
                 self.assertEqual(user["sub_role"], sub_role)
 
     def test_entry_rejects_an_account_from_another_identity(self):
-        response = self.login("general", "class_teacher")
+        response = self.login("demo_general", "class_teacher")
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
@@ -135,13 +83,13 @@ class LoginRoleEntryTests(unittest.TestCase):
         )
 
     def test_invalid_entry_is_rejected(self):
-        response = self.login("general", "administrator")
+        response = self.login("demo_general", "administrator")
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json()["error"], "登录身份入口无效")
 
     def test_legacy_login_without_entry_remains_compatible(self):
-        response = self.login("general")
+        response = self.login("demo_general")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["user"]["role"], "teacher")
