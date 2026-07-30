@@ -555,7 +555,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   </div>
 
   <!-- ═══════ 营养配餐入口 ═══════ -->
-  <a id="nutrition-entry" data-show-for="teacher,admin" class="meal-flow-card meal-flow-toggle" href="/nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐智能推荐">
+  <a id="nutrition-entry" data-show-for="teacher,parent,admin" class="meal-flow-card meal-flow-toggle" href="nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐">
     <span class="meal-flow-icon blue"><i data-lucide="salad"></i></span>
     <span class="meal-flow-title">营养配餐</span>
     <span class="meal-flow-note">查看营养推荐</span>
@@ -1679,8 +1679,21 @@ function enterNutritionRecommendations(event){
     const bound = UserAuth.getBoundStudent && UserAuth.getBoundStudent();
     const childCode = (bound && (bound.idCard || bound.id_card)) || sessionStorage.getItem('bs_bound_id_card');
     if(childCode) params.set('childCode', childCode);
+  } else {
+    const subRole = (UserAuth.getSubRole && UserAuth.getSubRole())
+      || sessionStorage.getItem('bs_sub_role');
+    const grade = (UserAuth.getBoundGrade && UserAuth.getBoundGrade())
+      || sessionStorage.getItem('bs_bound_grade');
+    const klass = (UserAuth.getBoundClass && UserAuth.getBoundClass())
+      || sessionStorage.getItem('bs_bound_class');
+    if(subRole) params.set('subRole', subRole);
+    if(grade) params.set('grade', grade);
+    if(klass) params.set('class', klass);
   }
-  window.location.href = `/nutrition/recommendations.html?${params.toString()}`;
+  const nutritionPath = location.protocol === 'file:'
+    ? `nutrition/recommendations.html?${params.toString()}`
+    : `/nutrition/recommendations.html?${params.toString()}`;
+  window.location.href = nutritionPath;
 }
 
 async function renderParentMealPicker(){

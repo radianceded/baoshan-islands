@@ -189,6 +189,7 @@ async function doLogin(e){
     }
     // 把登录信息写入 sessionStorage（与 UserAuth 字段约定一致）
     const user = data.user;
+    if(data.sessionToken) sessionStorage.setItem('bs_session_token', data.sessionToken);
     sessionStorage.setItem('bs_role', user.role);
     if(user.sub_role) sessionStorage.setItem('bs_sub_role', user.sub_role);
     if(user.bound_grade) sessionStorage.setItem('bs_bound_grade', user.bound_grade);

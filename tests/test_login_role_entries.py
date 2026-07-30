@@ -37,6 +37,62 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertIn("fetch(`${LOCAL_API_BASE}/api/login`", self.html)
 
 
+class NutritionRoleViewTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        root = Path(__file__).resolve().parents[1]
+        cls.health_html = (root / "island-health.html").read_text(encoding="utf-8")
+        cls.recommendations_html = (
+            root / "nutrition" / "recommendations.html"
+        ).read_text(encoding="utf-8")
+        cls.common_js = (root / "nutrition" / "common.js").read_text(encoding="utf-8")
+
+    def test_health_island_passes_teacher_scope_to_nutrition(self):
+        self.assertIn('data-show-for="teacher,parent,admin"', self.health_html)
+        self.assertIn("params.set('subRole', subRole)", self.health_html)
+        self.assertIn("params.set('grade', grade)", self.health_html)
+        self.assertIn("params.set('class', klass)", self.health_html)
+
+    def test_nutrition_page_has_three_role_specific_views(self):
+        for view_id in (
+            "parentRecommendationView",
+            "generalTeacherView",
+            "classTeacherView",
+        ):
+            self.assertIn(f'id="{view_id}"', self.recommendations_html)
+        self.assertIn("/api/menus/upload", self.recommendations_html)
+        self.assertIn("/api/meal-stats/grade", self.recommendations_html)
+        self.assertIn("/api/meal-stats/class", self.recommendations_html)
+        for element_id in (
+            "menuPreview",
+            "gtTotalCount",
+            "gtACount",
+            "gtBCount",
+            "gtGradeCount",
+            "gtStatsScope",
+        ):
+            self.assertIn(f'id="{element_id}"', self.recommendations_html)
+
+    def test_nutrition_requests_include_teacher_scope(self):
+        self.assertIn("'X-Demo-Sub': NUTRITION_SUB_ROLE", self.common_js)
+        self.assertIn("'X-Demo-Grade': NUTRITION_GRADE", self.common_js)
+        self.assertIn("'X-Demo-Class': NUTRITION_CLASS", self.common_js)
+
+    def test_local_file_navigation_uses_repo_pages_and_local_api(self):
+        self.assertIn("location.protocol === 'file:'", self.health_html)
+        self.assertIn("`nutrition/recommendations.html?", self.health_html)
+        self.assertIn(
+            "location.protocol === 'file:' ? 'http://127.0.0.1:5051' : ''",
+            self.common_js,
+        )
+        self.assertIn("'../island-health.html'", self.common_js)
+        self.assertIn("NUTRITION_PLATFORM_BASE + path", self.common_js)
+        self.assertIn(
+            "NUTRITION_PLATFORM_BASE + '/api/menus/upload'",
+            self.recommendations_html,
+        )
+
+
 class LoginRoleEntryTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -74,9 +130,30 @@ class LoginRoleEntryTests(unittest.TestCase):
             with self.subTest(entry=entry):
                 response = self.login(username, entry)
                 self.assertEqual(response.status_code, 200)
-                user = response.get_json()["user"]
+                payload = response.get_json()
+                self.assertTrue(payload["sessionToken"])
+                user = payload["user"]
                 self.assertEqual(user["role"], role)
                 self.assertEqual(user["sub_role"], sub_role)
+
+    def test_password_login_token_preserves_server_side_role_scope(self):
+        login = self.login("demo_class", "class_teacher").get_json()
+        old_disable_demo = server_app.DISABLE_DEMO
+        server_app.DISABLE_DEMO = True
+        try:
+            response = self.client.get(
+                "/api/auth/me",
+                headers={"Authorization": f"Bearer {login['sessionToken']}"},
+            )
+        finally:
+            server_app.DISABLE_DEMO = old_disable_demo
+
+        self.assertEqual(response.status_code, 200)
+        user = response.get_json()
+        self.assertEqual(user["role"], "teacher")
+        self.assertEqual(user["subRole"], "class")
+        self.assertEqual(user["boundGrade"], "三年级")
+        self.assertEqual(user["boundClass"], "1班")
 
     def test_entry_rejects_an_account_from_another_identity(self):
         response = self.login("demo_general", "class_teacher")

@@ -908,7 +908,21 @@ def login():
         'demo_idx':     row['demo_idx'],
         'displayName':  row['display_name'],
     }
-    return jsonify({'success': True, 'user': user})
+    session_token = _sign_session({
+        'accountId': row['id'],
+        'username': row['username'],
+        'role': row['role'],
+        'subRole': row['sub_role'],
+        'boundIdCard': row['bound_id_card'],
+        'boundGrade': row['bound_grade'],
+        'boundClass': row['bound_class'],
+        'ts': int(time.time()),
+    })
+    return jsonify({
+        'success': True,
+        'sessionToken': session_token,
+        'user': user,
+    })
 
 # ==================== 角色 & 用户绑定 ====================
 # user_bindings: 把钉钉 unionId 映射到角色 + 绑定的学生
@@ -1004,6 +1018,15 @@ def _current_user():
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
         info = _verify_session(auth[7:])
+        if info and info.get('accountId'):
+            return {
+                'role': info.get('role') or 'none',
+                'sub_role': info.get('subRole'),
+                'bound_id_card': info.get('boundIdCard'),
+                'bound_grade': info.get('boundGrade'),
+                'bound_class': info.get('boundClass'),
+                'identity': f"account:{info.get('accountId')}",
+            }
         if info and info.get('unionId'):
             uid = info['unionId']
             b = _lookup_binding(uid)
@@ -2532,7 +2555,7 @@ def list_menus():
 def upload_menu():
     """总务老师上传周菜单（图片 + 周次 + 日期区间）"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] not in (None,'general')):
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
         return jsonify({'error': '仅总务老师/管理员可上传'}), 403
     if not _rate_check(f'menu:{u["identity"]}'):
         return jsonify({'error': f'上传过于频繁(>{UPLOAD_RATE_PER_MIN} 次/分钟),请稍后重试'}), 429
@@ -2804,6 +2827,9 @@ def list_meal_choices():
 @app.route('/api/grade-counts', methods=['GET'])
 def grade_counts():
     """各年级 / 全校 学生人数"""
+    u = _current_user()
+    if u['role'] not in ('teacher', 'admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看全校年级统计'}), 403
     db = get_db()
     rows = db.execute('SELECT grade_name, COUNT(*) AS cnt FROM students GROUP BY grade_name ORDER BY grade_name').fetchall()
     items = [{'grade': r['grade_name'] or '-', 'count': r['cnt']} for r in rows]
@@ -2927,8 +2953,8 @@ def class_fitness_stats():
 def stats_class_summary():
     """班级粒度 A/B 餐人数汇总（按 grade 过滤；不指定则全部）"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin'):
-        return jsonify({'error':'无权限'}), 403
+    if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看全校班级汇总'}), 403
     _ensure_meal_tables()
     db = get_db()
     grade = request.args.get('grade')
@@ -2962,8 +2988,8 @@ def stats_class_summary():
 def stats_grade():
     """总务老师：各年级各周一~周五 A / B 餐人数汇总。可指定 week_number"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin'):
-        return jsonify({'error':'无权限'}), 403
+    if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看年级选餐统计'}), 403
     _ensure_meal_tables()
     db = get_db()
     week = request.args.get('week', type=int)
@@ -3004,7 +3030,20 @@ def stats_class():
     week_even = request.args.get('week_even', type=int)
     db = get_db()
     # 拿到该班所有学生
-    students = db.execute('SELECT id_card, name FROM students WHERE grade_name=? AND class_name=? ORDER BY name', (grade, klass)).fetchall()
+    student_table = _meal_student_source(db)
+    if student_table:
+        students = db.execute(
+            f'''SELECT id_card, name FROM {student_table}
+                WHERE grade_name=? AND class_name=? ORDER BY name''',
+            (grade, klass),
+        ).fetchall()
+    else:
+        students = db.execute(
+            '''SELECT id_card, name FROM meal_choices
+               WHERE grade_name=? AND class_name=?
+               GROUP BY id_card, name ORDER BY name''',
+            (grade, klass),
+        ).fetchall()
     # 拿到该班的选餐记录
     sql = 'SELECT id_card, week_number, parity, weekday, choice FROM meal_choices WHERE grade_name=? AND class_name=?'
     params = [grade, klass]
