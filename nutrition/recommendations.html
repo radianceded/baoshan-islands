@@ -6,6 +6,145 @@
 <title>营养配餐管理 - 宝山学习群岛</title>
 <link rel="stylesheet" href="common.css">
 <style>
+  .parent-mode{background:#f4f8f2}
+  .pr-page{
+    --pr-ink:#173c2a;
+    --pr-muted:#617268;
+    --pr-accent:#2f7a4b;
+    --pr-accent-strong:#245f3b;
+    --pr-soft:#e7f3e7;
+    --pr-line:#d9e6db;
+    --pr-surface:#fff;
+    width:min(1160px,100%);margin:0 auto;display:grid;gap:20px;color:var(--pr-ink)
+  }
+  .pr-hero{
+    position:relative;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);
+    gap:24px;align-items:center;padding:28px 30px;border:1px solid #d6e7d8;border-radius:24px;
+    background:
+      radial-gradient(circle at 92% 16%,rgba(255,255,255,.9) 0 8%,transparent 8.5%),
+      radial-gradient(circle at 78% 88%,rgba(255,255,255,.7) 0 11%,transparent 11.5%),
+      linear-gradient(135deg,#e8f5e8,#f7fbf3);
+    box-shadow:0 14px 38px rgba(49,91,58,.09);overflow:hidden
+  }
+  .pr-hero-copy{position:relative;display:grid;gap:10px}
+  .pr-kid-line{display:flex;align-items:center;gap:12px}
+  .pr-kid-avatar{
+    display:grid;place-items:center;width:52px;height:52px;border-radius:16px;
+    background:#d3ebd8;font-size:25px;box-shadow:inset 0 0 0 1px rgba(47,122,75,.12)
+  }
+  .pr-hero h2{font-size:clamp(25px,3vw,36px);line-height:1.16;letter-spacing:-.02em;color:var(--pr-ink)}
+  .pr-hero p{max-width:56ch;color:var(--pr-muted);font-size:14px;line-height:1.7}
+  .pr-health-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .pr-health-chip{
+    display:inline-flex;align-items:center;min-height:30px;padding:5px 10px;border:1px solid #cfe0d1;
+    border-radius:999px;background:rgba(255,255,255,.72);color:#43604d;font-size:12px;font-weight:700
+  }
+  .pr-date-card{position:relative;display:grid;gap:9px;padding:18px;border:1px solid rgba(47,122,75,.14);border-radius:18px;background:rgba(255,255,255,.82)}
+  .pr-date-card label{font-size:12px;font-weight:800;color:#496052}
+  .pr-date-card .form-control{width:100%;min-height:44px;border-radius:12px;background:#fff}
+  .pr-date-card .btn{min-height:44px;border-radius:999px;justify-content:center;background:var(--pr-accent);color:#fff}
+  .pr-date-card .btn:hover{background:var(--pr-accent-strong)}
+  .pr-main-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:18px;align-items:stretch}
+  .pr-recommend-card,.pr-ai-card,.pr-plan-board{
+    border:1px solid var(--pr-line);border-radius:20px;background:var(--pr-surface);
+    box-shadow:0 10px 28px rgba(43,79,51,.07)
+  }
+  .pr-recommend-card{display:grid;gap:18px;padding:22px}
+  .pr-section-title{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+  .pr-section-title h3{font-size:19px;line-height:1.3;color:var(--pr-ink)}
+  .pr-section-title p{margin-top:4px;color:var(--pr-muted);font-size:12px;line-height:1.55}
+  .pr-date-tag{flex:0 0 auto;color:#587063;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pr-meal-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pr-meal-option{
+    position:relative;display:grid;gap:12px;min-width:0;padding:17px;border:1px solid var(--pr-line);
+    border-radius:16px;background:#fbfdfb;color:var(--pr-ink);text-align:left;font-family:inherit
+  }
+  .pr-meal-option.is-recommended{border-color:#75a982;background:#edf7ed;box-shadow:inset 0 0 0 1px rgba(47,122,75,.1)}
+  .pr-meal-option-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .pr-meal-letter{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#e5ede7;color:#355742;font-size:20px;font-weight:900}
+  .pr-meal-option.is-recommended .pr-meal-letter{background:var(--pr-accent);color:#fff}
+  .pr-recommend-badge{padding:5px 8px;border-radius:999px;background:#d8ebdc;color:#285f3b;font-size:11px;font-weight:900;white-space:nowrap}
+  .pr-meal-name{display:block;color:#304f3a;font-size:14px;line-height:1.4}
+  .pr-meal-score{display:flex;align-items:baseline;gap:5px}
+  .pr-meal-score strong{font-size:31px;line-height:1;color:var(--pr-ink);font-variant-numeric:tabular-nums}
+  .pr-meal-score span{color:var(--pr-muted);font-size:11px}
+  .pr-meal-facts{display:flex;gap:6px;flex-wrap:wrap;color:#587063;font-size:11px}
+  .pr-meal-facts span{padding:4px 7px;border-radius:8px;background:#f0f4f1}
+  .pr-reason-box{padding:15px 16px;border-radius:14px;background:#f1f7ef;color:#355742;font-size:13px;line-height:1.75}
+  .pr-reason-box strong{display:block;margin-bottom:3px;color:var(--pr-accent-strong);font-size:12px}
+  .pr-ai-card{display:grid;align-content:start;gap:18px;padding:22px;background:#fff}
+  .pr-ai-title{display:flex;align-items:center;gap:11px}
+  .pr-ai-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#dff0e1;font-size:20px}
+  .pr-ai-title h3{font-size:18px;color:var(--pr-ink)}
+  .pr-ai-title p{margin-top:2px;color:var(--pr-muted);font-size:12px}
+  .pr-ai-points{display:grid;gap:10px}
+  .pr-ai-point{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:11px 0;border-bottom:1px solid #e9efea}
+  .pr-ai-point:last-child{border-bottom:0}
+  .pr-ai-point b{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#edf5ed;color:var(--pr-accent);font-size:12px}
+  .pr-ai-point strong{display:block;color:#304f3a;font-size:13px}
+  .pr-ai-point span{display:block;margin-top:2px;color:var(--pr-muted);font-size:12px;line-height:1.55}
+  .pr-risk{padding:12px 14px;border-radius:12px;background:#fff6df;color:#75591f;font-size:12px;line-height:1.65}
+  .pr-risk.is-clear{background:#edf7ef;color:#376442}
+  .pr-plan-board{display:grid;gap:18px;padding:22px}
+  .pr-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+  .pr-plan-status{flex:0 0 auto;padding:7px 11px;border-radius:999px;background:#eef3ef;color:#52685a;font-size:12px;font-weight:800}
+  .pr-plan-status.is-ready{background:#dff0e1;color:#285f3b}
+  .pr-deadline{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;
+    border:1px solid #cfe0d1;border-radius:14px;background:#f2f8f1;color:#496052;font-size:12px
+  }
+  .pr-deadline strong{display:block;color:#285f3b;font-size:13px}
+  .pr-deadline span{font-variant-numeric:tabular-nums}
+  .pr-deadline.is-closed{border-color:#efd0cc;background:#fff3f1;color:#8c4841}
+  .pr-deadline.is-closed strong{color:#983d35}
+  .pr-week-block{display:grid;gap:10px}
+  .pr-week-title{display:flex;align-items:center;justify-content:space-between;color:#3d5946;font-size:13px}
+  .pr-week-title strong{font-size:14px}
+  .pr-day-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+  .pr-day{
+    display:grid;gap:9px;padding:12px;border:1px solid var(--pr-line);border-radius:14px;background:#fbfdfb;
+    transition:transform .18s ease,border-color .18s ease,background .18s ease
+  }
+  .pr-day:hover{transform:translateY(-2px);border-color:#a9c8af}
+  .pr-day.is-missing{border-style:dashed;background:#fafbfa}
+  .pr-day-date{color:var(--pr-muted);font-size:11px;line-height:1.45}
+  .pr-day-date strong{display:block;color:#355742;font-size:12px}
+  .pr-day-menu{display:grid;gap:3px;min-height:42px;color:#5d7063;font-size:10px;line-height:1.35}
+  .pr-day-menu span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pr-day-menu b{color:#355742;font-weight:900}
+  .pr-day-choice{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .pr-day-choice button{
+    min-height:32px;border:1px solid #d6e1d8;border-radius:9px;background:#fff;color:#587063;
+    font:800 12px/1 inherit;cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease
+  }
+  .pr-day-choice button:active{transform:scale(.97)}
+  .pr-day-choice button.is-selected{border-color:var(--pr-accent);background:var(--pr-accent);color:#fff}
+  .pr-day-choice button:disabled{border-color:#dce4de;background:#eef2ef;color:#9aa69d;cursor:not-allowed;transform:none}
+  .pr-day-note{min-height:16px;color:#728177;font-size:10px}
+  .pr-submit-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:2px}
+  .pr-submit-copy{color:var(--pr-muted);font-size:12px;line-height:1.6}
+  .pr-submit-copy strong{display:block;color:#355742;font-size:13px}
+  .pr-submit-button{
+    flex:0 0 auto;min-width:190px;min-height:48px;border:0;border-radius:999px;background:var(--pr-accent);
+    color:#fff;font:900 14px/1 inherit;cursor:pointer;box-shadow:0 8px 18px rgba(47,122,75,.23);
+    transition:transform .18s ease,background .18s ease,box-shadow .18s ease
+  }
+  .pr-submit-button:hover{transform:translateY(-2px);background:var(--pr-accent-strong);box-shadow:0 10px 22px rgba(47,122,75,.28)}
+  .pr-submit-button:active{transform:scale(.98)}
+  .pr-submit-button:disabled{background:#c7d3c9;color:#f7faf7;box-shadow:none;cursor:not-allowed;transform:none}
+  .pr-submit-message{min-height:20px;color:#52685a;font-size:12px;font-weight:700}
+  .pr-submit-message.is-error{color:#a33b34}
+  .pr-submit-message.is-success{color:#28623c}
+  .pr-empty{display:grid;place-items:center;min-height:240px;padding:28px;text-align:center;color:var(--pr-muted)}
+  .pr-empty strong{display:block;margin-bottom:5px;color:var(--pr-ink);font-size:16px}
+  .pr-error{display:grid;gap:8px;padding:16px;border-radius:14px;background:#fff0ef;color:#963a34;font-size:13px}
+  .pr-skeleton{display:grid;gap:10px;padding:20px}
+  .pr-skeleton span{height:42px;border-radius:12px;background:#edf2ee}
+  @media (prefers-reduced-motion:no-preference){
+    .pr-hero,.pr-main-grid,.pr-plan-board{animation:pr-enter .45s cubic-bezier(.16,1,.3,1) both}
+    .pr-main-grid{animation-delay:.05s}.pr-plan-board{animation-delay:.1s}
+    @keyframes pr-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  }
   .gt-page{display:grid;gap:18px}
   .gt-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:4px 2px}
   .gt-intro h2{font-size:24px;line-height:1.25;color:#24442e}
@@ -61,12 +200,75 @@
   .gt-skeleton{display:grid;gap:9px;padding:18px 20px}
   .gt-skeleton span{height:34px;border-radius:7px;background:#edf2ee}
   .gt-error{margin:18px;padding:14px;border-radius:9px;background:#fff0f0;color:#a52b2b;font-size:13px}
+  .ct-page{display:grid;gap:16px}
+  .ct-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:4px 2px}
+  .ct-intro h2{font-size:24px;line-height:1.25;color:#24442e}
+  .ct-intro p{margin-top:5px;color:#5d6d63;font-size:13px}
+  .ct-controls{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+  .ct-field{display:grid;gap:6px}
+  .ct-field label{font-size:12px;font-weight:700;color:#52665a}
+  .ct-field .form-control{width:108px;min-height:40px}
+  .ct-controls .btn{min-height:40px}
+  .ct-toggle{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 11px;border:1px solid #cfdcd3;border-radius:8px;background:#fff;color:#405549;font-size:12px;font-weight:700;cursor:pointer}
+  .ct-toggle:hover{background:#f3f8f4}
+  .ct-toggle input{width:16px;height:16px;accent-color:var(--primary)}
+  .ct-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid #dfe9e2;border-radius:12px;background:#fff;overflow:hidden}
+  .ct-metric{min-width:0;padding:16px 18px;border-right:1px solid #e7eee9}
+  .ct-metric:last-child{border-right:0}
+  .ct-metric strong{display:block;color:#294634;font-size:25px;line-height:1.15;font-variant-numeric:tabular-nums}
+  .ct-metric span{display:block;margin-top:5px;color:#65746b;font-size:12px}
+  .ct-metric.is-a strong{color:#8a5a15}
+  .ct-metric.is-b strong{color:#24627e}
+  .ct-panel{border:1px solid #dfe9e2;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(52,89,61,.07);overflow:hidden}
+  .ct-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid #e7eee9}
+  .ct-panel-head h3{color:#294634;font-size:16px}
+  .ct-panel-head p{margin-top:3px;color:#65746b;font-size:12px}
+  .ct-result-count{color:#53675a;font-size:12px;font-weight:700}
+  .ct-table-wrap{max-height:620px;overflow:auto}
+  .ct-table{min-width:1080px;font-size:12px}
+  .ct-table th,.ct-table td{text-align:center;padding:9px 8px}
+  .ct-table thead th{top:0;z-index:2;background:#f4f8f5;color:#4d6254}
+  .ct-table thead tr:nth-child(2) th{top:38px}
+  .ct-table .ct-student{position:sticky;left:0;z-index:1;text-align:left;background:#fff;box-shadow:1px 0 #e7eee9}
+  .ct-table thead .ct-student{z-index:3;background:#f4f8f5}
+  .ct-choice{display:inline-grid;place-items:center;min-width:30px;height:26px;border-radius:7px;font-weight:800}
+  .ct-choice.is-a{background:#fff4d9;color:#7d5317}
+  .ct-choice.is-b{background:#e4f2f8;color:#21617c}
+  .ct-choice.is-empty{background:#f2f4f3;color:#7a8780;font-weight:700}
+  .ct-completion{font-variant-numeric:tabular-nums;font-weight:800;color:#34533d}
+  .ct-completion.is-incomplete{color:#a34c25}
+  .ct-table tfoot td{position:sticky;bottom:0;background:#f7faf8;color:#52665a;font-weight:700;border-top:1px solid #dfe9e2}
+  .ct-day-total{display:grid;gap:1px;font-size:10px;line-height:1.35}
+  .ct-day-total .is-a{color:#8a5a15}
+  .ct-day-total .is-b{color:#24627e}
+  .ct-empty{display:grid;place-items:center;min-height:260px;padding:32px;text-align:center;color:#65746b}
+  .ct-empty strong{display:block;margin-bottom:5px;color:#38513f;font-size:15px}
+  .ct-error{display:grid;place-items:start;gap:10px;margin:18px;padding:15px;border-radius:9px;background:#fff0f0;color:#972f2f;font-size:13px}
+  .ct-skeleton{display:grid;gap:9px;padding:18px}
+  .ct-skeleton span{height:36px;border-radius:7px;background:#edf2ee}
   @media (max-width:960px){
+    .pr-hero,.pr-main-grid{grid-template-columns:1fr}
+    .pr-day-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
     .gt-layout{grid-template-columns:1fr}
     .gt-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .ct-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .ct-metric:nth-child(3){border-right:0}
+    .ct-metric:nth-child(-n+3){border-bottom:1px solid #e7eee9}
   }
   @media (max-width:640px){
     .app-content{padding:14px}
+    .pr-page{gap:14px}
+    .pr-hero{padding:20px;border-radius:20px}
+    .pr-kid-line{align-items:flex-start}
+    .pr-health-chips{gap:6px}
+    .pr-main-grid{gap:14px}
+    .pr-recommend-card,.pr-ai-card,.pr-plan-board{padding:17px;border-radius:18px}
+    .pr-meal-compare{grid-template-columns:1fr}
+    .pr-plan-head,.pr-submit-row{align-items:stretch;flex-direction:column}
+    .pr-plan-status{align-self:flex-start}
+    .pr-deadline{align-items:flex-start;flex-direction:column}
+    .pr-day-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .pr-submit-button{width:100%}
     .gt-intro{align-items:stretch;flex-direction:column}
     .gt-week-control{align-items:stretch}
     .gt-week-control .gt-field{flex:1}
@@ -74,6 +276,50 @@
     .gt-date-row{grid-template-columns:1fr}
     .gt-summary{grid-template-columns:1fr 1fr}
     .gt-panel-head{align-items:stretch;flex-direction:column}
+    .ct-intro{align-items:stretch;flex-direction:column}
+    .ct-controls{align-items:stretch}
+    .ct-field{flex:1}
+    .ct-field .form-control{width:100%}
+    .ct-controls .btn{flex:1;justify-content:center}
+    .ct-toggle{justify-content:center}
+    .ct-summary{grid-template-columns:1fr 1fr}
+    .ct-metric,.ct-metric:nth-child(3){border-right:1px solid #e7eee9;border-bottom:1px solid #e7eee9}
+    .ct-metric:nth-child(even){border-right:0}
+    .ct-metric:last-child{grid-column:1/-1;border-right:0;border-bottom:0}
+    .ct-panel-head{align-items:flex-start;flex-direction:column}
+  }
+  @media (max-width:390px){
+    .pr-day-grid{grid-template-columns:1fr}
+  }
+  @media (prefers-color-scheme:dark){
+    body.parent-mode{background:#122019;color:#e7f0e9}
+    .parent-mode .app-content{background:#122019}
+    .pr-page{
+      --pr-ink:#e8f2ea;--pr-muted:#a9b9ad;--pr-accent:#68b37e;--pr-accent-strong:#7cc391;
+      --pr-soft:#1d3325;--pr-line:#31483a;--pr-surface:#192a20
+    }
+    .pr-hero{border-color:#314b3a;background:radial-gradient(circle at 88% 12%,rgba(113,171,127,.14),transparent 25%),linear-gradient(135deg,#1a3022,#17271d)}
+    .pr-kid-avatar,.pr-ai-icon{background:#294735}
+    .pr-health-chip,.pr-date-card{border-color:#3a5542;background:rgba(27,45,34,.82);color:#c0d2c4}
+    .pr-date-card label,.pr-section-title p,.pr-ai-title p,.pr-ai-point span,.pr-submit-copy,.pr-day-date,.pr-day-menu{color:var(--pr-muted)}
+    .pr-date-card .form-control{border-color:#3b5142;background:#1b2b21;color:#e8f2ea}
+    .pr-meal-option,.pr-day{border-color:var(--pr-line);background:#1b2d22;color:var(--pr-ink)}
+    .pr-meal-option.is-recommended{border-color:#568767;background:#213b2a}
+    .pr-meal-letter,.pr-meal-facts span{background:#293b2f;color:#c3d3c6}
+    .pr-meal-name{color:#d9e8dc}
+    .pr-recommend-badge{background:#31543d;color:#cae3d0}
+    .pr-reason-box,.pr-ai-point b{background:#21382a;color:#c9ddcd}
+    .pr-ai-point{border-color:#304638}
+    .pr-day-choice button{border-color:#3a5141;background:#223429;color:#c2d0c5}
+    .pr-risk{background:#3b321d;color:#ead8a4}
+    .pr-risk.is-clear{background:#203a29;color:#c9e2cf}
+    .pr-plan-status{background:#293a2f;color:#c2d1c5}
+    .pr-plan-status.is-ready{background:#25462f;color:#cce6d2}
+    .pr-deadline{border-color:#35503d;background:#203529;color:#b7c9bb}
+    .pr-deadline strong,.pr-day-menu b{color:#d0e2d3}
+    .pr-deadline.is-closed{border-color:#68443f;background:#3b2925;color:#e5b9b2}
+    .pr-deadline.is-closed strong{color:#f0c7c0}
+    .pr-skeleton span{background:#263a2d}
   }
 </style>
 </head>
@@ -84,49 +330,92 @@
 </header>
 
 <div class="app-content">
-  <div class="card" id="parentRecommendationView">
-    <div class="card-header">
-      <h2>🤖 自动分配结果</h2>
-      <div class="btn-group" id="recommendationActions">
-        <a href="review.html" class="btn btn-outline btn-sm">📋 人工复核</a>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV()">📤 导出CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 导出JSON</button>
+  <div id="parentRecommendationView">
+    <div class="pr-page">
+      <section class="pr-hero" aria-labelledby="parentChildTitle">
+        <div class="pr-hero-copy">
+          <div class="pr-kid-line">
+            <div class="pr-kid-avatar" aria-hidden="true">🥗</div>
+            <div>
+              <h2 id="parentChildTitle">为孩子选一份更合适的午餐</h2>
+              <p id="parentChildScope">系统会结合孩子档案和当天 A/B 餐数据给出建议，最终选择仍由家长确认。</p>
+            </div>
+          </div>
+          <div class="pr-health-chips" id="parentHealthChips" aria-label="孩子营养档案摘要">
+            <span class="pr-health-chip">正在读取孩子档案</span>
+          </div>
+        </div>
+        <div class="pr-date-card">
+          <label for="parentRecommendationDate">查看哪一天的建议</label>
+          <input id="parentRecommendationDate" class="form-control" type="date">
+          <button class="btn" type="button" onclick="renderParentRecommendation()">查看当天建议</button>
+        </div>
+      </section>
+
+      <div class="pr-main-grid">
+        <section class="pr-recommend-card" aria-labelledby="parentRecommendationTitle">
+          <div class="pr-section-title">
+            <div>
+              <h3 id="parentRecommendationTitle">今天更适合哪一餐</h3>
+              <p>匹配分来自孩子档案、餐食营养和过敏信息。</p>
+            </div>
+            <span class="pr-date-tag" id="parentCurrentDate">等待数据</span>
+          </div>
+          <div id="parentRecommendationSummary" aria-live="polite">
+            <div class="pr-skeleton" aria-label="正在加载孩子营养建议">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="pr-ai-card" aria-labelledby="parentAiTitle">
+          <div class="pr-ai-title">
+            <div class="pr-ai-icon" aria-hidden="true">✨</div>
+            <div>
+              <h3 id="parentAiTitle">AI 为什么这样建议</h3>
+              <p>把计算结果翻译成家长容易理解的依据。</p>
+            </div>
+          </div>
+          <div class="pr-ai-points" id="parentAiInsights">
+            <div class="pr-skeleton"><span></span><span></span><span></span></div>
+          </div>
+          <div class="pr-risk is-clear" id="parentRiskNote">正在检查注意事项。</div>
+        </aside>
       </div>
-    </div>
 
-    <div class="filter-bar">
-      <input type="date" class="form-control" id="filterDate" onchange="loadResults()">
-      <select class="form-control" id="filterPlan" onchange="loadResults()">
-        <option value="">全部推荐</option>
-        <option value="A">推荐A餐</option>
-        <option value="B">推荐B餐</option>
-        <option value="MANUAL">需人工处理</option>
-      </select>
-      <select class="form-control" id="filterConfirmed" onchange="loadResults()">
-        <option value="">全部确认状态</option>
-        <option value="1">已确认</option>
-        <option value="0">未确认</option>
-      </select>
-      <select class="form-control" id="filterCampus" onchange="loadResults()">
-        <option value="">全部校区</option>
-        <option value="本部">本部</option><option value="宝林">宝林</option><option value="罗泾">罗泾</option>
-      </select>
-      <button class="btn btn-primary btn-sm" onclick="runRecommendation()" id="runBtn">🚀 执行推荐</button>
+      <section class="pr-plan-board" aria-labelledby="parentPlanTitle">
+        <div class="pr-plan-head">
+          <div class="pr-section-title">
+            <div>
+              <h3 id="parentPlanTitle">两周 AI 选餐方案</h3>
+              <p>AI 已预选每天更合适的一餐。家长可以调整，再一次提交 10 天。</p>
+            </div>
+          </div>
+          <span class="pr-plan-status" id="parentPlanStatus">正在准备方案</span>
+        </div>
+        <div class="pr-deadline" id="parentDeadlineStatus" aria-live="polite">
+          <div>
+            <strong>正在读取选餐截止时间</strong>
+            <span>截止前可以调整并重新提交。</span>
+          </div>
+        </div>
+        <div id="parentPlanWeeks">
+          <div class="pr-skeleton"><span></span><span></span><span></span></div>
+        </div>
+        <div class="pr-submit-row">
+          <div>
+            <div class="pr-submit-copy">
+              <strong>提交前请再确认一次</strong>
+              提交后会同步到健康岛选餐记录。
+            </div>
+            <div class="pr-submit-message" id="parentSubmitMessage" aria-live="polite"></div>
+          </div>
+          <button class="pr-submit-button" id="parentSubmitBtn" type="button" onclick="submitRecommendedMealPlan()" disabled>
+            一键提交选餐
+          </button>
+        </div>
+      </section>
     </div>
-
-    <!-- Stats -->
-    <div id="statsBar" class="mb-2"></div>
-
-    <!-- Running indicator -->
-    <div id="runningIndicator" class="hidden alert alert-info text-center">
-      <span class="spinner"></span> 正在执行推荐计算...
-    </div>
-
-    <!-- Results Table -->
-    <div class="table-wrap" id="resultsTable">
-      <div class="loading"><span class="spinner"></span> 加载中...</div>
-    </div>
-    <div class="pagination" id="pagination"></div>
   </div>
 
   <div id="generalTeacherView" class="hidden">
@@ -177,6 +466,10 @@
                 <input id="menuDateEnd" class="form-control" type="date">
               </div>
             </div>
+            <div class="gt-field">
+              <label for="menuSelectionDeadline">家长选餐截止时间</label>
+              <input id="menuSelectionDeadline" class="form-control" type="datetime-local" required>
+            </div>
             <label class="gt-file-box" for="menuImage">
               <input id="menuImage" type="file" accept="image/*" required>
               <span>
@@ -225,21 +518,51 @@
   </div>
 
   <div id="classTeacherView" class="hidden">
-    <div class="card">
-      <div class="card-header">
+    <div class="ct-page">
+      <div class="ct-intro">
         <div>
-          <h2>📋 本班学生 A/B 餐选择情况</h2>
-          <div id="classMealScope" class="text-secondary"></div>
+          <h2 id="classMealTitle">本班营养配餐统计</h2>
+          <p id="classMealScope">班级范围由当前班主任账号绑定。</p>
         </div>
-        <div class="btn-group">
-          <input id="classWeekOdd" class="form-control" type="number" min="1" max="30" value="17" aria-label="奇数周周次">
-          <input id="classWeekEven" class="form-control" type="number" min="1" max="30" value="18" aria-label="偶数周周次">
-          <button class="btn btn-outline btn-sm" type="button" onclick="loadClassMealStats()">查询</button>
+        <div class="ct-controls">
+          <div class="ct-field">
+            <label for="classWeekOdd">奇数周周次</label>
+            <input id="classWeekOdd" class="form-control" type="number" min="1" max="30" value="17">
+          </div>
+          <div class="ct-field">
+            <label for="classWeekEven">偶数周周次</label>
+            <input id="classWeekEven" class="form-control" type="number" min="1" max="30" value="18">
+          </div>
+          <button class="btn btn-primary" type="button" onclick="loadClassMealStats()">更新统计</button>
+          <label class="ct-toggle" for="classIncompleteOnly">
+            <input id="classIncompleteOnly" type="checkbox">
+            只看未完成
+          </label>
         </div>
       </div>
-      <div class="table-wrap" id="classMealStats">
-        <div class="loading"><span class="spinner"></span> 加载中...</div>
-      </div>
+
+      <section class="ct-summary" aria-label="本班选餐概览">
+        <div class="ct-metric"><strong id="ctStudentCount">0</strong><span>班级学生</span></div>
+        <div class="ct-metric"><strong id="ctCompleteCount">0</strong><span>已完成 10 天</span></div>
+        <div class="ct-metric"><strong id="ctIncompleteCount">0</strong><span>尚未完成</span></div>
+        <div class="ct-metric is-a"><strong id="ctACount">0</strong><span>A 餐选择人次</span></div>
+        <div class="ct-metric is-b"><strong id="ctBCount">0</strong><span>B 餐选择人次</span></div>
+      </section>
+
+      <section class="ct-panel" aria-labelledby="classDetailTitle">
+        <div class="ct-panel-head">
+          <div>
+            <h3 id="classDetailTitle">学生两周选餐明细</h3>
+            <p id="classMealPeriod">第 17 周和第 18 周，共 10 个用餐日</p>
+          </div>
+          <span id="classResultCount" class="ct-result-count">0 名学生</span>
+        </div>
+        <div class="ct-table-wrap" id="classMealStats">
+          <div class="ct-skeleton" aria-label="正在加载本班选餐统计">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
@@ -250,9 +573,8 @@
 <script>
   const ROLE = NUTRITION_ROLE;
   const SUB_ROLE = NUTRITION_SUB_ROLE || (ROLE === 'teacher' ? 'general' : '');
-  let currentPage = 1;
   const navItems = ROLE === 'parent'
-    ? [['recommendations.html','孩子的营养推荐']]
+    ? []
     : [['recommendations.html', SUB_ROLE === 'class' ? '本班选餐统计' : '全校配餐管理']];
   document.querySelector('.app-header h1').textContent = ROLE === 'parent'
     ? '孩子营养推荐'
@@ -265,76 +587,489 @@
   document.getElementById('generalTeacherView').classList.toggle('hidden', !(ROLE === 'teacher' && SUB_ROLE === 'general'));
   document.getElementById('classTeacherView').classList.toggle('hidden', !(ROLE === 'teacher' && SUB_ROLE === 'class'));
 
-  if (ROLE === 'parent') {
-    document.getElementById('recommendationActions').style.display = 'none';
-    document.getElementById('filterCampus').style.display = 'none';
-    document.getElementById('runBtn').style.display = 'none';
+  queueMicrotask(() => {
+    if (ROLE === 'parent') {
+      initParentView();
+    } else if (SUB_ROLE === 'class') {
+      initClassTeacherView();
+    } else {
+      initGeneralTeacherView();
+    }
+  });
+
+  let parentRecommendations = [];
+  let parentMealPlans = [];
+  let parentAllMealPlans = [];
+  let parentMenus = [];
+  let parentPlanDays = [];
+  let parentPlanMeta = null;
+  let parentDeadlineTimer = null;
+  const parentChoices = {odd:{}, even:{}};
+  const PARENT_CHILD_CODE = NUTRITION_CHILD_CODE || sessionStorage.getItem('bs_bound_id_card') || '';
+  const PARENT_DAY_NAMES = ['周一','周二','周三','周四','周五'];
+
+  function parentPlanLabel(plan) {
+    return plan === 'A' ? 'A 餐' : plan === 'B' ? 'B 餐' : '需要人工确认';
   }
 
-  document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
-  if (ROLE === 'parent') {
-    loadResults();
-  } else if (SUB_ROLE === 'class') {
-    loadClassMealStats();
-  } else {
-    initGeneralTeacherView();
+  function parentScore(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '-';
+    return `${Math.round(number <= 1 ? number * 100 : number)}分`;
   }
 
-  async function loadResults() {
-    const d = document.getElementById('filterDate').value;
-    const plan = document.getElementById('filterPlan').value;
-    const confirmed = document.getElementById('filterConfirmed').value;
-    const campus = document.getElementById('filterCampus').value;
-    const params = new URLSearchParams({ page: currentPage, page_size: 50 });
-    if (d) params.set('plan_date', d);
-    if (plan) params.set('recommended_plan', plan);
-    if (confirmed) params.set('confirmed', confirmed);
-    if (campus) params.set('campus', campus);
-
-    const data = await apiFetch(`/recommendations?${params.toString()}`);
-    if (!data) return;
-
-    // Stats
-    loadStats(d);
-
-    document.getElementById('resultsTable').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>儿童编号</th><th>年龄</th><th>数据状态</th>
-          <th class="text-right">A餐得分</th><th class="text-right">B餐得分</th>
-          <th>推荐结果</th><th>推荐原因</th><th>风险提示</th><th>确认状态</th><th>操作</th>
-        </tr></thead>
-        <tbody>${data.items.map(r => `
-          <tr>
-            <td><code>${escHtml(r.child_code)}</code></td>
-            <td>${r.age ?? '-'}</td>
-            <td><span class="badge ${r.data_status==='complete'?'badge-success':'badge-warning'}">${r.data_status==='complete'?'完整':'需补充'}</span></td>
-            <td class="text-right">${formatNum(r.score_a)}</td>
-            <td class="text-right">${formatNum(r.score_b)}</td>
-            <td><span class="badge ${r.recommended_plan==='A'?'badge-info':r.recommended_plan==='B'?'badge-success':'badge-danger'}">
-              ${r.recommended_plan==='MANUAL'?'⚠️ 人工处理':r.recommended_plan+'餐'}</span></td>
-            <td><small>${escHtml(r.reason||'-')}</small></td>
-            <td>${r.risk_notes ? `<small class="text-warning">${escHtml(r.risk_notes)}</small>` : '-'}</td>
-            <td>${r.confirmed ? '<span class="badge badge-success">已确认</span>' : '<span class="badge badge-neutral">待确认</span>'}</td>
-            <td>${ROLE !== 'parent' && !r.confirmed ? `<button class="btn btn-outline btn-sm" onclick="quickConfirm(${r.id})">确认</button>` : ''}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="10" class="text-center">暂无推荐结果，请先执行推荐</td></tr>'}</tbody>
-      </table>`;
-    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadResults(); });
+  function parentDateLabel(value) {
+    if (!value) return '';
+    const date = new Date(`${value}T00:00:00`);
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
   }
 
-  async function loadStats(d) {
-    if (!d) { document.getElementById('statsBar').innerHTML = ''; return; }
-    const stats = await apiFetch(`/recommendations/stats?plan_date=${d}`);
-    if (!stats) return;
-    document.getElementById('statsBar').innerHTML = `
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-value">${stats.total}</div><div class="stat-label">总人数</div></div>
-        <div class="stat-card" style="border-left:4px solid #1565c0"><div class="stat-value">${stats.a_count}</div><div class="stat-label">推荐A餐</div></div>
-        <div class="stat-card" style="border-left:4px solid #2e7d32"><div class="stat-value">${stats.b_count}</div><div class="stat-label">推荐B餐</div></div>
-        <div class="stat-card" style="border-left:4px solid #c62828"><div class="stat-value">${stats.manual_count}</div><div class="stat-label">需人工处理</div></div>
-        <div class="stat-card" style="border-left:4px solid #f57f17"><div class="stat-value">${stats.confirmed_count}</div><div class="stat-label">已确认</div></div>
+  function parentDateTimeLabel(value) {
+    if (!value) return '';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('zh-CN', {
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  }
+
+  function parentWeekDates(startValue) {
+    if (!startValue) return [];
+    const result = [];
+    const cursor = new Date(`${startValue}T00:00:00`);
+    if (Number.isNaN(cursor.getTime())) return [];
+    while (result.length < 5) {
+      const day = cursor.getDay();
+      if (day >= 1 && day <= 5) {
+        const year = cursor.getFullYear();
+        const month = String(cursor.getMonth() + 1).padStart(2, '0');
+        const date = String(cursor.getDate()).padStart(2, '0');
+        result.push(`${year}-${month}-${date}`);
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }
+
+  async function initParentView() {
+    document.body.classList.add('parent-mode');
+    const kidName = sessionStorage.getItem('bs_kid_name') || '孩子';
+    const grade = sessionStorage.getItem('bs_bound_grade') || '';
+    const klass = sessionStorage.getItem('bs_bound_class') || '';
+    document.getElementById('parentChildTitle').textContent = `为${kidName}选一份更合适的午餐`;
+    document.getElementById('parentChildScope').textContent = grade && klass
+      ? `${grade} ${klass}。系统只读取当前账号绑定孩子的数据。`
+      : '系统只读取当前账号绑定孩子的数据，最终选择由家长确认。';
+    document.getElementById('parentRecommendationDate').addEventListener('change', loadParentDayView);
+    if (!PARENT_CHILD_CODE) {
+      renderParentBindingError();
+      return;
+    }
+    await loadParentRecommendations();
+  }
+
+  function renderParentBindingError() {
+    document.getElementById('parentHealthChips').innerHTML =
+      '<span class="pr-health-chip">账号尚未绑定孩子</span>';
+    document.getElementById('parentRecommendationSummary').innerHTML =
+      '<div class="pr-error"><strong>暂时无法生成方案</strong><span>请联系管理员完成家长与孩子绑定。</span></div>';
+    document.getElementById('parentAiInsights').innerHTML =
+      '<div class="pr-empty"><div><strong>缺少孩子档案</strong><span>绑定完成后，AI 会展示具体推荐依据。</span></div></div>';
+    document.getElementById('parentPlanWeeks').innerHTML =
+      '<div class="pr-empty"><div><strong>两周方案尚未准备</strong><span>完成账号绑定后即可生成。</span></div></div>';
+    document.getElementById('parentPlanStatus').textContent = '需要完成绑定';
+    renderParentDeadlineStatus();
+  }
+
+  async function loadParentRecommendations() {
+    const [recommendationData, mealPlanData, menuData] = await Promise.all([
+      apiFetch('/recommendations?page=1&page_size=200'),
+      apiFetch('/meal-plans?page=1&page_size=200'),
+      rootApiFetch('/api/menus'),
+    ]);
+    if (!recommendationData) {
+      document.getElementById('parentRecommendationSummary').innerHTML =
+        '<div class="pr-error"><strong>营养建议加载失败</strong><span>请检查服务连接后重试。</span></div>';
+      document.getElementById('parentPlanWeeks').innerHTML =
+        '<div class="pr-error"><strong>两周方案加载失败</strong><span>请稍后重新进入页面。</span></div>';
+      return;
+    }
+    parentRecommendations = (recommendationData.items || []).sort((a, b) =>
+      String(a.plan_date || '').localeCompare(String(b.plan_date || '')) ||
+      Number(a.id || 0) - Number(b.id || 0)
+    );
+    parentAllMealPlans = mealPlanData ? (mealPlanData.items || []) : [];
+    parentMenus = menuData ? (menuData.menus || []) : [];
+    renderParentHealthSummary(parentRecommendations[0]);
+    const dateInput = document.getElementById('parentRecommendationDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = parentRecommendations.some(item => item.plan_date === today)
+      ? today
+      : parentRecommendations.length
+        ? parentRecommendations[parentRecommendations.length - 1].plan_date
+        : today;
+    await Promise.all([loadParentDayView(), buildParentMealPlan()]);
+  }
+
+  function renderParentHealthSummary(profile) {
+    const target = document.getElementById('parentHealthChips');
+    if (!profile) {
+      target.innerHTML = '<span class="pr-health-chip">营养档案等待补充</span>';
+      return;
+    }
+    const allergies = parseJsonField(profile.allergies);
+    const chips = [
+      profile.age ? `${profile.age}岁` : '',
+      profile.bmi ? `BMI ${formatNum(profile.bmi, 1)}` : '',
+      allergies.length ? `过敏关注：${allergies.join('、')}` : '暂无已登记过敏项',
+      profile.data_status === 'complete' ? '营养档案完整' : '部分档案待补充',
+    ].filter(Boolean);
+    target.innerHTML = chips.map(item => `<span class="pr-health-chip">${escHtml(item)}</span>`).join('');
+  }
+
+  async function loadParentDayView() {
+    const dateValue = document.getElementById('parentRecommendationDate').value;
+    document.getElementById('parentCurrentDate').textContent = dateValue
+      ? parentDateLabel(dateValue)
+      : '请选择日期';
+    const mealData = dateValue
+      ? await apiFetch(`/meal-plans/by-date/${encodeURIComponent(dateValue)}`)
+      : null;
+    parentMealPlans = mealData ? (mealData.meals || []) : [];
+    renderParentRecommendation();
+  }
+
+  function parentMealFacts(plan) {
+    if (!plan) return '<span>餐食明细待补充</span>';
+    const items = [];
+    if (plan.calories_kcal !== null && plan.calories_kcal !== undefined) items.push(`${formatNum(plan.calories_kcal, 0)} kcal`);
+    if (plan.protein_g !== null && plan.protein_g !== undefined) items.push(`蛋白质 ${formatNum(plan.protein_g, 1)}g`);
+    const ingredients = parseJsonField(plan.ingredients).slice(0, 2);
+    items.push(...ingredients);
+    return (items.length ? items : ['餐食明细待补充'])
+      .map(item => `<span>${escHtml(item)}</span>`).join('');
+  }
+
+  function renderParentRecommendation() {
+    const dateValue = document.getElementById('parentRecommendationDate').value;
+    const recommendation = parentRecommendations.find(item => item.plan_date === dateValue);
+    const target = document.getElementById('parentRecommendationSummary');
+    if (!recommendation) {
+      target.innerHTML = `
+        <div class="pr-empty">
+          <div>
+            <strong>${escHtml(parentDateLabel(dateValue) || '所选日期')}还没有建议</strong>
+            <span>需要总务老师补齐当天 A/B 餐数据，再由系统生成推荐。</span>
+          </div>
+        </div>`;
+      renderParentAiInsights(null, null);
+      return;
+    }
+    const mealA = parentMealPlans.find(item => item.plan_type === 'A');
+    const mealB = parentMealPlans.find(item => item.plan_type === 'B');
+    target.innerHTML = `
+      <div class="pr-meal-compare">
+        ${renderParentMealOption('A', recommendation, mealA)}
+        ${renderParentMealOption('B', recommendation, mealB)}
+      </div>
+      <div class="pr-reason-box">
+        <strong>AI 推荐结论</strong>
+        ${escHtml(recommendation.reason || `综合孩子档案与餐食数据，建议优先选择${parentPlanLabel(recommendation.recommended_plan)}。`)}
       </div>`;
+    renderParentAiInsights(
+      recommendation,
+      recommendation.recommended_plan === 'A' ? mealA : mealB
+    );
+  }
+
+  function renderParentMealOption(planType, recommendation, mealPlan) {
+    const recommended = recommendation.recommended_plan === planType;
+    const score = planType === 'A' ? recommendation.score_a : recommendation.score_b;
+    return `
+      <div class="pr-meal-option${recommended ? ' is-recommended' : ''}">
+        <div class="pr-meal-option-head">
+          <span class="pr-meal-letter">${planType}</span>
+          ${recommended ? '<span class="pr-recommend-badge">AI 更推荐</span>' : ''}
+        </div>
+        <strong class="pr-meal-name">${escHtml(mealPlan?.plan_name || `${planType} 餐菜单待发布`)}</strong>
+        <div class="pr-meal-score"><strong>${parentScore(score)}</strong><span>综合匹配</span></div>
+        <div class="pr-meal-facts">${parentMealFacts(mealPlan)}</div>
+      </div>`;
+  }
+
+  function renderParentAiInsights(recommendation, recommendedMeal) {
+    const target = document.getElementById('parentAiInsights');
+    const risk = document.getElementById('parentRiskNote');
+    if (!recommendation) {
+      target.innerHTML = '<div class="pr-empty"><div><strong>等待当天推荐</strong><span>生成后会解释推荐依据。</span></div></div>';
+      risk.className = 'pr-risk is-clear';
+      risk.textContent = '当前没有可展示的注意事项。';
+      return;
+    }
+    const allergies = parseJsonField(recommendation.allergies);
+    const scoreA = Number(recommendation.score_a || 0);
+    const scoreB = Number(recommendation.score_b || 0);
+    const gap = Math.abs(scoreA - scoreB);
+    const gapLabel = parentScore(gap);
+    const nutritionText = recommendedMeal
+      ? [
+          recommendedMeal.calories_kcal !== null && recommendedMeal.calories_kcal !== undefined
+            ? `热量约 ${formatNum(recommendedMeal.calories_kcal, 0)} kcal`
+            : '',
+          recommendedMeal.protein_g !== null && recommendedMeal.protein_g !== undefined
+            ? `蛋白质 ${formatNum(recommendedMeal.protein_g, 1)}g`
+            : '',
+        ].filter(Boolean).join('，') || '餐食营养明细仍待补充'
+      : '餐食营养明细仍待补充';
+    target.innerHTML = `
+      <div class="pr-ai-point">
+        <b>1</b><div><strong>综合匹配</strong><span>${parentPlanLabel(recommendation.recommended_plan)}领先约 ${escHtml(gapLabel)}。</span></div>
+      </div>
+      <div class="pr-ai-point">
+        <b>2</b><div><strong>餐食营养</strong><span>${escHtml(nutritionText)}。</span></div>
+      </div>
+      <div class="pr-ai-point">
+        <b>3</b><div><strong>安全检查</strong><span>${allergies.length ? `已核对过敏关注项：${escHtml(allergies.join('、'))}` : '当前档案未登记过敏项'}。</span></div>
+      </div>`;
+    risk.className = `pr-risk${recommendation.risk_notes ? '' : ' is-clear'}`;
+    risk.innerHTML = recommendation.risk_notes
+      ? `<strong>请留意：</strong>${escHtml(recommendation.risk_notes)}`
+      : '本次建议没有额外风险提示。';
+  }
+
+  function chooseParentMenuPair() {
+    const validMenus = parentMenus.filter(item =>
+      item.date_start && ['odd','even'].includes(item.parity)
+    );
+    const oddMenus = validMenus
+      .filter(item => item.parity === 'odd')
+      .sort((a, b) => Number(b.week_number) - Number(a.week_number));
+    for (const odd of oddMenus) {
+      const even = validMenus.find(item =>
+        item.parity === 'even' && Number(item.week_number) === Number(odd.week_number) + 1
+      );
+      if (even) return {odd, even};
+    }
+    return null;
+  }
+
+  async function buildParentMealPlan() {
+    const target = document.getElementById('parentPlanWeeks');
+    parentPlanMeta = chooseParentMenuPair();
+    parentPlanDays = [];
+    parentChoices.odd = {};
+    parentChoices.even = {};
+    if (parentDeadlineTimer) clearInterval(parentDeadlineTimer);
+    if (!parentPlanMeta) {
+      target.innerHTML = `
+        <div class="pr-empty">
+          <div>
+            <strong>两周日期还没有发布</strong>
+            <span>需要总务老师为连续奇数周和偶数周填写日期区间。</span>
+          </div>
+        </div>`;
+      updateParentPlanReadiness();
+      return;
+    }
+    parentDeadlineTimer = setInterval(updateParentPlanReadiness, 30000);
+    for (const parity of ['odd','even']) {
+      const menu = parentPlanMeta[parity];
+      const dates = parentWeekDates(menu.date_start);
+      dates.forEach((planDate, index) => {
+        const recommendation = parentRecommendations.find(item => item.plan_date === planDate);
+        const choice = recommendation && ['A','B'].includes(recommendation.recommended_plan)
+          ? recommendation.recommended_plan
+          : '';
+        if (choice) parentChoices[parity][index + 1] = choice;
+        parentPlanDays.push({
+          parity,
+          week: Number(menu.week_number),
+          weekday: index + 1,
+          planDate,
+          recommendation,
+          mealA: parentAllMealPlans.find(item =>
+            item.plan_date === planDate && item.plan_type === 'A'
+          ),
+          mealB: parentAllMealPlans.find(item =>
+            item.plan_date === planDate && item.plan_type === 'B'
+          ),
+        });
+      });
+    }
+    renderParentPlanWeeks();
+    updateParentPlanReadiness();
+  }
+
+  function renderParentPlanWeeks() {
+    const target = document.getElementById('parentPlanWeeks');
+    target.innerHTML = ['odd','even'].map(parity => {
+      const menu = parentPlanMeta[parity];
+      const days = parentPlanDays.filter(item => item.parity === parity);
+      return `
+        <div class="pr-week-block">
+          <div class="pr-week-title">
+            <strong>第 ${menu.week_number} 周</strong>
+            <span>${parity === 'odd' ? '奇数周' : '偶数周'}，${escHtml(parentDateLabel(menu.date_start))}开始</span>
+          </div>
+          <div class="pr-day-grid">
+            ${days.map(day => renderParentPlanDay(day)).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderParentPlanDay(day) {
+    const selected = parentChoices[day.parity][day.weekday] || '';
+    const missing = !day.recommendation;
+    const closed = isParentSelectionClosed();
+    return `
+      <article class="pr-day${missing ? ' is-missing' : ''}">
+        <button type="button" class="pr-day-date" onclick="selectParentPlanDate('${day.planDate}')" style="border:0;background:transparent;padding:0;text-align:left;cursor:pointer;font-family:inherit">
+          <strong>${PARENT_DAY_NAMES[day.weekday - 1]}</strong>
+          ${escHtml(parentDateLabel(day.planDate))}
+        </button>
+        <div class="pr-day-menu" aria-label="${PARENT_DAY_NAMES[day.weekday - 1]}菜单">
+          <span><b>A</b> ${escHtml(day.mealA?.plan_name || '菜单待发布')}</span>
+          <span><b>B</b> ${escHtml(day.mealB?.plan_name || '菜单待发布')}</span>
+        </div>
+        <div class="pr-day-choice" aria-label="${PARENT_DAY_NAMES[day.weekday - 1]}选择">
+          <button type="button" class="${selected === 'A' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'A')" ${missing || closed ? 'disabled' : ''}>A 餐</button>
+          <button type="button" class="${selected === 'B' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'B')" ${missing || closed ? 'disabled' : ''}>B 餐</button>
+        </div>
+        <span class="pr-day-note">${closed ? '选餐已截止' : missing ? '等待 AI 建议' : `AI 推荐 ${day.recommendation.recommended_plan} 餐`}</span>
+      </article>`;
+  }
+
+  async function selectParentPlanDate(planDate) {
+    document.getElementById('parentRecommendationDate').value = planDate;
+    await loadParentDayView();
+    document.getElementById('parentRecommendationTitle').scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
+  function setParentPlanChoice(parity, weekday, choice) {
+    if (isParentSelectionClosed()) return;
+    parentChoices[parity][weekday] = choice;
+    renderParentPlanWeeks();
+    updateParentPlanReadiness();
+  }
+
+  function parentSelectionDeadline() {
+    if (!parentPlanMeta) return null;
+    const deadlines = ['odd','even']
+      .map(parity => parentPlanMeta[parity]?.selection_deadline)
+      .filter(Boolean)
+      .map(value => new Date(String(value).replace(' ', 'T')))
+      .filter(value => !Number.isNaN(value.getTime()))
+      .sort((a, b) => a.getTime() - b.getTime());
+    return deadlines[0] || null;
+  }
+
+  function isParentSelectionClosed() {
+    const deadline = parentSelectionDeadline();
+    return Boolean(deadline && Date.now() >= deadline.getTime());
+  }
+
+  function renderParentDeadlineStatus() {
+    const target = document.getElementById('parentDeadlineStatus');
+    const deadline = parentSelectionDeadline();
+    const closed = isParentSelectionClosed();
+    target.className = `pr-deadline${closed ? ' is-closed' : ''}`;
+    if (!deadline) {
+      target.innerHTML = `
+        <div>
+          <strong>本轮暂未设置截止时间</strong>
+          <span>截止时间发布前，家长仍可调整并提交。</span>
+        </div>`;
+      return;
+    }
+    target.innerHTML = `
+      <div>
+        <strong>${closed ? '本轮选餐已截止' : '请在截止时间前完成选餐'}</strong>
+        <span>截止时间：${escHtml(parentDateTimeLabel(deadline.toISOString()))}</span>
+      </div>
+      <span>${closed ? '不可再提交或修改' : '截止前可重复提交，以最后一次为准'}</span>`;
+  }
+
+  function updateParentPlanReadiness() {
+    const completed = ['odd','even'].reduce((sum, parity) =>
+      sum + Object.keys(parentChoices[parity]).length, 0);
+    const closed = isParentSelectionClosed();
+    const ready = Boolean(parentPlanMeta) && completed === 10 && !closed;
+    const status = document.getElementById('parentPlanStatus');
+    const button = document.getElementById('parentSubmitBtn');
+    status.textContent = closed
+      ? '选餐已截止'
+      : ready ? '10 天方案已准备好' : `已准备 ${completed} / 10 天`;
+    status.className = `pr-plan-status${ready ? ' is-ready' : ''}`;
+    button.disabled = !ready;
+    renderParentDeadlineStatus();
+    if (closed) {
+      button.textContent = '选餐已截止';
+      document.getElementById('parentSubmitMessage').textContent =
+        '截止时间后不能提交或修改选餐。';
+      renderParentPlanWeeks();
+    } else if (ready) {
+      button.textContent = '一键提交选餐';
+      if (!document.getElementById('parentSubmitMessage').classList.contains('is-success')) {
+        document.getElementById('parentSubmitMessage').textContent = '';
+      }
+    } else {
+      document.getElementById('parentSubmitMessage').textContent =
+        completed ? `还缺 ${10 - completed} 天 AI 推荐。` : '等待完整菜单和推荐结果。';
+    }
+  }
+
+  function submitRecommendedMealPlan() {
+    if (isParentSelectionClosed()) {
+      updateParentPlanReadiness();
+      return;
+    }
+    if (!parentPlanMeta || document.getElementById('parentSubmitBtn').disabled) return;
+    showConfirm(
+      '确认提交两周选餐',
+      '将按当前方案提交奇数周和偶数周共 10 天选餐。提交前仍可调整每天的 A/B 餐。',
+      performRecommendedMealSubmit
+    );
+  }
+
+  async function performRecommendedMealSubmit() {
+    const button = document.getElementById('parentSubmitBtn');
+    const message = document.getElementById('parentSubmitMessage');
+    button.disabled = true;
+    button.textContent = '正在提交';
+    message.className = 'pr-submit-message';
+    message.textContent = '正在同步到健康岛选餐记录。';
+    const data = await rootApiFetch('/api/meal-choices', {
+      method: 'POST',
+      body: JSON.stringify({
+        studentIdCard: PARENT_CHILD_CODE,
+        studentName: sessionStorage.getItem('bs_kid_name') || '',
+        grade: sessionStorage.getItem('bs_bound_grade') || '',
+        class: sessionStorage.getItem('bs_bound_class') || '',
+        week_odd: Number(parentPlanMeta.odd.week_number),
+        week_even: Number(parentPlanMeta.even.week_number),
+        choices: parentChoices,
+      }),
+    });
+    button.textContent = '一键提交选餐';
+    if (!data) {
+      button.disabled = false;
+      message.className = 'pr-submit-message is-error';
+      message.textContent = '提交失败，请检查网络后重试。';
+      return;
+    }
+    message.className = 'pr-submit-message is-success';
+    message.textContent = `提交成功，已同步 ${data.saved || 10} 天选餐。`;
+    button.textContent = '选餐已提交';
+    button.disabled = true;
+    showSuccess('两周选餐已提交');
   }
 
   let gtGradeRows = [];
@@ -398,6 +1133,10 @@
       return;
     }
     const menu = (data.menus || []).find(item => item.parity === parity);
+    document.getElementById('menuDateStart').value = menu?.date_start || '';
+    document.getElementById('menuDateEnd').value = menu?.date_end || '';
+    document.getElementById('menuSelectionDeadline').value =
+      (menu?.selection_deadline || '').replace(' ', 'T').slice(0, 16);
     if (menu && menu.image_path) {
       showMenuPreview(
         NUTRITION_PLATFORM_BASE + '/' + menu.image_path.replace(/^\/+/, ''),
@@ -424,6 +1163,7 @@
     form.append('parity', document.getElementById('menuParity').value);
     form.append('dateStart', document.getElementById('menuDateStart').value);
     form.append('dateEnd', document.getElementById('menuDateEnd').value);
+    form.append('selectionDeadline', document.getElementById('menuSelectionDeadline').value);
     const button = document.getElementById('menuUploadBtn');
     button.disabled = true;
     button.textContent = '正在上传...';
@@ -503,100 +1243,123 @@
       </table>`;
   }
 
+  let ctStudents = [];
+
+  function initClassTeacherView() {
+    document.getElementById('classIncompleteOnly').addEventListener('change', renderClassMealStats);
+    document.getElementById('classWeekOdd').addEventListener('change', loadClassMealStats);
+    document.getElementById('classWeekEven').addEventListener('change', loadClassMealStats);
+    loadClassMealStats();
+  }
+
+  function setClassSummary(summary = {}) {
+    document.getElementById('ctStudentCount').textContent = summary.studentCount || 0;
+    document.getElementById('ctCompleteCount').textContent = summary.completeCount || 0;
+    document.getElementById('ctIncompleteCount').textContent = summary.incompleteCount || 0;
+    document.getElementById('ctACount').textContent = summary.aCount || 0;
+    document.getElementById('ctBCount').textContent = summary.bCount || 0;
+  }
+
   async function loadClassMealStats() {
     if (ROLE !== 'teacher' || SUB_ROLE !== 'class') return;
     const grade = NUTRITION_GRADE;
     const klass = NUTRITION_CLASS;
     const target = document.getElementById('classMealStats');
+    document.getElementById('classMealTitle').textContent = grade && klass
+      ? `${grade} ${klass}营养配餐统计`
+      : '本班营养配餐统计';
     document.getElementById('classMealScope').textContent = grade && klass
-      ? `${grade} ${klass}，数据范围由当前班主任账号绑定`
-      : '当前班主任账号尚未绑定年级和班级';
+      ? '仅显示当前班主任账号绑定班级，不能切换到其他班级。'
+      : '当前班主任账号尚未绑定年级和班级。';
     if (!grade || !klass) {
-      target.innerHTML = '<div class="alert alert-warning">账号缺少年级或班级绑定，无法查询本班选餐。</div>';
+      setClassSummary();
+      target.innerHTML = '<div class="ct-error"><strong>无法读取班级范围</strong><span>请联系管理员为当前班主任账号绑定年级和班级。</span></div>';
       return;
     }
     const odd = document.getElementById('classWeekOdd').value;
     const even = document.getElementById('classWeekEven').value;
+    document.getElementById('classMealPeriod').textContent =
+      `第 ${odd} 周和第 ${even} 周，共 10 个用餐日`;
     const params = new URLSearchParams({
       grade,
       class: klass,
       week_odd: odd,
       week_even: even,
     });
-    target.innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>';
+    target.innerHTML = '<div class="ct-skeleton" aria-label="正在加载本班选餐统计"><span></span><span></span><span></span><span></span></div>';
     const data = await rootApiFetch(`/api/meal-stats/class?${params.toString()}`);
-    if (!data) return;
-    const students = data.students || [];
-    if (!students.length) {
-      target.innerHTML = '<div class="text-center text-secondary">本班暂无学生选餐数据</div>';
+    if (!data) {
+      ctStudents = [];
+      setClassSummary();
+      document.getElementById('classResultCount').textContent = '加载失败';
+      target.innerHTML = '<div class="ct-error"><strong>统计加载失败</strong><span>请检查本地服务或网络连接后重试。</span><button class="btn btn-outline btn-sm" type="button" onclick="loadClassMealStats()">重新加载</button></div>';
       return;
     }
-    const choiceCell = value => value === 'A'
-      ? '<span class="badge badge-info">A</span>'
+    ctStudents = data.students || [];
+    setClassSummary(data.summary);
+    renderClassMealStats();
+  }
+
+  function renderClassMealStats() {
+    const target = document.getElementById('classMealStats');
+    const incompleteOnly = document.getElementById('classIncompleteOnly').checked;
+    const students = incompleteOnly
+      ? ctStudents.filter(student => !student.isComplete)
+      : ctStudents;
+    document.getElementById('classResultCount').textContent = incompleteOnly
+      ? `展示 ${students.length} / ${ctStudents.length} 名学生`
+      : `${students.length} 名学生`;
+    if (!ctStudents.length) {
+      target.innerHTML = '<div class="ct-empty"><div><strong>本班暂无学生名单</strong><span>导入学生名册后，未选餐学生也会显示在这里。</span></div></div>';
+      return;
+    }
+    if (!students.length) {
+      target.innerHTML = '<div class="ct-empty"><div><strong>全班已经完成选餐</strong><span>关闭“只看未完成”可查看全部学生明细。</span></div></div>';
+      return;
+    }
+    const choiceCell = (value, label) => value === 'A'
+      ? `<span class="ct-choice is-a" aria-label="${label}选择 A 餐">A</span>`
       : value === 'B'
-        ? '<span class="badge badge-success">B</span>'
-        : '<span class="text-secondary">-</span>';
-    const aCount = students.reduce((sum, student) =>
-      sum + ['odd','even'].reduce((subtotal, parity) =>
-        subtotal + [1,2,3,4,5].filter(day => student[`${parity}_${day}`] === 'A').length, 0), 0);
-    const bCount = students.reduce((sum, student) =>
-      sum + ['odd','even'].reduce((subtotal, parity) =>
-        subtotal + [1,2,3,4,5].filter(day => student[`${parity}_${day}`] === 'B').length, 0), 0);
+        ? `<span class="ct-choice is-b" aria-label="${label}选择 B 餐">B</span>`
+        : `<span class="ct-choice is-empty" aria-label="${label}尚未选择">未选</span>`;
+    const dayTotal = (parity, day) => {
+      const a = students.filter(student => student[`${parity}_${day}`] === 'A').length;
+      const b = students.filter(student => student[`${parity}_${day}`] === 'B').length;
+      return `<span class="ct-day-total"><span class="is-a">A ${a}</span><span class="is-b">B ${b}</span></span>`;
+    };
+    const days = daysForClass();
     target.innerHTML = `
-      <div class="stats-grid mb-2">
-        <div class="stat-card"><div class="stat-value">${students.length}</div><div class="stat-label">本班学生</div></div>
-        <div class="stat-card"><div class="stat-value">${aCount}</div><div class="stat-label">A餐选择人次</div></div>
-        <div class="stat-card"><div class="stat-value">${bCount}</div><div class="stat-label">B餐选择人次</div></div>
-      </div>
-      <table>
+      <table class="ct-table">
         <thead>
-          <tr><th>学生</th><th colspan="5">奇数周</th><th colspan="5">偶数周</th></tr>
-          <tr><th></th>${[...daysForClass(), ...daysForClass()].map(day => `<th>${day}</th>`).join('')}</tr>
+          <tr>
+            <th class="ct-student" rowspan="2">学生</th>
+            <th colspan="5">奇数周</th>
+            <th colspan="5">偶数周</th>
+            <th rowspan="2">完成情况</th>
+          </tr>
+          <tr>${[...days, ...days].map(day => `<th>周${day}</th>`).join('')}</tr>
         </thead>
         <tbody>${students.map(student => `
           <tr>
-            <td><strong>${escHtml(student.displayName || '-')}</strong></td>
-            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`odd_${day}`])}</td>`).join('')}
-            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`even_${day}`])}</td>`).join('')}
+            <td class="ct-student"><strong>${escHtml(student.displayName || '-')}</strong></td>
+            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`odd_${day}`], `奇数周周${days[day - 1]}`)}</td>`).join('')}
+            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`even_${day}`], `偶数周周${days[day - 1]}`)}</td>`).join('')}
+            <td><span class="ct-completion${student.isComplete ? '' : ' is-incomplete'}">${student.selectedCount || 0}/10</span></td>
           </tr>
         `).join('')}</tbody>
+        <tfoot>
+          <tr>
+            <td class="ct-student">当前列表合计</td>
+            ${[1,2,3,4,5].map(day => `<td>${dayTotal('odd', day)}</td>`).join('')}
+            ${[1,2,3,4,5].map(day => `<td>${dayTotal('even', day)}</td>`).join('')}
+            <td>${students.reduce((sum, student) => sum + Number(student.selectedCount || 0), 0)} 项</td>
+          </tr>
+        </tfoot>
       </table>`;
   }
 
   function daysForClass() {
     return ['一','二','三','四','五'];
-  }
-
-  async function runRecommendation() {
-    const d = document.getElementById('filterDate').value;
-    if (!d) { showError('请选择日期'); return; }
-
-    const btn = document.getElementById('runBtn');
-    btn.disabled = true; btn.textContent = '计算中...';
-    document.getElementById('runningIndicator').classList.remove('hidden');
-
-    const result = await apiFetch('/recommend', { method: 'POST', body: JSON.stringify({ plan_date: d }) });
-
-    btn.disabled = false; btn.textContent = '🚀 执行推荐';
-    document.getElementById('runningIndicator').classList.add('hidden');
-
-    if (result) {
-      showSuccess(`推荐完成！共 ${result.saved} 条，A餐 ${result.stats.a_count} / B餐 ${result.stats.b_count} / 人工 ${result.stats.manual_count}`);
-      currentPage = 1;
-      loadResults();
-    }
-  }
-
-  async function quickConfirm(id) {
-    const result = await apiFetch(`/recommendations/${id}/confirm`, { method: 'POST', body: JSON.stringify({ operator: ROLE }) });
-    if (result) { showSuccess('已确认'); loadResults(); }
-  }
-
-  function exportCSV() {
-    window.open(`${API_BASE}/recommendations/export?plan_date=${document.getElementById('filterDate').value}&format=csv`, '_blank');
-  }
-  function exportJSON() {
-    window.open(`${API_BASE}/recommendations/export?plan_date=${document.getElementById('filterDate').value}&format=json`, '_blank');
   }
 </script>
 </body>

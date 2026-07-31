@@ -41,6 +41,11 @@ class NutritionAuthorizationTests(unittest.TestCase):
                    VALUES (?, '2026-07-27', 'test', 'A', 0)""",
                 (child_id,),
             )
+        conn.execute(
+            """INSERT INTO nutrition_meal_plans
+               (plan_date, plan_type, plan_name, calories_kcal, protein_g)
+               VALUES ('2026-07-27', 'A', '测试A餐', 520, 24)"""
+        )
         conn.commit()
         conn.close()
 
@@ -151,6 +156,39 @@ class NutritionAuthorizationTests(unittest.TestCase):
         self.assertEqual(teacher.status_code, 200)
         self.assertEqual(teacher.get_json()["confirmed"], 1)
         self.assertEqual(teacher.get_json()["confirmed_by"], "teacher-test")
+
+    def test_parent_cannot_execute_or_export_recommendations(self):
+        headers = {
+            "X-User-Role": "parent",
+            "X-Nutrition-Child-Code": "C059",
+        }
+        execute = self.client.post(
+            "/api/nutrition/recommend",
+            json={"plan_date": "2026-07-27"},
+            headers=headers,
+        )
+        export = self.client.get(
+            "/api/nutrition/recommendations/export?plan_date=2026-07-27",
+            headers=headers,
+        )
+
+        self.assertEqual(execute.status_code, 403)
+        self.assertEqual(export.status_code, 403)
+
+    def test_parent_can_read_meal_data_used_by_own_recommendation(self):
+        response = self.client.get(
+            "/api/nutrition/meal-plans/by-date/2026-07-27",
+            headers={
+                "X-User-Role": "parent",
+                "X-Nutrition-Child-Code": "C059",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        meals = response.get_json()["meals"]
+        self.assertEqual(len(meals), 1)
+        self.assertEqual(meals[0]["plan_type"], "A")
+        self.assertEqual(meals[0]["protein_g"], 24)
 
     def test_legacy_role_header_is_ignored_unless_explicitly_enabled(self):
         locked_app = Flask("nutrition-locked")
@@ -402,6 +440,34 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             {("odd", "B"), ("even", "A")},
         )
 
+    def test_parent_cannot_submit_after_deadline_but_teacher_can_correct(self):
+        self.client.get("/api/menus")
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.executemany(
+            """INSERT INTO weekly_menus
+               (week_number, parity, date_start, date_end, selection_deadline)
+               VALUES (?, ?, ?, ?, '2000-01-01T20:00')
+               ON CONFLICT(week_number, parity) DO UPDATE SET
+                 selection_deadline=excluded.selection_deadline""",
+            [
+                (17, "odd", "2026-07-27", "2026-07-31"),
+                (18, "even", "2026-08-03", "2026-08-07"),
+            ],
+        )
+        conn.commit()
+        conn.close()
+
+        parent = self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers("BS001"),
+        )
+        teacher = self._submit(self._payload(student_id="BS002"))
+
+        self.assertEqual(parent.status_code, 409)
+        self.assertIn("已截止", parent.get_json()["error"])
+        self.assertEqual(teacher.status_code, 200)
+        self.assertEqual({row[0] for row in self._meal_rows()}, {"BS002"})
+
     def test_student_history_and_list_require_authorized_scope(self):
         self._submit(
             self._payload(student_id="BS001"),
@@ -556,6 +622,61 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
             {student["idCard"] for student in data["students"]},
             {"BS001", "BS002"},
         )
+
+    def test_class_teacher_stats_include_completion_and_exact_week_pair(self):
+        self._submit(
+            self._payload(student_id="BS001"),
+            headers=self._parent_headers("BS001"),
+        )
+        later = self._payload(student_id="BS001")
+        later["week_odd"] = 19
+        later["week_even"] = 20
+        later["choices"]["odd"] = {str(day): "B" for day in range(1, 6)}
+        later["choices"]["even"] = {str(day): "A" for day in range(1, 6)}
+        self._submit(later, headers=self._parent_headers("BS001"))
+
+        response = self.client.get(
+            "/api/meal-stats/class?week_odd=17&week_even=18",
+            headers=self._teacher_headers(
+                sub_role="class", grade="五年级", klass="1班"
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(
+            data["summary"],
+            {
+                "studentCount": 2,
+                "completeCount": 1,
+                "incompleteCount": 1,
+                "aCount": 5,
+                "bCount": 5,
+            },
+        )
+        by_id = {student["idCard"]: student for student in data["students"]}
+        self.assertEqual(by_id["BS001"]["displayName"], "学生甲")
+        self.assertEqual(by_id["BS001"]["selectedCount"], 10)
+        self.assertEqual(by_id["BS001"]["missingCount"], 0)
+        self.assertTrue(by_id["BS001"]["isComplete"])
+        self.assertEqual(by_id["BS001"]["odd_1"], "A")
+        self.assertEqual(by_id["BS001"]["even_1"], "B")
+        self.assertEqual(by_id["BS002"]["selectedCount"], 0)
+        self.assertEqual(by_id["BS002"]["missingCount"], 10)
+        self.assertFalse(by_id["BS002"]["isComplete"])
+
+    def test_class_stats_reject_unscoped_or_unbound_teacher(self):
+        unspecified = self.client.get(
+            "/api/meal-stats/class?grade=五年级&class=1班",
+            headers=self._teacher_headers(),
+        )
+        unbound_class_teacher = self.client.get(
+            "/api/meal-stats/class?grade=五年级&class=1班",
+            headers=self._teacher_headers(sub_role="class"),
+        )
+
+        self.assertEqual(unspecified.status_code, 403)
+        self.assertEqual(unbound_class_teacher.status_code, 403)
 
     def test_class_teacher_demo_database_without_student_table_returns_empty(self):
         conn = sqlite3.connect(server_app.DB_PATH)

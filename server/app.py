@@ -958,12 +958,16 @@ def _ensure_meal_tables():
         parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
         date_start TEXT,
         date_end TEXT,
+        selection_deadline TEXT,
         image_path TEXT,
         notes TEXT,
         uploaded_by TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(week_number, parity)
     )''')
+    menu_cols = {r[1] for r in db.execute('PRAGMA table_info(weekly_menus)').fetchall()}
+    if 'selection_deadline' not in menu_cols:
+        db.execute('ALTER TABLE weekly_menus ADD COLUMN selection_deadline TEXT')
     # 学生 10 天选餐（家长一次性提交奇/偶周 5 天）
     db.execute('''CREATE TABLE IF NOT EXISTS meal_choices(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2570,6 +2574,7 @@ def upload_menu():
         parity = request.form.get('parity')
         date_start = request.form.get('dateStart')
         date_end = request.form.get('dateEnd')
+        selection_deadline = request.form.get('selectionDeadline')
         notes = request.form.get('notes','')
     else:
         data = request.get_json() or {}
@@ -2577,10 +2582,17 @@ def upload_menu():
         parity = data.get('parity')
         date_start = data.get('dateStart')
         date_end = data.get('dateEnd')
+        selection_deadline = data.get('selectionDeadline')
         notes = data.get('notes','')
         f = None
     if not week or parity not in ('odd','even'):
         return jsonify({'error':'week 与 parity(odd|even) 必填'}), 400
+    selection_deadline = (selection_deadline or '').strip()
+    if selection_deadline:
+        try:
+            datetime.fromisoformat(selection_deadline.replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({'error':'selectionDeadline 格式无效'}), 400
     image_path = None
     if f:
         safe_name = f'menu_w{week}_{parity}_{int(time.time())}{ext}'
@@ -2595,12 +2607,22 @@ def upload_menu():
             try: os.remove(os.path.join(BASE_DIR, old['image_path']))
             except Exception: pass
         if not image_path: image_path = old['image_path']
-        db.execute('UPDATE weekly_menus SET date_start=?, date_end=?, image_path=?, notes=?, uploaded_by=? WHERE id=?',
-                   (date_start, date_end, image_path, notes, u['identity'], old['id']))
+        db.execute('''UPDATE weekly_menus
+                      SET date_start=?, date_end=?, selection_deadline=?,
+                          image_path=?, notes=?, uploaded_by=?
+                      WHERE id=?''',
+                   (date_start, date_end, selection_deadline, image_path,
+                    notes, u['identity'], old['id']))
         new_id = old['id']
     else:
-        cur = db.execute('INSERT INTO weekly_menus(week_number, parity, date_start, date_end, image_path, notes, uploaded_by) VALUES(?,?,?,?,?,?,?)',
-                         (week, parity, date_start, date_end, image_path, notes, u['identity']))
+        cur = db.execute(
+            '''INSERT INTO weekly_menus
+               (week_number, parity, date_start, date_end, selection_deadline,
+                image_path, notes, uploaded_by)
+               VALUES(?,?,?,?,?,?,?,?)''',
+            (week, parity, date_start, date_end, selection_deadline,
+             image_path, notes, u['identity'])
+        )
         new_id = cur.lastrowid
     db.commit()
     return jsonify({'id': new_id, 'imagePath': image_path, 'message':'已保存'})
@@ -2726,6 +2748,30 @@ def submit_meal_choices():
 
     _ensure_meal_tables()
     db = get_db()
+    if u['role'] == 'parent':
+        menu_rows = db.execute(
+            '''SELECT week_number, parity, selection_deadline
+               FROM weekly_menus
+               WHERE (week_number=? AND parity='odd')
+                  OR (week_number=? AND parity='even')''',
+            (week_odd, week_even)
+        ).fetchall()
+        for menu_row in menu_rows:
+            deadline_text = (menu_row['selection_deadline'] or '').strip()
+            if not deadline_text:
+                continue
+            try:
+                deadline = datetime.fromisoformat(
+                    deadline_text.replace('Z', '+00:00')
+                )
+            except ValueError:
+                continue
+            now = datetime.now(deadline.tzinfo) if deadline.tzinfo else datetime.now()
+            if now >= deadline:
+                return jsonify({
+                    'error': '本轮选餐已截止，无法提交或修改',
+                    'deadline': deadline_text,
+                }), 409
     if id_card:
         s = _find_meal_student(db, id_card)
         if not s:
@@ -3017,6 +3063,8 @@ def stats_class():
     u = _current_user()
     if u['role'] not in ('teacher','admin'):
         return jsonify({'error':'无权限'}), 403
+    if u['role'] == 'teacher' and u.get('sub_role') not in ('general', 'class'):
+        return jsonify({'error':'当前老师账号未配置营养配餐权限'}), 403
     _ensure_meal_tables()
     grade = request.args.get('grade') or u['bound_grade']
     klass = request.args.get('class') or u['bound_class']
@@ -3025,7 +3073,7 @@ def stats_class():
         grade = u['bound_grade']
         klass = u['bound_class']
     if not grade or not klass:
-        return jsonify({'error':'grade & class 必填（班主任无须填，由账号决定）'}), 400
+        return jsonify({'error':'班主任账号尚未绑定年级和班级'}), 403
     week_odd = request.args.get('week_odd', type=int)
     week_even = request.args.get('week_even', type=int)
     db = get_db()
@@ -3047,27 +3095,58 @@ def stats_class():
     # 拿到该班的选餐记录
     sql = 'SELECT id_card, week_number, parity, weekday, choice FROM meal_choices WHERE grade_name=? AND class_name=?'
     params = [grade, klass]
+    week_filters = []
     if week_odd:
-        sql += ' AND ((parity=\'odd\' AND week_number=?) OR parity=\'even\')'
+        week_filters.append("(parity='odd' AND week_number=?)")
         params.append(week_odd)
     if week_even:
-        sql += ' AND ((parity=\'even\' AND week_number=?) OR parity=\'odd\')'
+        week_filters.append("(parity='even' AND week_number=?)")
         params.append(week_even)
+    if week_filters:
+        sql += ' AND (' + ' OR '.join(week_filters) + ')'
     cur = db.execute(sql, params)
     by_student = {}
     for r in cur.fetchall():
         by_student.setdefault(r['id_card'], {})[f"{r['parity']}_{r['weekday']}"] = r['choice']
     rows = []
+    a_count = 0
+    b_count = 0
+    complete_count = 0
     for s in students:
+        choices = by_student.get(s['id_card'], {})
+        student_a_count = sum(1 for value in choices.values() if value == 'A')
+        student_b_count = sum(1 for value in choices.values() if value == 'B')
+        selected_count = student_a_count + student_b_count
+        a_count += student_a_count
+        b_count += student_b_count
+        if selected_count == 10:
+            complete_count += 1
         row = {
             'idCard': s['id_card'],
-            'displayName': mask_name(s['name']),
+            'displayName': s['name'],
             'grade': grade,
             'class': klass,
+            'selectedCount': selected_count,
+            'missingCount': 10 - selected_count,
+            'isComplete': selected_count == 10,
         }
-        row.update(by_student.get(s['id_card'], {}))
+        row.update(choices)
         rows.append(row)
-    return jsonify({'students': rows, 'grade': grade, 'class': klass})
+    student_count = len(rows)
+    return jsonify({
+        'students': rows,
+        'grade': grade,
+        'class': klass,
+        'weekOdd': week_odd,
+        'weekEven': week_even,
+        'summary': {
+            'studentCount': student_count,
+            'completeCount': complete_count,
+            'incompleteCount': student_count - complete_count,
+            'aCount': a_count,
+            'bCount': b_count,
+        },
+    })
 
 # ==================== Excel 导出（班主任 + 总务）====================
 from io import BytesIO

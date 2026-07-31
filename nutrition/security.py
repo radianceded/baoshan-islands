@@ -88,7 +88,7 @@ ROLE_PERMISSIONS = {
         "audit:read",
     },
     "parent": {
-        "recommend:read_own",
+        "recommend:read_own", "meal_plans:read",
     },
     "nutritionist": {
         "children:read",
