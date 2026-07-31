@@ -53,6 +53,23 @@ class NutritionRoleViewTests(unittest.TestCase):
         self.assertIn("params.set('grade', grade)", self.health_html)
         self.assertIn("params.set('class', klass)", self.health_html)
 
+    def test_general_teacher_health_island_redirects_to_nutrition_stats(self):
+        self.assertIn("if(event) event.preventDefault()", self.health_html)
+        self.assertIn(
+            """} else if(UserAuth.isGeneralTeacher()){
+      enterNutritionRecommendations();
+      return;""",
+            self.health_html,
+        )
+
+    def test_class_teacher_health_island_redirects_to_nutrition_stats(self):
+        self.assertIn(
+            """} else if(UserAuth.isClassTeacher()){
+      enterNutritionRecommendations();
+      return;""",
+            self.health_html,
+        )
+
     def test_nutrition_page_has_three_role_specific_views(self):
         for view_id in (
             "parentRecommendationView",
@@ -70,7 +87,10 @@ class NutritionRoleViewTests(unittest.TestCase):
             "gtBCount",
             "gtGradeCount",
             "gtStatsScope",
+            "gradeStatsWeekOdd",
+            "gradeStatsWeekEven",
             "classMealTitle",
+            "classMenuBoard",
             "classIncompleteOnly",
             "ctStudentCount",
             "ctCompleteCount",
@@ -100,8 +120,14 @@ class NutritionRoleViewTests(unittest.TestCase):
         self.assertIn("buildParentMealPlan()", self.recommendations_html)
         self.assertIn("submitRecommendedMealPlan()", self.recommendations_html)
         self.assertIn("isParentSelectionClosed()", self.recommendations_html)
-        self.assertIn("day.mealA?.plan_name", self.recommendations_html)
+        self.assertIn("parentPlanSummary(day.mealA)", self.recommendations_html)
+        self.assertIn("parentSubmittedChoices.find", self.recommendations_html)
+        self.assertIn("menu.image_path", self.recommendations_html)
+        self.assertIn("renderClassMenuBoard", self.recommendations_html)
+        self.assertIn("ctMealPlans", self.recommendations_html)
+        self.assertIn("gradeStatsWeekEven", self.recommendations_html)
         self.assertIn("rootApiFetch('/api/meal-choices'", self.recommendations_html)
+        self.assertIn("/api/meal-choices/student/", self.recommendations_html)
         self.assertNotIn('id="parentRecommendationHistory"', self.recommendations_html)
         self.assertNotIn('id="parentMealHistory"', self.recommendations_html)
         self.assertNotIn('id="runBtn"', self.recommendations_html)
@@ -111,6 +137,14 @@ class NutritionRoleViewTests(unittest.TestCase):
         self.assertIn("'X-Demo-Sub': NUTRITION_SUB_ROLE", self.common_js)
         self.assertIn("'X-Demo-Grade': NUTRITION_GRADE", self.common_js)
         self.assertIn("'X-Demo-Class': NUTRITION_CLASS", self.common_js)
+
+    def test_teacher_nutrition_back_button_returns_home(self):
+        self.assertIn(
+            "['general', 'class'].includes(NUTRITION_SUB_ROLE)",
+            self.common_js,
+        )
+        self.assertIn("'../island-homepage.html'", self.common_js)
+        self.assertIn("returnsHome ? '‹ 返回主页' : '‹ 返回健康岛'", self.common_js)
 
     def test_local_file_navigation_uses_repo_pages_and_local_api(self):
         self.assertIn("location.protocol === 'file:'", self.health_html)

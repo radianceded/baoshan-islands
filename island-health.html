@@ -1671,7 +1671,7 @@ function updateParentMealProgress(){
 }
 
 function enterNutritionRecommendations(event){
-  event.preventDefault();
+  if(event) event.preventDefault();
   const isParent = window.UserAuth && UserAuth.isParent && UserAuth.isParent();
   const role = isParent ? 'parent' : 'teacher';
   const params = new URLSearchParams({role});
@@ -2298,18 +2298,11 @@ if(window.UserAuth){
       loadParentGrowth();
       renderParentMealPicker();
     } else if(UserAuth.isGeneralTeacher()){
-      _restoreGTDraft();
-      loadGradeCounts();
-      loadGradeStats();
-      loadClassSummary();
-      document.getElementById('gtWeekOdd').addEventListener('change', ()=>{ loadGradeStats(); loadClassSummary(); });
-      // 图片选择文件名提示
-      document.getElementById('gtImageOdd').addEventListener('change', e=>{ document.getElementById('gtImageOddName').textContent = e.target.files[0]?.name || '未选择'; });
-      document.getElementById('gtImageEven').addEventListener('change', e=>{ document.getElementById('gtImageEvenName').textContent = e.target.files[0]?.name || '未选择'; });
+      enterNutritionRecommendations();
+      return;
     } else if(UserAuth.isClassTeacher()){
-      loadClassTable();
-      loadClassVisionStats();
-      loadClassFitnessStats();
+      enterNutritionRecommendations();
+      return;
     }
   });
 }
