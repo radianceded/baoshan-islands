@@ -20,11 +20,14 @@ function nutritionHealthIslandUrl() {
 function addNutritionBackButton() {
   const header = document.querySelector('.app-header');
   if (!header || header.querySelector('.nutrition-back-link')) return;
+  const returnsHome = NUTRITION_ROLE === 'teacher'
+    && ['general', 'class'].includes(NUTRITION_SUB_ROLE);
+  const homePath = location.protocol === 'file:' ? '../island-homepage.html' : '/island-homepage.html';
   const link = document.createElement('a');
   link.className = 'nutrition-back-link';
-  link.href = nutritionHealthIslandUrl();
-  link.textContent = '‹ 返回健康岛';
-  link.setAttribute('aria-label', '返回健康岛');
+  link.href = returnsHome ? homePath : nutritionHealthIslandUrl();
+  link.textContent = returnsHome ? '‹ 返回主页' : '‹ 返回健康岛';
+  link.setAttribute('aria-label', returnsHome ? '返回主页' : '返回健康岛');
   link.style.cssText = 'display:inline-flex;align-items:center;margin-right:14px;padding:7px 12px;border:1px solid rgba(255,255,255,.55);border-radius:8px;color:inherit;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap;';
   link.onmouseenter = () => { link.style.background = 'rgba(255,255,255,.16)'; };
   link.onmouseleave = () => { link.style.background = 'transparent'; };
