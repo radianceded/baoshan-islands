@@ -1171,9 +1171,7 @@ class ClubSignupRegressionTests(unittest.TestCase):
         )
         conn.commit()
         conn.close()
-        second_course = server_app.COURSES[3]
         self._signup(student_id="BS001")
-        self._signup(course_id=second_course["id"], student_id="BS001")
         self._signup(student_id="BS004")
 
         response = self.client.get(
@@ -1194,7 +1192,7 @@ class ClubSignupRegressionTests(unittest.TestCase):
         by_name = {student["name"]: student for student in data["students"]}
         self.assertEqual(
             {club["id"] for club in by_name["学生甲"]["clubs"]},
-            {self.course["id"], second_course["id"]},
+            {self.course["id"]},
         )
         self.assertEqual(by_name["学生乙"]["clubs"], [])
         self.assertEqual(by_name["学生丙"]["clubs"], [])
@@ -1273,14 +1271,12 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertIn(self.course["name"], conflict.get_json()["error"])
         self.assertEqual(self._student_signup_count(), 1)
 
-    def test_each_student_can_signup_for_at_most_three_courses(self):
+    def test_each_student_can_signup_for_at_most_one_course(self):
         courses = [
             server_app.COURSES[0],
             server_app.COURSES[3],
-            server_app.COURSES[4],
-            server_app.COURSES[8],
         ]
-        self.assertEqual(len({course["weekday"] for course in courses}), 4)
+        self.assertEqual(len({course["weekday"] for course in courses}), 2)
 
         responses = [
             self._signup(course_id=course["id"])
@@ -1289,18 +1285,16 @@ class ClubSignupRegressionTests(unittest.TestCase):
 
         self.assertEqual(
             [response.status_code for response in responses],
-            [201, 201, 201, 409],
+            [201, 409],
         )
         self.assertEqual(
             responses[-1].get_json()["code"],
             "CLUB_LIMIT_REACHED",
         )
-        self.assertEqual(self._student_signup_count(), 3)
+        self.assertEqual(self._student_signup_count(), 1)
 
     def test_concurrent_requests_cannot_exceed_student_signup_limit(self):
-        self._signup(course_id=server_app.COURSES[0]["id"])
-        self._signup(course_id=server_app.COURSES[3]["id"])
-        candidates = [server_app.COURSES[4], server_app.COURSES[8]]
+        candidates = [server_app.COURSES[0], server_app.COURSES[3]]
         barrier = Barrier(2)
 
         def submit(course):
@@ -1315,7 +1309,7 @@ class ClubSignupRegressionTests(unittest.TestCase):
             statuses = list(pool.map(submit, candidates))
 
         self.assertEqual(sorted(statuses), [201, 409])
-        self.assertEqual(self._student_signup_count(), 3)
+        self.assertEqual(self._student_signup_count(), 1)
 
     def test_signup_rejects_unknown_course_without_writing(self):
         response = self._signup(course_id="missing-course")

@@ -6,6 +6,33 @@
 <title>营养配餐管理 - 宝山学习群岛</title>
 <link rel="stylesheet" href="common.css">
 <style>
+  :root{
+    --nutrition-canvas:#f1f8f6;
+    --nutrition-surface:#fff;
+    --nutrition-surface-soft:#f5fafc;
+    --nutrition-primary:#1c93b8;
+    --nutrition-primary-strong:#13718e;
+    --nutrition-primary-soft:#e3f2f8;
+    --nutrition-ink:#22485c;
+    --nutrition-text:#3c5d6e;
+    --nutrition-muted:#6b8a9a;
+    --nutrition-line:#dbe7ed;
+    --nutrition-meal-a:#ce8014;
+    --nutrition-meal-a-bg:#fceed4;
+    --nutrition-meal-b:#13718e;
+    --nutrition-meal-b-bg:#e3f2f8;
+    --nutrition-success:#1b895f;
+    --nutrition-success-bg:#daf2e6;
+    --nutrition-danger:#da513c;
+    --nutrition-danger-bg:#fce5e0;
+    --primary:var(--nutrition-primary);
+    --primary-light:var(--nutrition-primary-soft);
+    --text:var(--nutrition-ink);
+    --text-secondary:var(--nutrition-muted);
+    --border:var(--nutrition-line);
+    --bg:var(--nutrition-canvas);
+    --white:var(--nutrition-surface);
+  }
   .parent-mode{background:#f4f8f2}
   .pr-page{
     --pr-ink:#173c2a;
@@ -316,36 +343,70 @@
   @media (max-width:390px){
     .pr-day-grid{grid-template-columns:1fr}
   }
-  @media (prefers-color-scheme:dark){
-    body.parent-mode{background:#122019;color:#e7f0e9}
-    .parent-mode .app-content{background:#122019}
-    .pr-page{
-      --pr-ink:#e8f2ea;--pr-muted:#a9b9ad;--pr-accent:#68b37e;--pr-accent-strong:#7cc391;
-      --pr-soft:#1d3325;--pr-line:#31483a;--pr-surface:#192a20
-    }
-    .pr-hero{border-color:#314b3a;background:radial-gradient(circle at 88% 12%,rgba(113,171,127,.14),transparent 25%),linear-gradient(135deg,#1a3022,#17271d)}
-    .pr-kid-avatar,.pr-ai-icon{background:#294735}
-    .pr-health-chip,.pr-date-card{border-color:#3a5542;background:rgba(27,45,34,.82);color:#c0d2c4}
-    .pr-date-card label,.pr-section-title p,.pr-ai-title p,.pr-ai-point span,.pr-submit-copy,.pr-day-date,.pr-day-menu{color:var(--pr-muted)}
-    .pr-date-card .form-control{border-color:#3b5142;background:#1b2b21;color:#e8f2ea}
-    .pr-meal-option,.pr-day{border-color:var(--pr-line);background:#1b2d22;color:var(--pr-ink)}
-    .pr-meal-option.is-recommended{border-color:#568767;background:#213b2a}
-    .pr-meal-letter,.pr-meal-facts span{background:#293b2f;color:#c3d3c6}
-    .pr-meal-name{color:#d9e8dc}
-    .pr-recommend-badge{background:#31543d;color:#cae3d0}
-    .pr-reason-box,.pr-ai-point b{background:#21382a;color:#c9ddcd}
-    .pr-ai-point{border-color:#304638}
-    .pr-day-choice button{border-color:#3a5141;background:#223429;color:#c2d0c5}
-    .pr-risk{background:#3b321d;color:#ead8a4}
-    .pr-risk.is-clear{background:#203a29;color:#c9e2cf}
-    .pr-plan-status{background:#293a2f;color:#c2d1c5}
-    .pr-plan-status.is-ready{background:#25462f;color:#cce6d2}
-    .pr-deadline{border-color:#35503d;background:#203529;color:#b7c9bb}
-    .pr-deadline strong,.pr-day-menu b{color:#d0e2d3}
-    .pr-deadline.is-closed{border-color:#68443f;background:#3b2925;color:#e5b9b2}
-    .pr-deadline.is-closed strong{color:#f0c7c0}
-    .pr-skeleton span{background:#263a2d}
+
+  /* 三种身份共用同一套营养配餐色彩，保持现有结构和尺寸不变。 */
+  body,.parent-mode,.parent-mode .app-content{
+    background:linear-gradient(180deg,#fffcf5 0%,var(--nutrition-canvas) 46%,#e4f1f6 100%);
+    background-attachment:fixed;color:var(--nutrition-ink)
   }
+  .app-header{background:rgba(255,253,247,.88);color:var(--nutrition-ink);border-bottom:1px solid var(--nutrition-line);box-shadow:0 2px 10px rgba(28,90,120,.06)}
+  .app-header h1{color:var(--nutrition-ink)}
+  .app-header nav a{color:var(--nutrition-muted)}
+  .app-header nav a:hover,.app-header nav a.active{background:var(--nutrition-primary-soft);color:var(--nutrition-primary-strong)}
+  .pr-page{
+    --pr-ink:var(--nutrition-ink);
+    --pr-muted:var(--nutrition-muted);
+    --pr-accent:var(--nutrition-primary);
+    --pr-accent-strong:var(--nutrition-primary-strong);
+    --pr-soft:var(--nutrition-surface-soft);
+    --pr-line:var(--nutrition-line);
+    --pr-surface:var(--nutrition-surface)
+  }
+  .pr-hero{border-color:var(--nutrition-line);background:linear-gradient(135deg,#ebf6fb,#f5fafc);box-shadow:0 14px 38px rgba(28,90,120,.09)}
+  .pr-recommend-card,.pr-ai-card,.pr-plan-board{box-shadow:0 10px 28px rgba(28,90,120,.07)}
+  .pr-kid-avatar,.pr-ai-icon{background:var(--nutrition-primary-soft);box-shadow:inset 0 0 0 1px rgba(28,147,184,.12)}
+  .pr-health-chip,.pr-date-card{border-color:var(--nutrition-line);background:rgba(255,255,255,.9);color:var(--nutrition-text)}
+  .pr-date-card label,.pr-date-tag,.pr-meal-facts,.pr-ai-title p,.pr-ai-point span,.pr-day-date,.pr-day-menu,.pr-day-note,.pr-submit-copy,.pr-submit-message{color:var(--nutrition-muted)}
+  .pr-meal-name,.pr-ai-point strong,.pr-week-title,.pr-day-date strong,.pr-day-menu b,.pr-submit-copy strong{color:var(--nutrition-ink)}
+  .pr-meal-option,.pr-day,.shared-menu-card{border-color:var(--nutrition-line);background:var(--nutrition-surface)}
+  .pr-meal-option.is-recommended{border-color:#bfe6d3;background:var(--nutrition-success-bg)}
+  .pr-meal-option:nth-child(1) .pr-meal-letter{background:var(--nutrition-meal-a-bg);color:var(--nutrition-meal-a)}
+  .pr-meal-option:nth-child(2) .pr-meal-letter{background:var(--nutrition-meal-b-bg);color:var(--nutrition-meal-b)}
+  .pr-meal-letter,.pr-meal-facts span,.shared-menu-meta span{background:var(--nutrition-surface-soft);color:var(--nutrition-text)}
+  .pr-recommend-badge,.pr-plan-status.is-ready{background:var(--nutrition-success-bg);color:var(--nutrition-success)}
+  .pr-plan-status{background:var(--nutrition-surface-soft);color:var(--nutrition-muted)}
+  .pr-reason-box,.pr-risk.is-clear{background:var(--nutrition-success-bg);color:var(--nutrition-success)}
+  .pr-risk{background:var(--nutrition-meal-a-bg);color:#8a5a1e}
+  .pr-deadline{border-color:var(--nutrition-line);background:var(--nutrition-primary-soft);color:var(--nutrition-text)}
+  .pr-deadline strong{color:var(--nutrition-primary-strong)}
+  .pr-deadline.is-closed,.pr-error,.gt-upload-status.is-error,.gt-error,.ct-error{background:var(--nutrition-danger-bg);color:var(--nutrition-danger)}
+  .pr-deadline.is-closed strong,.pr-submit-message.is-error{color:var(--nutrition-danger)}
+  .pr-submit-message.is-success{color:var(--nutrition-success)}
+  .pr-day:hover{border-color:#9fcddd}
+  .pr-submit-button{box-shadow:0 8px 18px rgba(28,147,184,.23)}
+  .pr-submit-button:hover{box-shadow:0 10px 22px rgba(28,147,184,.28)}
+  .gt-panel,.gt-metric,.ct-summary,.ct-panel,.shared-menu-panel{border-color:var(--nutrition-line);background:var(--nutrition-surface);box-shadow:0 6px 18px rgba(28,90,120,.07)}
+  .gt-panel-head,.ct-panel-head,.shared-menu-head,.ct-metric{border-color:var(--nutrition-line)}
+  .gt-intro h2,.gt-panel-head h3,.gt-metric strong,.ct-intro h2,.ct-metric strong,.ct-panel-head h3,.shared-menu-head h3,.shared-menu-copy h4{color:var(--nutrition-ink)}
+  .gt-intro p,.gt-field label,.gt-panel-head p,.gt-metric span,.gt-empty,.ct-intro p,.ct-field label,.ct-metric span,.ct-panel-head p,.ct-result-count,.ct-empty,.shared-menu-head p,.shared-menu-meta,.shared-menu-image{color:var(--nutrition-muted)}
+  .gt-file-box{border-color:#9fb8c5;background:var(--nutrition-surface-soft)}
+  .gt-file-box:hover,.gt-segment:hover,.ct-toggle:hover{background:var(--nutrition-surface-soft)}
+  .gt-file-title,.shared-menu-day strong{color:var(--nutrition-primary-strong)}
+  .ct-completion{color:var(--nutrition-success)}
+  .gt-upload-status,.gt-skeleton span,.ct-skeleton span,.shared-menu-image{background:var(--nutrition-surface-soft)}
+  .gt-table th,.gt-table th:first-child,.ct-table thead th,.ct-table thead .ct-student{background:var(--nutrition-surface-soft);color:var(--nutrition-text)}
+  .gt-table td:first-child,.ct-table .ct-student{background:var(--nutrition-surface)}
+  .gt-table .gt-a,.ct-choice.is-a{color:var(--nutrition-meal-a);background:var(--nutrition-meal-a-bg)}
+  .gt-table .gt-b,.ct-choice.is-b{color:var(--nutrition-meal-b);background:var(--nutrition-meal-b-bg)}
+  .pr-day-choice button:first-child{border-color:#ead8a4;background:var(--nutrition-meal-a-bg);color:var(--nutrition-meal-a)}
+  .pr-day-choice button:last-child{border-color:#c7dfea;background:var(--nutrition-meal-b-bg);color:var(--nutrition-meal-b)}
+  .pr-day-choice button:first-child.is-selected{border-color:var(--nutrition-meal-a);background:var(--nutrition-meal-a);color:#fff}
+  .pr-day-choice button:last-child.is-selected{border-color:var(--nutrition-meal-b);background:var(--nutrition-meal-b);color:#fff}
+  .ct-metric.is-a strong,.ct-day-total .is-a{color:var(--nutrition-meal-a)}
+  .ct-metric.is-b strong,.ct-day-total .is-b{color:var(--nutrition-meal-b)}
+  .ct-choice.is-empty{background:#eef3f5;color:var(--nutrition-muted)}
+  .ct-table tfoot td{background:var(--nutrition-surface-soft);color:var(--nutrition-text);border-color:var(--nutrition-line)}
+  .shared-menu-day{border-color:#e8f0f3;color:var(--nutrition-text)}
 </style>
 </head>
 <body>

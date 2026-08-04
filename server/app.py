@@ -1583,7 +1583,7 @@ def del_custom_student(id_str):
 
 # ==================== 社团抢课（活动岛） ====================
 
-CLUB_MAX_SIGNUPS_PER_STUDENT = 3
+CLUB_MAX_SIGNUPS_PER_STUDENT = 1
 
 # 简单分类规则：按关键字猜类别（art / sport / tech / subject）
 def _club_category(name):
@@ -2071,19 +2071,6 @@ def create_club_signup():
             db.rollback()
             return jsonify({'success': False, 'error': '该学生已报名这门课程'}), 409
 
-        student_signup_count = db.execute(
-            '''SELECT COUNT(*) AS count FROM club_signups
-               WHERE student_id = ? AND semester = ?''',
-            (user['bound_id_card'], CLUB_SEMESTER)
-        ).fetchone()['count']
-        if student_signup_count >= CLUB_MAX_SIGNUPS_PER_STUDENT:
-            db.rollback()
-            return jsonify({
-                'success': False,
-                'error': f'每名学生最多报名 {CLUB_MAX_SIGNUPS_PER_STUDENT} 门社团',
-                'code': 'CLUB_LIMIT_REACHED',
-            }), 409
-
         conflict = db.execute(
             '''SELECT c.name
                FROM club_signups cs
@@ -2100,6 +2087,19 @@ def create_club_signup():
                 'success': False,
                 'error': f"上课时间冲突：{course['weekday']}已报名“{conflict['name']}”",
                 'code': 'CLUB_TIME_CONFLICT',
+            }), 409
+
+        student_signup_count = db.execute(
+            '''SELECT COUNT(*) AS count FROM club_signups
+               WHERE student_id = ? AND semester = ?''',
+            (user['bound_id_card'], CLUB_SEMESTER)
+        ).fetchone()['count']
+        if student_signup_count >= CLUB_MAX_SIGNUPS_PER_STUDENT:
+            db.rollback()
+            return jsonify({
+                'success': False,
+                'error': f'每名学生最多报名 {CLUB_MAX_SIGNUPS_PER_STUDENT} 门社团',
+                'code': 'CLUB_LIMIT_REACHED',
             }), 409
 
         count = db.execute(

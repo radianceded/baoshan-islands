@@ -6,8 +6,16 @@
 <title>活动岛 · 宝山实验</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
-  body{background: linear-gradient(180deg,#FFF6E5 0%, #FFD8E8 25%, #BFE6FF 60%, #6FC8F0 100%);overflow-x:hidden;min-height:100vh}
+  html,body{min-height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background:
+      radial-gradient(circle at 50% -140px,rgba(255,255,255,.88) 0,rgba(255,255,255,0) 520px),
+      linear-gradient(180deg,#DFF1F8 0%,#EDF7F8 52%,#F4FAF7 100%);
+    background-attachment:fixed;
+    overflow-x:hidden;
+    min-height:100vh;
+    min-height:100dvh;
+  }
 
   .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
   .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,140,66,0.35);transition:transform .15s}
@@ -20,19 +28,20 @@
   .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
   .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
 
-  .banner{position:relative;height:360px;overflow:hidden;background: linear-gradient(180deg,#FFD8E8 0%, #FFB8C8 100%);border-bottom:4px solid #FF9DBC}
+  .banner{position:relative;height:360px;overflow:hidden;background:#DCEFF6;border-bottom:0;box-shadow:inset 0 -1px rgba(92,139,160,.12)}
   .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner::after{content:"";position:absolute;left:0;right:0;bottom:-1px;z-index:3;height:68px;background:linear-gradient(180deg,rgba(223,241,248,0),#E7F4F8);pointer-events:none}
   .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
   .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
   .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
   .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#5C42A0;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
   .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#A893E8;box-shadow:0 0 0 3px rgba(168,147,232,.25)}
 
-  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+  .wrap{position:relative;z-index:4;max-width:1280px;margin:0 auto;padding:28px 24px 80px}
   .grid{display:grid;grid-template-columns: 1.4fr 1fr;gap:20px}
   @media (max-width:980px){.grid{grid-template-columns:1fr}}
 
-  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,80,120,0.08);border:1px solid rgba(180,220,240,.6)}
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 12px 30px rgba(54,102,124,.08);border:1px solid rgba(180,211,224,.75)}
   .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
   .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:linear-gradient(135deg,#FFD3D8,#E89090)}
   .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
@@ -189,6 +198,9 @@
   .my-row .nm{font-size:13px;font-weight:800;color:#1F3A4D}
   .my-row .tm{font-size:11px;color:#7BB8DA;margin-top:2px;font-weight:700}
   .my-row .badge{margin-left:auto;font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;background:#E0F8E4;color:#15803D}
+  .my-row .cancel-btn{flex-shrink:0;border:1px solid #F2B8B5;border-radius:10px;background:#FFF0EF;color:#B33A32;padding:5px 10px;font:800 11px/1 inherit;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .my-row .cancel-btn:hover{border-color:#D77B75;background:#FFE2DF;color:#8F2D27}
+  .my-row .cancel-btn:active{transform:scale(.97)}
 
   .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#5C42A0;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(92,66,160,.35);opacity:0;transition:all .35s;z-index:300}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -349,7 +361,7 @@ let currentCampus = 'all';
 let clubSearchQuery = '';
 let signed = new Set();
 let signedCourses = [];
-let maxSignups = 3;
+let maxSignups = 1;
 
 function isGeneralClubManager(){
   return Boolean(window.UserAuth && UserAuth.isGeneralTeacher && UserAuth.isGeneralTeacher());
@@ -399,7 +411,7 @@ async function loadMySignups(){
     const d = await r.json();
     signedCourses = d.signups || [];
     signed = new Set(signedCourses.map(s => s.id));
-    maxSignups = Number(d.maxSignups) || 3;
+    maxSignups = Number(d.maxSignups) || 1;
     return true;
   } catch(e){
     console.warn('[clubs] 报名记录拉取失败：', e.message);
@@ -423,15 +435,15 @@ function matchesClubSearch(course){
 
 function signupBlockReason(course){
   if(!isParentClubUser() || signed.has(course.id)) return null;
-  if(signed.size >= maxSignups){
-    return {label:'已达上限', message:`每名学生最多报名 ${maxSignups} 门社团`};
-  }
   const conflict = signedCourses.find(item => item.weekday === course.weekday);
   if(conflict){
     return {
       label:'时间冲突',
       message:`${course.weekday}已报名“${conflict.name}”`,
     };
+  }
+  if(signed.size >= maxSignups){
+    return {label:'已达上限', message:`每名学生最多报名 ${maxSignups} 门社团`};
   }
   return null;
 }
@@ -863,6 +875,7 @@ function renderMyList(){
           <div class="tm">${escapeClubText(meta)}</div>
         </div>
         <span class="badge" style="${hasConflict ? 'background:#FFE0E0;color:#C2410C' : ''}">${hasConflict ? '时间冲突' : '已报名'}</span>
+        <button type="button" class="cancel-btn" onclick="cancelSignup('${courseId}')" aria-label="取消报名${escapeClubText(c ? c.name : courseId)}">取消报名</button>
       </div>
     `;
   }).join('');
