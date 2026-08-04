@@ -503,6 +503,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <!-- ───── 主内容 ───── -->
 <div class="wrap">
 
+  <!-- ═══════ 家长视图：AI 营养配餐入口 ═══════ -->
+  <a id="parent-nutrition-entry" data-show-for="parent" class="meal-flow-card meal-flow-toggle" href="nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入 AI 营养配餐">
+    <span class="meal-flow-icon blue"><i data-lucide="salad"></i></span>
+    <span class="meal-flow-title">AI营养配餐</span>
+    <span class="meal-flow-note">查看营养推荐</span>
+    <i class="meal-flow-chevron" data-lucide="arrow-right"></i>
+  </a>
+
   <!-- ═══════ 家长视图：选餐 + 每周餐食展示 ═══════ -->
   <div class="meal-flow" data-show-for="parent" id="parent-meal-panel" style="margin-bottom:18px">
     <input id="pmWeekOdd" type="hidden" value="17">
@@ -555,7 +563,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   </div>
 
   <!-- ═══════ 营养配餐入口 ═══════ -->
-  <a id="nutrition-entry" data-show-for="teacher,parent,admin" class="meal-flow-card meal-flow-toggle" href="nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐">
+  <a id="nutrition-entry" data-show-for="teacher,admin" class="meal-flow-card meal-flow-toggle" href="nutrition/recommendations.html" onclick="enterNutritionRecommendations(event)" style="margin-bottom:18px;text-decoration:none" aria-label="进入营养配餐">
     <span class="meal-flow-icon blue"><i data-lucide="salad"></i></span>
     <span class="meal-flow-title">营养配餐</span>
     <span class="meal-flow-note">查看营养推荐</span>
