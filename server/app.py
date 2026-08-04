@@ -24,8 +24,10 @@ from flask_cors import CORS
 
 try:
     from .club_courses import COURSES, SEMESTER as CLUB_SEMESTER
+    from .menu_excel import MenuWorkbookError, parse_menu_workbook
 except ImportError:
     from club_courses import COURSES, SEMESTER as CLUB_SEMESTER
+    from menu_excel import MenuWorkbookError, parse_menu_workbook
 
 # ==================== 启动时自动加载 server/.env ====================
 def _load_env_file():
@@ -968,6 +970,59 @@ def _ensure_meal_tables():
     menu_cols = {r[1] for r in db.execute('PRAGMA table_info(weekly_menus)').fetchall()}
     if 'selection_deadline' not in menu_cols:
         db.execute('ALTER TABLE weekly_menus ADD COLUMN selection_deadline TEXT')
+    for column, column_type in (
+        ('import_batch_id', 'INTEGER'),
+        ('service_days_json', "TEXT DEFAULT '[]'"),
+    ):
+        if column not in menu_cols:
+            db.execute(f'ALTER TABLE weekly_menus ADD COLUMN {column} {column_type}')
+    db.execute('''CREATE TABLE IF NOT EXISTS menu_import_batches(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        week_number INTEGER NOT NULL,
+        parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
+        date_start TEXT,
+        date_end TEXT,
+        selection_deadline TEXT NOT NULL,
+        image_path TEXT NOT NULL,
+        excel_path TEXT NOT NULL,
+        parsed_json TEXT NOT NULL,
+        issues_json TEXT NOT NULL DEFAULT '[]',
+        status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','rejected')),
+        uploaded_by TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        published_at TEXT
+    )''')
+    db.execute('''CREATE TABLE IF NOT EXISTS nutrition_meal_plans(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_date DATE NOT NULL,
+        plan_type TEXT CHECK(plan_type IN ('A','B')) NOT NULL,
+        plan_name TEXT,
+        ingredients TEXT DEFAULT '[]',
+        calories_kcal REAL,
+        protein_g REAL,
+        fat_g REAL,
+        carbs_g REAL,
+        sugar_g REAL,
+        sodium_mg REAL,
+        fiber_g REAL,
+        allergens TEXT DEFAULT '[]',
+        suitable_tags TEXT DEFAULT '[]',
+        unsuitable_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(plan_date, plan_type)
+    )''')
+    meal_plan_cols = {r[1] for r in db.execute('PRAGMA table_info(nutrition_meal_plans)').fetchall()}
+    for column, column_type in (
+        ('weekly_menu_id', 'INTEGER'),
+        ('service_status', "TEXT DEFAULT 'normal'"),
+        ('menu_items', "TEXT DEFAULT '[]'"),
+        ('protein_pct', 'REAL'),
+        ('fat_pct', 'REAL'),
+        ('vitamin_c_mg', 'REAL'),
+        ('source_raw', 'TEXT'),
+    ):
+        if column not in meal_plan_cols:
+            db.execute(f'ALTER TABLE nutrition_meal_plans ADD COLUMN {column} {column_type}')
     # 学生 10 天选餐（家长一次性提交奇/偶周 5 天）
     db.execute('''CREATE TABLE IF NOT EXISTS meal_choices(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2837,6 +2892,46 @@ import shutil
 UPLOAD_DIR = os.path.join(BASE_DIR, 'assets', 'menu-uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_IMAGE_EXTS = {'.png','.jpg','.jpeg','.gif','.webp','.bmp'}
+ALLOWED_MENU_EXCEL_EXTS = {'.xlsx'}
+
+
+def _menu_service_days(parsed):
+    return [
+        {
+            'plan_date': day.get('plan_date'),
+            'weekday': day.get('weekday'),
+            'weekday_label': day.get('weekday_label'),
+            'service_status': day.get('service_status', 'normal'),
+            'service_note': day.get('service_note', ''),
+        }
+        for day in (parsed.get('days') or [])
+        if day.get('plan_date')
+    ]
+
+
+def _decode_menu_row(row):
+    item = dict(row)
+    try:
+        item['service_days'] = json.loads(item.pop('service_days_json', '') or '[]')
+    except (TypeError, json.JSONDecodeError):
+        item['service_days'] = []
+    return item
+
+
+def _required_menu_days(row):
+    """返回该周真正需要选择的周一至周五；旧菜单保持五天兼容。"""
+    try:
+        days = json.loads(row['service_days_json'] or '[]')
+    except (KeyError, TypeError, json.JSONDecodeError):
+        days = []
+    if not days:
+        return {1, 2, 3, 4, 5}
+    return {
+        int(day['weekday']) for day in days
+        if day.get('service_status') == 'normal'
+        and str(day.get('weekday', '')).isdigit()
+        and 1 <= int(day['weekday']) <= 5
+    }
 
 @app.route('/api/menus', methods=['GET'])
 def list_menus():
@@ -2848,12 +2943,12 @@ def list_menus():
         cur = db.execute('SELECT * FROM weekly_menus WHERE week_number = ? ORDER BY parity', (week,))
     else:
         cur = db.execute('SELECT * FROM weekly_menus ORDER BY week_number DESC LIMIT 40')
-    items = [dict(r) for r in cur.fetchall()]
+    items = [_decode_menu_row(r) for r in cur.fetchall()]
     return jsonify({'menus': items})
 
 @app.route('/api/menus/upload', methods=['POST'])
 def upload_menu():
-    """总务老师上传周菜单（图片 + 周次 + 日期区间）"""
+    """总务老师上传菜单。图片+Excel先生成草稿；旧调用保持直接发布兼容。"""
     u = _current_user()
     if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
         return jsonify({'error': '仅总务老师/管理员可上传'}), 403
@@ -2872,6 +2967,7 @@ def upload_menu():
         date_end = request.form.get('dateEnd')
         selection_deadline = request.form.get('selectionDeadline')
         notes = request.form.get('notes','')
+        excel_file = request.files.get('excel')
     else:
         data = request.get_json() or {}
         week = data.get('week')
@@ -2881,6 +2977,7 @@ def upload_menu():
         selection_deadline = data.get('selectionDeadline')
         notes = data.get('notes','')
         f = None
+        excel_file = None
     if not week or parity not in ('odd','even'):
         return jsonify({'error':'week 与 parity(odd|even) 必填'}), 400
     selection_deadline = (selection_deadline or '').strip()
@@ -2891,6 +2988,68 @@ def upload_menu():
     except ValueError:
         return jsonify({'error':'selectionDeadline 格式无效'}), 400
     image_path = None
+    if excel_file:
+        excel_ext = os.path.splitext(excel_file.filename or '')[1].lower()
+        if excel_ext not in ALLOWED_MENU_EXCEL_EXTS:
+            return jsonify({'error':'菜单数据仅支持 .xlsx 文件'}), 400
+        excel_bytes = excel_file.read()
+        if not excel_bytes:
+            return jsonify({'error':'Excel 文件为空'}), 400
+        if len(excel_bytes) > 20 * 1024 * 1024:
+            return jsonify({'error':'Excel 文件不能超过 20MB'}), 400
+        try:
+            parsed = parse_menu_workbook(excel_bytes)
+        except MenuWorkbookError as exc:
+            return jsonify({'error':str(exc)}), 400
+
+        issues = list(parsed.get('issues') or [])
+        parsed_start = parsed.get('date_start')
+        parsed_end = parsed.get('date_end')
+        if date_start and parsed_start != date_start:
+            issues.append({
+                'severity':'error', 'code':'date_start_mismatch', 'field':'date_start',
+                'message':f'填写的开始日期 {date_start} 与Excel识别日期 {parsed_start} 不一致',
+            })
+        if date_end and parsed_end != date_end:
+            issues.append({
+                'severity':'error', 'code':'date_end_mismatch', 'field':'date_end',
+                'message':f'填写的结束日期 {date_end} 与Excel识别日期 {parsed_end} 不一致',
+            })
+        date_start, date_end = parsed_start, parsed_end
+
+        stamp = int(time.time() * 1000)
+        digest = hashlib.sha256(excel_bytes).hexdigest()[:10]
+        image_name = f'menu_w{week}_{parity}_{stamp}{ext}'
+        excel_name = f'menu_w{week}_{parity}_{stamp}_{digest}.xlsx'
+        image_full_path = os.path.join(UPLOAD_DIR, image_name)
+        excel_full_path = os.path.join(UPLOAD_DIR, excel_name)
+        f.save(image_full_path)
+        with open(excel_full_path, 'wb') as output:
+            output.write(excel_bytes)
+        image_path = f'assets/menu-uploads/{image_name}'
+        excel_path = f'assets/menu-uploads/{excel_name}'
+        parsed['issues'] = issues
+
+        db = get_db()
+        cur = db.execute(
+            '''INSERT INTO menu_import_batches
+               (week_number, parity, date_start, date_end, selection_deadline,
+                image_path, excel_path, parsed_json, issues_json, uploaded_by)
+               VALUES(?,?,?,?,?,?,?,?,?,?)''',
+            (week, parity, date_start, date_end, selection_deadline,
+             image_path, excel_path, json.dumps(parsed, ensure_ascii=False),
+             json.dumps(issues, ensure_ascii=False), u['identity'])
+        )
+        db.commit()
+        return jsonify({
+            'draftId': cur.lastrowid,
+            'imagePath': image_path,
+            'preview': parsed,
+            'issues': issues,
+            'canPublish': not any(issue.get('severity') == 'error' for issue in issues),
+            'message':'Excel解析完成，请核对后确认发布',
+        })
+
     if f:
         safe_name = f'menu_w{week}_{parity}_{int(time.time())}{ext}'
         full_path = os.path.join(UPLOAD_DIR, safe_name)
@@ -2923,6 +3082,98 @@ def upload_menu():
         new_id = cur.lastrowid
     db.commit()
     return jsonify({'id': new_id, 'imagePath': image_path, 'message':'已保存'})
+
+
+@app.route('/api/menu-imports/<int:batch_id>/publish', methods=['POST'])
+def publish_menu_import(batch_id):
+    """总务老师确认解析结果后，原子发布周菜单和每日 A/B 餐。"""
+    u = _current_user()
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师/管理员可发布'}), 403
+    _ensure_meal_tables()
+    db = get_db()
+    batch = db.execute('SELECT * FROM menu_import_batches WHERE id=?', (batch_id,)).fetchone()
+    if not batch:
+        return jsonify({'error':'菜单解析草稿不存在'}), 404
+    if batch['status'] == 'published':
+        return jsonify({'error':'该菜单已经发布'}), 409
+    try:
+        issues = json.loads(batch['issues_json'] or '[]')
+        parsed = json.loads(batch['parsed_json'] or '{}')
+    except json.JSONDecodeError:
+        return jsonify({'error':'菜单解析草稿已损坏，请重新上传'}), 409
+    blocking = [issue for issue in issues if issue.get('severity') == 'error']
+    if blocking:
+        return jsonify({'error':'仍有必须修正的Excel异常，暂不能发布', 'issues':blocking}), 409
+    service_days = _menu_service_days(parsed)
+    if not any(day.get('service_status') == 'normal' for day in service_days):
+        return jsonify({'error':'Excel中没有可发布的正常供餐日'}), 409
+
+    old = db.execute(
+        'SELECT id, image_path FROM weekly_menus WHERE week_number=? AND parity=?',
+        (batch['week_number'], batch['parity'])
+    ).fetchone()
+    try:
+        if old:
+            menu_id = old['id']
+            db.execute(
+                '''UPDATE weekly_menus
+                   SET date_start=?, date_end=?, selection_deadline=?, image_path=?,
+                       notes=?, uploaded_by=?, import_batch_id=?, service_days_json=?
+                   WHERE id=?''',
+                (batch['date_start'], batch['date_end'], batch['selection_deadline'],
+                 batch['image_path'], parsed.get('title', ''), u['identity'], batch_id,
+                 json.dumps(service_days, ensure_ascii=False), menu_id)
+            )
+        else:
+            cur = db.execute(
+                '''INSERT INTO weekly_menus
+                   (week_number, parity, date_start, date_end, selection_deadline,
+                    image_path, notes, uploaded_by, import_batch_id, service_days_json)
+                   VALUES(?,?,?,?,?,?,?,?,?,?)''',
+                (batch['week_number'], batch['parity'], batch['date_start'], batch['date_end'],
+                 batch['selection_deadline'], batch['image_path'], parsed.get('title', ''),
+                 u['identity'], batch_id, json.dumps(service_days, ensure_ascii=False))
+            )
+            menu_id = cur.lastrowid
+
+        parsed_dates = [day['plan_date'] for day in parsed.get('days', []) if day.get('plan_date')]
+        for plan_date in parsed_dates:
+            db.execute('DELETE FROM nutrition_meal_plans WHERE plan_date=?', (plan_date,))
+        for day in parsed.get('days', []):
+            if day.get('service_status') != 'normal':
+                continue
+            for meal in day.get('meals', []):
+                db.execute(
+                    '''INSERT INTO nutrition_meal_plans
+                       (plan_date, plan_type, plan_name, ingredients, calories_kcal,
+                        protein_g, fat_g, allergens, suitable_tags, weekly_menu_id,
+                        service_status, menu_items, protein_pct, fat_pct,
+                        vitamin_c_mg, source_raw)
+                       VALUES(?,?,?,?,?,NULL,NULL,'[]','[]',?,'normal',?,?,?,?,?)''',
+                    (day['plan_date'], meal['plan_type'], meal.get('plan_name'),
+                     json.dumps(meal.get('ingredients') or [], ensure_ascii=False),
+                     meal.get('calories_kcal'), menu_id,
+                     json.dumps(meal.get('menu_items') or [], ensure_ascii=False),
+                     meal.get('protein_pct'), meal.get('fat_pct'), meal.get('vitamin_c_mg'),
+                     json.dumps(meal, ensure_ascii=False))
+                )
+        db.execute(
+            "UPDATE menu_import_batches SET status='published', published_at=CURRENT_TIMESTAMP WHERE id=?",
+            (batch_id,)
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return jsonify({
+        'id': menu_id,
+        'publishedMeals': sum(
+            len(day.get('meals', [])) for day in parsed.get('days', [])
+            if day.get('service_status') == 'normal'
+        ),
+        'message':'菜单与餐食数据已发布',
+    })
 
 # ==================== 家长 / 老师批量选餐 ====================
 
@@ -3035,7 +3286,7 @@ def submit_meal_choices():
         return jsonify({'error':'week_odd 与 week_even 必须是整数'}), 400
 
     normalized_choices = {}
-    required_days = {1, 2, 3, 4, 5}
+    allowed_days = {1, 2, 3, 4, 5}
     for parity in ('odd', 'even'):
         normalized_choices[parity] = {}
         for day, choice in (choices.get(parity) or {}).items():
@@ -3043,16 +3294,14 @@ def submit_meal_choices():
                 day = int(day)
             except (TypeError, ValueError):
                 return jsonify({'error':'选餐日期必须为周一至周五'}), 400
-            if day not in required_days or choice not in ('A', 'B'):
+            if day not in allowed_days or choice not in ('A', 'B'):
                 return jsonify({'error':'选餐内容无效'}), 400
             normalized_choices[parity][day] = choice
-        if set(normalized_choices[parity]) != required_days:
-            return jsonify({'error':'请完整选择奇偶周共 10 天的餐食'}), 400
 
     _ensure_meal_tables()
     db = get_db()
     menu_rows = db.execute(
-        '''SELECT week_number, parity, selection_deadline
+        '''SELECT week_number, parity, selection_deadline, service_days_json
            FROM weekly_menus
            WHERE (week_number=? AND parity='odd')
               OR (week_number=? AND parity='even')''',
@@ -3063,6 +3312,15 @@ def submit_meal_choices():
         return jsonify({'error':'本轮两周菜单尚未完整发布，暂不能提交选餐'}), 409
     for parity in ('odd', 'even'):
         menu_row = menu_by_parity[parity]
+        required_days = _required_menu_days(menu_row)
+        if not required_days:
+            return jsonify({'error':f'{"奇数周" if parity == "odd" else "偶数周"}没有可选供餐日'}), 409
+        if set(normalized_choices[parity]) != required_days:
+            return jsonify({
+                'error':'请完整选择本轮所有正常供餐日的餐食',
+                'parity': parity,
+                'requiredDays': sorted(required_days),
+            }), 400
         deadline_text = (menu_row['selection_deadline'] or '').strip()
         if not deadline_text:
             return jsonify({'error':'本轮选餐截止时间尚未发布，暂不能提交选餐'}), 409
@@ -3378,6 +3636,21 @@ def stats_class():
     if week_even != week_odd + 1:
         return jsonify({'error':'请选择连续的奇数周和偶数周'}), 400
     db = get_db()
+    menu_rows = db.execute(
+        '''SELECT parity, service_days_json FROM weekly_menus
+           WHERE (week_number=? AND parity='odd')
+              OR (week_number=? AND parity='even')''',
+        (week_odd, week_even),
+    ).fetchall()
+    required_by_parity = {'odd': {1,2,3,4,5}, 'even': {1,2,3,4,5}}
+    for menu_row in menu_rows:
+        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row)
+    required_keys = {
+        f'{parity}_{weekday}'
+        for parity, weekdays in required_by_parity.items()
+        for weekday in weekdays
+    }
+    required_count = len(required_keys)
     # 拿到该班所有学生
     student_table = _meal_student_source(db)
     if student_table:
@@ -3415,12 +3688,13 @@ def stats_class():
     complete_count = 0
     for s in students:
         choices = by_student.get(s['id_card'], {})
-        student_a_count = sum(1 for value in choices.values() if value == 'A')
-        student_b_count = sum(1 for value in choices.values() if value == 'B')
+        required_choices = {key: value for key, value in choices.items() if key in required_keys}
+        student_a_count = sum(1 for value in required_choices.values() if value == 'A')
+        student_b_count = sum(1 for value in required_choices.values() if value == 'B')
         selected_count = student_a_count + student_b_count
         a_count += student_a_count
         b_count += student_b_count
-        if selected_count == 10:
+        if selected_count == required_count:
             complete_count += 1
         row = {
             'idCard': s['id_card'],
@@ -3428,8 +3702,9 @@ def stats_class():
             'grade': grade,
             'class': klass,
             'selectedCount': selected_count,
-            'missingCount': 10 - selected_count,
-            'isComplete': selected_count == 10,
+            'missingCount': required_count - selected_count,
+            'requiredCount': required_count,
+            'isComplete': selected_count == required_count,
         }
         row.update(choices)
         rows.append(row)

@@ -44,6 +44,23 @@
     --pr-surface:#fff;
     width:min(1160px,100%);margin:0 auto;display:grid;gap:20px;color:var(--pr-ink)
   }
+  #parentPairing,#parentSelection{scroll-margin-top:76px}
+  .parent-mode .app-header nav a{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:86px;
+    border:1px solid var(--nutrition-line);border-radius:999px;background:rgba(255,255,255,.72);
+    color:var(--nutrition-muted);font-weight:800
+  }
+  .parent-mode .app-header nav a:hover{border-color:#9fcddd;background:var(--nutrition-primary-soft);color:var(--nutrition-primary-strong)}
+  .parent-mode .app-header nav a.active{
+    border-color:var(--nutrition-primary);background:var(--nutrition-primary);color:#fff;
+    box-shadow:0 5px 14px rgba(28,147,184,.2)
+  }
+  .parent-mode .app-header nav .nav-anchor-icon{font-size:14px;line-height:1}
+  .pr-anchor-target{animation:pr-anchor-pulse .9s ease-out}
+  @keyframes pr-anchor-pulse{
+    0%,100%{box-shadow:0 10px 28px rgba(28,90,120,.07)}
+    35%{box-shadow:0 0 0 4px rgba(28,147,184,.16),0 12px 30px rgba(28,90,120,.12)}
+  }
   .pr-hero{
     position:relative;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);
     gap:24px;align-items:center;padding:28px 30px;border:1px solid #d6e7d8;border-radius:24px;
@@ -172,6 +189,7 @@
     .pr-main-grid{animation-delay:.05s}.pr-plan-board{animation-delay:.1s}
     @keyframes pr-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   }
+  @media (prefers-reduced-motion:reduce){.pr-anchor-target{animation:none}}
   .gt-page{display:grid;gap:18px}
   .gt-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:4px 2px}
   .gt-intro h2{font-size:24px;line-height:1.25;color:#24442e}
@@ -202,6 +220,17 @@
   .gt-upload-status.is-success{background:#eaf6ed;color:#2e6c3d}
   .gt-upload-status.is-error{background:#fff0f0;color:#a52b2b}
   .gt-upload-body .btn{justify-content:center;min-height:42px;font-weight:700}
+  .gt-import-preview{display:none;gap:10px;padding:12px;border:1px solid var(--nutrition-line);border-radius:10px;background:var(--nutrition-surface-soft)}
+  .gt-import-preview.is-visible{display:grid}
+  .gt-import-summary{display:flex;justify-content:space-between;gap:10px;color:var(--nutrition-text);font-size:12px;font-weight:800}
+  .gt-import-days{display:grid;gap:7px;max-height:280px;overflow:auto}
+  .gt-import-day{display:grid;gap:5px;padding:9px;border:1px solid var(--nutrition-line);border-radius:8px;background:#fff;font-size:11px}
+  .gt-import-day strong{color:var(--nutrition-ink)}
+  .gt-import-day span{color:var(--nutrition-muted);line-height:1.5}
+  .gt-import-day.is-off{border-style:dashed;background:#f5f7f7}
+  .gt-import-issues{display:grid;gap:5px}
+  .gt-import-issue{padding:7px 8px;border-radius:7px;background:#fff7df;color:#806018;font-size:11px;line-height:1.45}
+  .gt-import-issue.is-error{background:var(--nutrition-danger-bg);color:var(--nutrition-danger)}
   .gt-stats-area{display:grid;gap:14px}
   .gt-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .gt-metric{padding:16px 18px;border:1px solid #dfe9e2;border-radius:10px;background:#fff}
@@ -438,7 +467,7 @@
         </div>
       </section>
 
-      <div class="pr-main-grid">
+      <div class="pr-main-grid" id="parentPairing">
         <section class="pr-recommend-card" aria-labelledby="parentRecommendationTitle">
           <div class="pr-section-title">
             <div>
@@ -469,12 +498,12 @@
         </aside>
       </div>
 
-      <section class="pr-plan-board" aria-labelledby="parentPlanTitle">
+      <section class="pr-plan-board" id="parentSelection" aria-labelledby="parentPlanTitle">
         <div class="pr-plan-head">
           <div class="pr-section-title">
             <div>
               <h3 id="parentPlanTitle">两周 AI 选餐方案</h3>
-              <p>AI 已预选每天更合适的一餐。家长可以调整，再一次提交 10 天。</p>
+              <p>AI 已预选每个供餐日更合适的一餐。家长可以调整后一次提交两周选餐。</p>
             </div>
           </div>
           <span class="pr-plan-status" id="parentPlanStatus">正在准备方案</span>
@@ -528,8 +557,8 @@
         <section class="gt-panel" aria-labelledby="gtUploadTitle">
           <div class="gt-panel-head">
             <div>
-              <h3 id="gtUploadTitle">餐食图片</h3>
-              <p>同周次和周类型再次上传会替换原图。</p>
+              <h3 id="gtUploadTitle">菜单图片与Excel</h3>
+              <p>先解析核对，确认发布后家长才能看到。</p>
             </div>
           </div>
           <form id="menuUploadForm" class="gt-upload-body">
@@ -567,12 +596,21 @@
                 <span class="gt-file-help">支持 PNG、JPG、WEBP，建议图片包含 A/B 餐信息。</span>
               </span>
             </label>
+            <label class="gt-file-box" for="menuExcel">
+              <input id="menuExcel" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+              <span>
+                <span class="gt-file-title">选择原始菜单Excel</span>
+                <span class="gt-file-help">系统读取日期、A/B餐、食材和营养数据，不依赖文件名。</span>
+              </span>
+            </label>
             <div class="gt-menu-preview" id="menuPreview">
               <img id="menuPreviewImage" alt="待上传的餐食图片预览">
               <span id="menuPreviewLabel">待上传</span>
             </div>
             <div id="menuUploadStatus" class="gt-upload-status" aria-live="polite">尚未选择图片</div>
-            <button class="btn btn-primary" type="submit" id="menuUploadBtn">上传餐食图片</button>
+            <div id="menuImportPreview" class="gt-import-preview" aria-live="polite"></div>
+            <button class="btn btn-primary" type="submit" id="menuUploadBtn">解析菜单</button>
+            <button class="btn btn-outline" type="button" id="menuPublishBtn" hidden disabled>确认发布</button>
           </form>
         </section>
 
@@ -676,14 +714,14 @@
   const ROLE = NUTRITION_ROLE;
   const SUB_ROLE = NUTRITION_SUB_ROLE || (ROLE === 'teacher' ? 'general' : '');
   const navItems = ROLE === 'parent'
-    ? []
-    : [['recommendations.html', SUB_ROLE === 'class' ? '本班选餐统计' : '全校配餐管理']];
+    ? [['#parentPairing', '配餐', '✨'], ['#parentSelection', '选餐', '✓']]
+    : [['recommendations.html', SUB_ROLE === 'class' ? '本班选餐统计' : '全校配餐管理', '']];
   document.querySelector('.app-header h1').textContent = ROLE === 'parent'
     ? '孩子营养推荐'
     : SUB_ROLE === 'class'
       ? '本班营养配餐'
       : '全校营养配餐';
-  document.getElementById('mainNav').innerHTML = navItems.map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+  document.getElementById('mainNav').innerHTML = navItems.map(([u,l,icon]) => `<a href="${u}" class="${!u.startsWith('#') && window.location.pathname.endsWith(u)?'active':''}">${icon ? `<span class="nav-anchor-icon" aria-hidden="true">${icon}</span>` : ''}<span>${l}</span></a>`).join('');
 
   document.getElementById('parentRecommendationView').classList.toggle('hidden', ROLE !== 'parent');
   document.getElementById('generalTeacherView').classList.toggle('hidden', !(ROLE === 'teacher' && SUB_ROLE === 'general'));
@@ -691,6 +729,7 @@
 
   queueMicrotask(() => {
     if (ROLE === 'parent') {
+      initParentSectionNavigation();
       initParentView();
     } else if (SUB_ROLE === 'class') {
       initClassTeacherView();
@@ -698,6 +737,40 @@
       initGeneralTeacherView();
     }
   });
+
+  function initParentSectionNavigation() {
+    const links = [...document.querySelectorAll('#mainNav a[href^="#"]')];
+    const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    if (!links.length || !sections.length) return;
+
+    const selectLink = id => {
+      links.forEach(link => {
+        const selected = link.getAttribute('href') === `#${id}`;
+        link.classList.toggle('active', selected);
+        if (selected) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    links.forEach(link => link.addEventListener('click', event => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (!target) return;
+      event.preventDefault();
+      selectLink(target.id);
+      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', `#${target.id}`);
+      target.classList.remove('pr-anchor-target');
+      requestAnimationFrame(() => target.classList.add('pr-anchor-target'));
+      window.setTimeout(() => target.classList.remove('pr-anchor-target'), 950);
+    }));
+
+    selectLink(location.hash === '#parentSelection' ? 'parentSelection' : 'parentPairing');
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) selectLink(visible.target.id);
+    }, { rootMargin: '-64px 0px -55% 0px', threshold: [0.05, 0.25] });
+    sections.forEach(section => observer.observe(section));
+  }
 
   let parentRecommendations = [];
   let parentMealPlans = [];
@@ -816,11 +889,16 @@
     renderParentHealthSummary(parentRecommendations[0]);
     const dateInput = document.getElementById('parentRecommendationDate');
     const today = new Date().toISOString().split('T')[0];
+    const publishedMealDates = [...new Set(parentAllMealPlans
+      .map(item => item.plan_date)
+      .filter(Boolean))].sort();
     dateInput.value = parentRecommendations.some(item => item.plan_date === today)
       ? today
       : parentRecommendations.length
         ? parentRecommendations[parentRecommendations.length - 1].plan_date
-        : today;
+        : publishedMealDates.length
+          ? publishedMealDates[publishedMealDates.length - 1]
+          : today;
     await Promise.all([loadParentDayView(), buildParentMealPlan()]);
   }
 
@@ -856,7 +934,12 @@
     if (!plan) return '<span>餐食明细待补充</span>';
     const items = [];
     if (plan.calories_kcal !== null && plan.calories_kcal !== undefined) items.push(`${formatNum(plan.calories_kcal, 0)} kcal`);
-    if (plan.protein_g !== null && plan.protein_g !== undefined) items.push(`蛋白质 ${formatNum(plan.protein_g, 1)}g`);
+    if (plan.protein_g !== null && plan.protein_g !== undefined) {
+      items.push(`蛋白质 ${formatNum(plan.protein_g, 1)}g`);
+    } else if (plan.protein_pct !== null && plan.protein_pct !== undefined) {
+      items.push(`蛋白质占比 ${formatNum(plan.protein_pct, 1)}%`);
+    }
+    if (plan.fat_pct !== null && plan.fat_pct !== undefined) items.push(`脂肪占比 ${formatNum(plan.fat_pct, 1)}%`);
     const ingredients = parseJsonField(plan.ingredients).slice(0, 2);
     items.push(...ingredients);
     return (items.length ? items : ['餐食明细待补充'])
@@ -931,7 +1014,9 @@
             : '',
           recommendedMeal.protein_g !== null && recommendedMeal.protein_g !== undefined
             ? `蛋白质 ${formatNum(recommendedMeal.protein_g, 1)}g`
-            : '',
+            : recommendedMeal.protein_pct !== null && recommendedMeal.protein_pct !== undefined
+              ? `蛋白质占比 ${formatNum(recommendedMeal.protein_pct, 1)}%`
+              : '',
         ].filter(Boolean).join('，') || '餐食营养明细仍待补充'
       : '餐食营养明细仍待补充';
     target.innerHTML = `
@@ -987,25 +1072,32 @@
     parentDeadlineTimer = setInterval(updateParentPlanReadiness, 30000);
     for (const parity of ['odd','even']) {
       const menu = parentPlanMeta[parity];
-      const dates = parentWeekDates(menu.date_start);
-      dates.forEach((planDate, index) => {
+      const serviceDays = menuServiceDays(menu);
+      serviceDays.forEach(day => {
+        const planDate = day.plan_date;
+        const weekday = Number(day.weekday);
         const recommendation = parentRecommendations.find(item => item.plan_date === planDate);
         const submitted = parentSubmittedChoices.find(item =>
           Number(item.week_number) === Number(menu.week_number)
           && item.parity === parity
-          && Number(item.weekday) === index + 1
+          && Number(item.weekday) === weekday
         );
-        const choice = submitted && ['A','B'].includes(submitted.choice)
-          ? submitted.choice
-          : recommendation && ['A','B'].includes(recommendation.recommended_plan)
-            ? recommendation.recommended_plan
-            : '';
-        if (choice) parentChoices[parity][index + 1] = choice;
+        const choice = day.service_status === 'normal'
+          ? submitted && ['A','B'].includes(submitted.choice)
+            ? submitted.choice
+            : recommendation && ['A','B'].includes(recommendation.recommended_plan)
+              ? recommendation.recommended_plan
+              : ''
+          : '';
+        if (choice) parentChoices[parity][weekday] = choice;
         parentPlanDays.push({
           parity,
           week: Number(menu.week_number),
-          weekday: index + 1,
+          weekday,
           planDate,
+          weekdayLabel: day.weekday_label || PARENT_DAY_NAMES[weekday - 1],
+          serviceStatus: day.service_status || 'normal',
+          serviceNote: day.service_note || '',
           recommendation,
           mealA: parentAllMealPlans.find(item =>
             item.plan_date === planDate && item.plan_type === 'A'
@@ -1045,23 +1137,35 @@
 
   function renderParentPlanDay(day) {
     const selected = parentChoices[day.parity][day.weekday] || '';
-    const missing = !day.recommendation;
+    const noService = day.serviceStatus !== 'normal';
+    const missing = !noService && (!day.mealA || !day.mealB);
     const closed = isParentSelectionClosed();
     return `
-      <article class="pr-day${missing ? ' is-missing' : ''}">
+      <article class="pr-day${missing || noService ? ' is-missing' : ''}">
         <button type="button" class="pr-day-date" onclick="selectParentPlanDate('${day.planDate}')" style="border:0;background:transparent;padding:0;text-align:left;cursor:pointer;font-family:inherit">
-          <strong>${PARENT_DAY_NAMES[day.weekday - 1]}</strong>
+          <strong>${escHtml(day.weekdayLabel || PARENT_DAY_NAMES[day.weekday - 1])}</strong>
           ${escHtml(parentDateLabel(day.planDate))}
         </button>
         <div class="pr-day-menu" aria-label="${PARENT_DAY_NAMES[day.weekday - 1]}菜单">
-          <span><b>A</b> ${escHtml(parentPlanSummary(day.mealA))}</span>
-          <span><b>B</b> ${escHtml(parentPlanSummary(day.mealB))}</span>
+          ${noService
+            ? `<span>${escHtml(day.serviceNote || '当天不供餐')}</span>`
+            : `<span><b>A</b> ${escHtml(parentPlanSummary(day.mealA))}</span>
+               <span><b>B</b> ${escHtml(parentPlanSummary(day.mealB))}</span>`}
         </div>
         <div class="pr-day-choice" aria-label="${PARENT_DAY_NAMES[day.weekday - 1]}选择">
-          <button type="button" class="${selected === 'A' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'A')" ${missing || closed ? 'disabled' : ''}>A 餐</button>
-          <button type="button" class="${selected === 'B' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'B')" ${missing || closed ? 'disabled' : ''}>B 餐</button>
+          ${noService ? '' : `
+            <button type="button" class="${selected === 'A' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'A')" ${missing || closed ? 'disabled' : ''}>A 餐</button>
+            <button type="button" class="${selected === 'B' ? 'is-selected' : ''}" onclick="setParentPlanChoice('${day.parity}',${day.weekday},'B')" ${missing || closed ? 'disabled' : ''}>B 餐</button>`}
         </div>
-        <span class="pr-day-note">${closed ? '选餐已截止' : missing ? '等待 AI 建议' : `AI 推荐 ${day.recommendation.recommended_plan} 餐`}</span>
+        <span class="pr-day-note">${noService
+          ? '无需选餐'
+          : closed
+            ? '选餐已截止'
+            : missing
+              ? '等待菜单发布'
+              : day.recommendation
+                ? `AI 推荐 ${day.recommendation.recommended_plan} 餐`
+                : '可手动选择，AI 建议待生成'}</span>
       </article>`;
   }
 
@@ -1087,6 +1191,21 @@
     return NUTRITION_PLATFORM_BASE + '/' + String(path).replace(/^\/+/, '');
   }
 
+  function menuServiceDays(menu) {
+    if (Array.isArray(menu?.service_days) && menu.service_days.length) {
+      return menu.service_days
+        .filter(day => day && day.plan_date && Number(day.weekday) >= 1 && Number(day.weekday) <= 5)
+        .sort((a, b) => Number(a.weekday) - Number(b.weekday));
+    }
+    return parentWeekDates(menu?.date_start).map((planDate, index) => ({
+      plan_date: planDate,
+      weekday: index + 1,
+      weekday_label: PARENT_DAY_NAMES[index],
+      service_status: 'normal',
+      service_note: '',
+    }));
+  }
+
   function parentPlanSummary(plan) {
     if (!plan) return '菜单待发布';
     const facts = [plan.plan_name || `${plan.plan_type || ''}餐`];
@@ -1095,6 +1214,8 @@
     }
     if (plan.protein_g !== null && plan.protein_g !== undefined) {
       facts.push(`蛋白质${formatNum(plan.protein_g, 1)}g`);
+    } else if (plan.protein_pct !== null && plan.protein_pct !== undefined) {
+      facts.push(`蛋白质${formatNum(plan.protein_pct, 1)}%`);
     }
     return facts.join(' · ');
   }
@@ -1137,15 +1258,18 @@
   }
 
   function updateParentPlanReadiness() {
-    const completed = ['odd','even'].reduce((sum, parity) =>
-      sum + Object.keys(parentChoices[parity]).length, 0);
+    const requiredDays = parentPlanDays.filter(day => day.serviceStatus === 'normal');
+    const requiredCount = requiredDays.length;
+    const completed = requiredDays.filter(day =>
+      ['A','B'].includes(parentChoices[day.parity][day.weekday])
+    ).length;
     const closed = isParentSelectionClosed();
-    const ready = Boolean(parentPlanMeta) && completed === 10 && !closed;
+    const ready = Boolean(parentPlanMeta) && requiredCount > 0 && completed === requiredCount && !closed;
     const status = document.getElementById('parentPlanStatus');
     const button = document.getElementById('parentSubmitBtn');
     status.textContent = closed
       ? '选餐已截止'
-      : ready ? '10 天方案已准备好' : `已准备 ${completed} / 10 天`;
+      : ready ? `${requiredCount} 天方案已准备好` : `已准备 ${completed} / ${requiredCount} 天`;
     status.className = `pr-plan-status${ready ? ' is-ready' : ''}`;
     button.disabled = !ready;
     renderParentDeadlineStatus();
@@ -1161,7 +1285,7 @@
       }
     } else {
       document.getElementById('parentSubmitMessage').textContent =
-        completed ? `还缺 ${10 - completed} 天 AI 推荐。` : '等待完整菜单和推荐结果。';
+        completed ? `还缺 ${requiredCount - completed} 天选餐。` : '等待完整菜单和推荐结果。';
     }
   }
 
@@ -1171,9 +1295,10 @@
       return;
     }
     if (!parentPlanMeta || document.getElementById('parentSubmitBtn').disabled) return;
+    const requiredCount = parentPlanDays.filter(day => day.serviceStatus === 'normal').length;
     showConfirm(
       '确认提交两周选餐',
-      '将按当前方案提交奇数周和偶数周共 10 天选餐。提交前仍可调整每天的 A/B 餐。',
+      `将按当前方案提交奇数周和偶数周共 ${requiredCount} 天选餐。提交前仍可调整每天的 A/B 餐。`,
       performRecommendedMealSubmit
     );
   }
@@ -1205,7 +1330,8 @@
       return;
     }
     message.className = 'pr-submit-message is-success';
-    message.textContent = `提交成功，已同步 ${data.saved || 10} 天选餐。`;
+    const requiredCount = parentPlanDays.filter(day => day.serviceStatus === 'normal').length;
+    message.textContent = `提交成功，已同步 ${data.saved ?? requiredCount} 天选餐。`;
     button.textContent = '选餐已提交';
     button.disabled = true;
     showSuccess('两周选餐已提交');
@@ -1214,12 +1340,15 @@
   let gtGradeRows = [];
   let gtParityFilter = 'all';
   let gtPreviewUrl = null;
+  let gtMenuDraftId = null;
 
   function initGeneralTeacherView() {
     document.getElementById('menuUploadForm').addEventListener('submit', uploadMenuImage);
     document.getElementById('menuImage').addEventListener('change', previewSelectedMenu);
-    document.getElementById('menuWeek').addEventListener('change', loadPublishedMenu);
-    document.getElementById('menuParity').addEventListener('change', loadPublishedMenu);
+    document.getElementById('menuExcel').addEventListener('change', updateSelectedMenuFiles);
+    document.getElementById('menuPublishBtn').addEventListener('click', publishParsedMenu);
+    document.getElementById('menuWeek').addEventListener('change', () => { clearMenuDraft(); loadPublishedMenu(); });
+    document.getElementById('menuParity').addEventListener('change', () => { clearMenuDraft(); loadPublishedMenu(); });
     document.getElementById('gradeStatsWeekOdd').addEventListener('change', loadGradeMealStats);
     document.getElementById('gradeStatsWeekEven').addEventListener('change', loadGradeMealStats);
     document.querySelectorAll('.gt-segment').forEach(button => {
@@ -1260,7 +1389,56 @@
     if (gtPreviewUrl) URL.revokeObjectURL(gtPreviewUrl);
     gtPreviewUrl = URL.createObjectURL(file);
     showMenuPreview(gtPreviewUrl, '待上传');
-    setMenuUploadStatus(`已选择：${file.name}`);
+    updateSelectedMenuFiles();
+  }
+
+  function updateSelectedMenuFiles() {
+    clearMenuDraft();
+    const image = document.getElementById('menuImage').files[0];
+    const excel = document.getElementById('menuExcel').files[0];
+    const selected = [image?.name, excel?.name].filter(Boolean);
+    setMenuUploadStatus(selected.length ? `已选择：${selected.join(' + ')}` : '请选择菜单图片和原始Excel');
+  }
+
+  function clearMenuDraft() {
+    gtMenuDraftId = null;
+    const preview = document.getElementById('menuImportPreview');
+    preview.classList.remove('is-visible');
+    preview.innerHTML = '';
+    const publish = document.getElementById('menuPublishBtn');
+    publish.hidden = true;
+    publish.disabled = true;
+  }
+
+  function renderMenuImportPreview(parsed, issues, canPublish) {
+    const target = document.getElementById('menuImportPreview');
+    const days = parsed?.days || [];
+    const errorCount = (issues || []).filter(issue => issue.severity === 'error').length;
+    const warningCount = (issues || []).length - errorCount;
+    target.innerHTML = `
+      <div class="gt-import-summary">
+        <span>${escHtml(parsed?.title || '菜单解析结果')}</span>
+        <span>${days.filter(day => day.service_status === 'normal').length} 个供餐日</span>
+      </div>
+      <div class="gt-import-days">
+        ${days.map(day => `
+          <div class="gt-import-day${day.service_status === 'normal' ? '' : ' is-off'}">
+            <strong>${escHtml(day.weekday_label || '')} · ${escHtml(day.plan_date || '')}</strong>
+            ${day.service_status === 'normal'
+              ? (day.meals || []).map(meal => `<span><b>${escHtml(meal.plan_type)}餐</b> ${escHtml(meal.plan_name || '菜品待补充')} · ${meal.calories_kcal ?? '-'} kcal · 蛋白质${meal.protein_pct ?? '-'}%</span>`).join('')
+              : `<span>${escHtml(day.service_note || '非供餐日，不计入家长必选数量')}</span>`}
+          </div>`).join('')}
+      </div>
+      ${(issues || []).length ? `
+        <div class="gt-import-issues">
+          ${(issues || []).map(issue => `<div class="gt-import-issue${issue.severity === 'error' ? ' is-error' : ''}">${issue.severity === 'error' ? '必须修正' : '请确认'}：${escHtml(issue.message || '')}</div>`).join('')}
+        </div>` : '<div class="gt-import-issue">解析检查通过，没有发现异常。</div>'}
+      <div class="gt-import-summary"><span>错误 ${errorCount} 项</span><span>提醒 ${warningCount} 项</span></div>`;
+    target.classList.add('is-visible');
+    const publish = document.getElementById('menuPublishBtn');
+    publish.hidden = false;
+    publish.disabled = !canPublish;
+    publish.textContent = canPublish ? '确认发布' : '请修正Excel后重新解析';
   }
 
   async function loadPublishedMenu() {
@@ -1293,12 +1471,14 @@
     event.preventDefault();
     if (ROLE !== 'teacher' || SUB_ROLE !== 'general') return;
     const file = document.getElementById('menuImage').files[0];
-    if (!file) {
-      setMenuUploadStatus('请先选择餐食图片', 'error');
+    const excel = document.getElementById('menuExcel').files[0];
+    if (!file || !excel) {
+      setMenuUploadStatus('请同时选择菜单图片和原始Excel', 'error');
       return;
     }
     const form = new FormData();
     form.append('image', file);
+    form.append('excel', excel);
     form.append('week', document.getElementById('menuWeek').value);
     form.append('parity', document.getElementById('menuParity').value);
     form.append('dateStart', document.getElementById('menuDateStart').value);
@@ -1306,8 +1486,8 @@
     form.append('selectionDeadline', document.getElementById('menuSelectionDeadline').value);
     const button = document.getElementById('menuUploadBtn');
     button.disabled = true;
-    button.textContent = '正在上传...';
-    setMenuUploadStatus('正在上传餐食图片...');
+    button.textContent = '正在解析...';
+    setMenuUploadStatus('正在读取Excel并检查菜单数据...');
     try {
       const response = await fetch(NUTRITION_PLATFORM_BASE + '/api/menus/upload', {
         method: 'POST',
@@ -1316,15 +1496,41 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-      document.getElementById('menuImage').value = '';
-      showSuccess('餐食图片上传成功');
-      await loadPublishedMenu();
+      gtMenuDraftId = data.draftId;
+      document.getElementById('menuDateStart').value = data.preview?.date_start || '';
+      document.getElementById('menuDateEnd').value = data.preview?.date_end || '';
+      renderMenuImportPreview(data.preview, data.issues || [], Boolean(data.canPublish));
+      setMenuUploadStatus(data.canPublish ? '解析完成，请核对后确认发布' : '解析完成，但存在必须修正的异常', data.canPublish ? 'success' : 'error');
     } catch (error) {
       setMenuUploadStatus(`上传失败：${error.message}`, 'error');
       showError(error.message);
     } finally {
       button.disabled = false;
-      button.textContent = '上传餐食图片';
+      button.textContent = '解析菜单';
+    }
+  }
+
+  async function publishParsedMenu() {
+    if (!gtMenuDraftId) return;
+    const button = document.getElementById('menuPublishBtn');
+    button.disabled = true;
+    button.textContent = '正在发布...';
+    try {
+      const response = await fetch(`${NUTRITION_PLATFORM_BASE}/api/menu-imports/${gtMenuDraftId}/publish`, {
+        method: 'POST',
+        headers: nutritionAuthHeaders(),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      document.getElementById('menuImage').value = '';
+      document.getElementById('menuExcel').value = '';
+      clearMenuDraft();
+      showSuccess(`菜单发布成功，共发布 ${data.publishedMeals || 0} 条 A/B 餐数据`);
+      await loadPublishedMenu();
+    } catch (error) {
+      setMenuUploadStatus(`发布失败：${error.message}`, 'error');
+      button.disabled = false;
+      button.textContent = '确认发布';
     }
   }
 
@@ -1559,7 +1765,7 @@
             <td class="ct-student"><strong>${escHtml(student.displayName || '-')}</strong></td>
             ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`odd_${day}`], `奇数周周${days[day - 1]}`)}</td>`).join('')}
             ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`even_${day}`], `偶数周周${days[day - 1]}`)}</td>`).join('')}
-            <td><span class="ct-completion${student.isComplete ? '' : ' is-incomplete'}">${student.selectedCount || 0}/10</span></td>
+            <td><span class="ct-completion${student.isComplete ? '' : ' is-incomplete'}">${student.selectedCount || 0}/${student.requiredCount || 10}</span></td>
           </tr>
         `).join('')}</tbody>
         <tfoot>

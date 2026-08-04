@@ -135,6 +135,20 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_audit_logs_type ON nutrition_audit_logs(target_type);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON nutrition_audit_logs(created_at);
     """)
+    meal_plan_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(nutrition_meal_plans)").fetchall()
+    }
+    for column, column_type in (
+        ("weekly_menu_id", "INTEGER"),
+        ("service_status", "TEXT DEFAULT 'normal'"),
+        ("menu_items", "TEXT DEFAULT '[]'"),
+        ("protein_pct", "REAL"),
+        ("fat_pct", "REAL"),
+        ("vitamin_c_mg", "REAL"),
+        ("source_raw", "TEXT"),
+    ):
+        if column not in meal_plan_cols:
+            conn.execute(f"ALTER TABLE nutrition_meal_plans ADD COLUMN {column} {column_type}")
     conn.commit()
 
     # 插入默认规则（如果不存在）
