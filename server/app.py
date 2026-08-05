@@ -23,9 +23,11 @@ from flask import Flask, jsonify, request, g, make_response, send_from_directory
 from flask_cors import CORS
 
 try:
-    from .club_courses import COURSES, COURSES_BY_ID, SEMESTER as CLUB_SEMESTER
+    from .club_courses import COURSES, SEMESTER as CLUB_SEMESTER
+    from .menu_excel import MenuWorkbookError, parse_menu_workbook
 except ImportError:
-    from club_courses import COURSES, COURSES_BY_ID, SEMESTER as CLUB_SEMESTER
+    from club_courses import COURSES, SEMESTER as CLUB_SEMESTER
+    from menu_excel import MenuWorkbookError, parse_menu_workbook
 
 # ==================== 启动时自动加载 server/.env ====================
 def _load_env_file():
@@ -908,7 +910,21 @@ def login():
         'demo_idx':     row['demo_idx'],
         'displayName':  row['display_name'],
     }
-    return jsonify({'success': True, 'user': user})
+    session_token = _sign_session({
+        'accountId': row['id'],
+        'username': row['username'],
+        'role': row['role'],
+        'subRole': row['sub_role'],
+        'boundIdCard': row['bound_id_card'],
+        'boundGrade': row['bound_grade'],
+        'boundClass': row['bound_class'],
+        'ts': int(time.time()),
+    })
+    return jsonify({
+        'success': True,
+        'sessionToken': session_token,
+        'user': user,
+    })
 
 # ==================== 角色 & 用户绑定 ====================
 # user_bindings: 把钉钉 unionId 映射到角色 + 绑定的学生
@@ -944,12 +960,69 @@ def _ensure_meal_tables():
         parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
         date_start TEXT,
         date_end TEXT,
+        selection_deadline TEXT,
         image_path TEXT,
         notes TEXT,
         uploaded_by TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(week_number, parity)
     )''')
+    menu_cols = {r[1] for r in db.execute('PRAGMA table_info(weekly_menus)').fetchall()}
+    if 'selection_deadline' not in menu_cols:
+        db.execute('ALTER TABLE weekly_menus ADD COLUMN selection_deadline TEXT')
+    for column, column_type in (
+        ('import_batch_id', 'INTEGER'),
+        ('service_days_json', "TEXT DEFAULT '[]'"),
+    ):
+        if column not in menu_cols:
+            db.execute(f'ALTER TABLE weekly_menus ADD COLUMN {column} {column_type}')
+    db.execute('''CREATE TABLE IF NOT EXISTS menu_import_batches(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        week_number INTEGER NOT NULL,
+        parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
+        date_start TEXT,
+        date_end TEXT,
+        selection_deadline TEXT NOT NULL,
+        image_path TEXT NOT NULL,
+        excel_path TEXT NOT NULL,
+        parsed_json TEXT NOT NULL,
+        issues_json TEXT NOT NULL DEFAULT '[]',
+        status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','rejected')),
+        uploaded_by TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        published_at TEXT
+    )''')
+    db.execute('''CREATE TABLE IF NOT EXISTS nutrition_meal_plans(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_date DATE NOT NULL,
+        plan_type TEXT CHECK(plan_type IN ('A','B')) NOT NULL,
+        plan_name TEXT,
+        ingredients TEXT DEFAULT '[]',
+        calories_kcal REAL,
+        protein_g REAL,
+        fat_g REAL,
+        carbs_g REAL,
+        sugar_g REAL,
+        sodium_mg REAL,
+        fiber_g REAL,
+        allergens TEXT DEFAULT '[]',
+        suitable_tags TEXT DEFAULT '[]',
+        unsuitable_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(plan_date, plan_type)
+    )''')
+    meal_plan_cols = {r[1] for r in db.execute('PRAGMA table_info(nutrition_meal_plans)').fetchall()}
+    for column, column_type in (
+        ('weekly_menu_id', 'INTEGER'),
+        ('service_status', "TEXT DEFAULT 'normal'"),
+        ('menu_items', "TEXT DEFAULT '[]'"),
+        ('protein_pct', 'REAL'),
+        ('fat_pct', 'REAL'),
+        ('vitamin_c_mg', 'REAL'),
+        ('source_raw', 'TEXT'),
+    ):
+        if column not in meal_plan_cols:
+            db.execute(f'ALTER TABLE nutrition_meal_plans ADD COLUMN {column} {column_type}')
     # 学生 10 天选餐（家长一次性提交奇/偶周 5 天）
     db.execute('''CREATE TABLE IF NOT EXISTS meal_choices(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1004,6 +1077,15 @@ def _current_user():
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
         info = _verify_session(auth[7:])
+        if info and info.get('accountId'):
+            return {
+                'role': info.get('role') or 'none',
+                'sub_role': info.get('subRole'),
+                'bound_id_card': info.get('boundIdCard'),
+                'bound_grade': info.get('boundGrade'),
+                'bound_class': info.get('boundClass'),
+                'identity': f"account:{info.get('accountId')}",
+            }
         if info and info.get('unionId'):
             uid = info['unionId']
             b = _lookup_binding(uid)
@@ -1556,6 +1638,8 @@ def del_custom_student(id_str):
 
 # ==================== 社团抢课（活动岛） ====================
 
+CLUB_MAX_SIGNUPS_PER_STUDENT = 1
+
 # 简单分类规则：按关键字猜类别（art / sport / tech / subject）
 def _club_category(name):
     n = (name or '').lower()
@@ -1596,8 +1680,23 @@ def _club_emoji(name, cat):
     return {'sport':'⚽','tech':'🤖','art':'🎨','subject':'📚'}.get(cat,'🎯')
 
 def _ensure_club_signups_table():
-    """仅保存抢课结果；课程目录继续使用只读配置，避免污染历史 clubs 表。"""
+    """保存社团目录与抢课结果；静态目录仅作为首次初始化种子。"""
     db = get_db()
+    db.execute('''CREATE TABLE IF NOT EXISTS club_course_catalog(
+        id TEXT PRIMARY KEY,
+        semester TEXT NOT NULL,
+        campus TEXT NOT NULL,
+        name TEXT NOT NULL,
+        teacher TEXT NOT NULL,
+        weekday TEXT NOT NULL,
+        location TEXT NOT NULL,
+        capacity INTEGER NOT NULL CHECK(capacity > 0),
+        note TEXT DEFAULT '',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )''')
     db.execute('''CREATE TABLE IF NOT EXISTS club_signups(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
@@ -1609,7 +1708,56 @@ def _ensure_club_signups_table():
     )''')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_course ON club_signups(course_id, semester)')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_student ON club_signups(student_id, semester)')
+    for sort_order, course in enumerate(COURSES):
+        db.execute(
+            '''INSERT OR IGNORE INTO club_course_catalog(
+                   id, semester, campus, name, teacher, weekday, location,
+                   capacity, note, is_active, sort_order
+               ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)''',
+            (
+                course['id'], course['semester'], course['campus'],
+                course['name'], course['teacher'], course['weekday'],
+                course['location'], course['capacity'], course.get('note', ''),
+                sort_order,
+            )
+        )
     db.commit()
+
+
+def _club_courses_from_db(db, include_inactive=False):
+    where = '' if include_inactive else 'AND is_active = 1'
+    rows = db.execute(
+        f'''SELECT id, semester, campus, name, teacher, weekday, location,
+                   capacity, note, is_active
+            FROM club_course_catalog
+            WHERE semester = ? {where}
+            ORDER BY sort_order, created_at, id''',
+        (CLUB_SEMESTER,)
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _club_course_from_db(db, course_id, include_inactive=False):
+    active_clause = '' if include_inactive else 'AND is_active = 1'
+    row = db.execute(
+        f'''SELECT id, semester, campus, name, teacher, weekday, location,
+                   capacity, note, is_active
+            FROM club_course_catalog
+            WHERE id = ? AND semester = ? {active_clause}''',
+        (course_id, CLUB_SEMESTER)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def _club_general_teacher():
+    user = _current_user()
+    allowed = (
+        user['role'] == 'admin'
+        or (user['role'] == 'teacher' and user.get('sub_role') == 'general')
+    )
+    if not allowed:
+        return None, (jsonify({'error': '仅总务老师可管理社团'}), 403)
+    return user, None
 
 
 def _club_course_payload(course, count=0, include_counts=False):
@@ -1617,7 +1765,7 @@ def _club_course_payload(course, count=0, include_counts=False):
     capacity = course['capacity']
     payload = {
         key: value for key, value in course.items()
-        if key != 'capacity'
+        if key not in ('capacity', 'is_active')
     }
     payload.update({
         'remaining': max(0, capacity - count),
@@ -1652,7 +1800,11 @@ def list_clubs():
     """本学期可抢课程目录，附实时报名人数与剩余名额。"""
     _ensure_club_signups_table()
     db = get_db()
-    include_counts = _current_user()['role'] in ('teacher', 'admin')
+    user = _current_user()
+    include_counts = (
+        user['role'] == 'admin'
+        or (user['role'] == 'teacher' and user.get('sub_role') == 'general')
+    )
     counts = {
         row['course_id']: row['count']
         for row in db.execute(
@@ -1665,7 +1817,7 @@ def list_clubs():
     }
     items = []
     campus = (request.args.get('campus') or '').strip()
-    for course in COURSES:
+    for course in _club_courses_from_db(db):
         if campus and campus != course['campus']:
             continue
         items.append(_club_course_payload(
@@ -1676,18 +1828,135 @@ def list_clubs():
     return jsonify({'clubs': items, 'total': len(items), 'semester': CLUB_SEMESTER})
 
 
-@app.route('/api/clubs/<course_id>/signups', methods=['GET'])
-def list_club_signup_students(course_id):
-    """老师查看指定课程在当前学期的报名学生。"""
-    user = _current_user()
-    if user['role'] != 'teacher':
-        return jsonify({'error': '仅老师可查看社团报名名单'}), 403
-    course = COURSES_BY_ID.get(course_id)
-    if not course:
-        return jsonify({'error': '课程不存在或已下架'}), 404
+@app.route('/api/clubs', methods=['POST'])
+def create_club():
+    """总务老师新增本学期社团。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    fields = {
+        key: str(data.get(key) or '').strip()
+        for key in ('campus', 'name', 'teacher', 'weekday', 'location')
+    }
+    if any(not value for value in fields.values()):
+        return jsonify({'error': '校区、社团名称、负责老师、上课日和地点均为必填'}), 400
+    limits = {'campus': 30, 'name': 60, 'teacher': 60, 'weekday': 20, 'location': 80}
+    if any(len(fields[key]) > limit for key, limit in limits.items()):
+        return jsonify({'error': '社团信息过长，请缩短后重试'}), 400
+    try:
+        capacity = int(data.get('capacity'))
+    except (TypeError, ValueError):
+        return jsonify({'error': '人数上限必须是正整数'}), 400
+    if capacity < 1 or capacity > 500:
+        return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
+    note = str(data.get('note') or '').strip()
+    if len(note) > 120:
+        return jsonify({'error': '备注不能超过 120 个字符'}), 400
 
     _ensure_club_signups_table()
     db = get_db()
+    sort_order = db.execute(
+        '''SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+           FROM club_course_catalog WHERE semester = ?''',
+        (CLUB_SEMESTER,)
+    ).fetchone()['next_order']
+    course_id = f"custom-{secrets.token_hex(6)}"
+    db.execute(
+        '''INSERT INTO club_course_catalog(
+               id, semester, campus, name, teacher, weekday, location,
+               capacity, note, is_active, sort_order
+           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)''',
+        (
+            course_id, CLUB_SEMESTER, fields['campus'], fields['name'],
+            fields['teacher'], fields['weekday'], fields['location'],
+            capacity, note, sort_order,
+        )
+    )
+    db.commit()
+    course = _club_course_from_db(db, course_id)
+    return jsonify({
+        'success': True,
+        'message': '社团已新增',
+        'course': _club_course_payload(course, 0, include_counts=True),
+    }), 201
+
+
+@app.route('/api/clubs/<course_id>', methods=['PATCH'])
+def update_club_capacity(course_id):
+    """总务老师调整本学期社团人数上限。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    try:
+        capacity = int(data.get('capacity'))
+    except (TypeError, ValueError):
+        return jsonify({'error': '人数上限必须是正整数'}), 400
+    if capacity < 1 or capacity > 500:
+        return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
+
+    _ensure_club_signups_table()
+    db = get_db()
+    course = _club_course_from_db(db, course_id)
+    if not course:
+        return jsonify({'error': '社团不存在或已下架'}), 404
+    count = db.execute(
+        '''SELECT COUNT(*) AS count FROM club_signups
+           WHERE course_id = ? AND semester = ?''',
+        (course_id, CLUB_SEMESTER)
+    ).fetchone()['count']
+    if capacity < count:
+        return jsonify({
+            'error': f'人数上限不能低于当前已报名人数（{count} 人）'
+        }), 409
+    db.execute(
+        '''UPDATE club_course_catalog
+           SET capacity = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND semester = ? AND is_active = 1''',
+        (capacity, course_id, CLUB_SEMESTER)
+    )
+    db.commit()
+    course = _club_course_from_db(db, course_id)
+    return jsonify({
+        'success': True,
+        'message': '人数上限已更新',
+        'course': _club_course_payload(course, count, include_counts=True),
+    })
+
+
+@app.route('/api/clubs/<course_id>', methods=['DELETE'])
+def archive_club(course_id):
+    """总务老师下架社团，保留已有报名记录。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    _ensure_club_signups_table()
+    db = get_db()
+    course = _club_course_from_db(db, course_id)
+    if not course:
+        return jsonify({'error': '社团不存在或已下架'}), 404
+    db.execute(
+        '''UPDATE club_course_catalog
+           SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND semester = ?''',
+        (course_id, CLUB_SEMESTER)
+    )
+    db.commit()
+    return jsonify({'success': True, 'message': '社团已下架'})
+
+
+@app.route('/api/clubs/<course_id>/signups', methods=['GET'])
+def list_club_signup_students(course_id):
+    """总务老师查看指定课程在当前学期的报名学生。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    _ensure_club_signups_table()
+    db = get_db()
+    course = _club_course_from_db(db, course_id, include_inactive=True)
+    if not course:
+        return jsonify({'error': '社团不存在'}), 404
     student_table = _students_table(_resolve_campus())
     student_table_exists = db.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
@@ -1730,6 +1999,81 @@ def list_club_signup_students(course_id):
     })
 
 
+@app.route('/api/clubs/class-signups', methods=['GET'])
+def list_class_club_signups():
+    """班主任查看自己班每名学生在当前学期选择的社团。"""
+    user = _current_user()
+    if user['role'] != 'teacher' or user.get('sub_role') != 'class':
+        return jsonify({'error': '仅班主任可查看本班社团报名'}), 403
+    grade = user.get('bound_grade')
+    klass = user.get('bound_class')
+    if not grade or not klass:
+        return jsonify({'error': '班主任账号尚未绑定年级和班级'}), 403
+
+    _ensure_club_signups_table()
+    db = get_db()
+    student_table = _students_table(_resolve_campus())
+    table_exists = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,)
+    ).fetchone()
+    if not table_exists:
+        return jsonify({
+            'grade': grade,
+            'class': klass,
+            'semester': CLUB_SEMESTER,
+            'students': [],
+            'totalStudents': 0,
+            'signedStudents': 0,
+        })
+
+    rows = db.execute(
+        f'''SELECT s.id_card, s.name,
+                   c.id AS course_id, c.name AS course_name,
+                   c.teacher AS course_teacher, c.weekday,
+                   c.location, c.campus
+            FROM {student_table} s
+            LEFT JOIN club_signups cs
+              ON cs.student_id = s.id_card AND cs.semester = ?
+            LEFT JOIN club_course_catalog c
+              ON c.id = cs.course_id AND c.semester = cs.semester
+            WHERE s.grade_name = ? AND s.class_name = ?
+            ORDER BY s.name, s.id_card, c.weekday, c.name''',
+        (CLUB_SEMESTER, grade, klass)
+    ).fetchall()
+
+    students = []
+    by_student = {}
+    for row in rows:
+        student = by_student.get(row['id_card'])
+        if student is None:
+            student = {
+                'studentId': row['id_card'],
+                'name': row['name'] or row['id_card'],
+                'clubs': [],
+            }
+            by_student[row['id_card']] = student
+            students.append(student)
+        if row['course_id']:
+            student['clubs'].append({
+                'id': row['course_id'],
+                'name': row['course_name'],
+                'teacher': row['course_teacher'],
+                'weekday': row['weekday'],
+                'location': row['location'],
+                'campus': row['campus'],
+            })
+
+    return jsonify({
+        'grade': grade,
+        'class': klass,
+        'semester': CLUB_SEMESTER,
+        'students': students,
+        'totalStudents': len(students),
+        'signedStudents': sum(bool(student['clubs']) for student in students),
+    })
+
+
 @app.route('/api/clubs/signups', methods=['GET'])
 def club_signups():
     """当前绑定学生在本学期的抢课结果。"""
@@ -1747,10 +2091,14 @@ def club_signups():
     ).fetchall()
     signups = []
     for row in rows:
-        course = COURSES_BY_ID.get(row['course_id'])
+        course = _club_course_from_db(db, row['course_id'], include_inactive=True)
         if course:
             signups.append({**course, 'created_at': row['created_at']})
-    return jsonify({'signups': signups, 'semester': CLUB_SEMESTER})
+    return jsonify({
+        'signups': signups,
+        'semester': CLUB_SEMESTER,
+        'maxSignups': CLUB_MAX_SIGNUPS_PER_STUDENT,
+    })
 
 
 @app.route('/api/clubs/signups', methods=['POST'])
@@ -1761,14 +2109,14 @@ def create_club_signup():
         return error
     data = request.get_json(silent=True) or {}
     course_id = (data.get('course_id') or '').strip()
-    course = COURSES_BY_ID.get(course_id)
-    if not course:
-        return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
-
     _ensure_club_signups_table()
     db = get_db()
     try:
         db.execute('BEGIN IMMEDIATE')
+        course = _club_course_from_db(db, course_id)
+        if not course:
+            db.rollback()
+            return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
         exists = db.execute(
             '''SELECT 1 FROM club_signups
                WHERE student_id = ? AND course_id = ? AND semester = ?''',
@@ -1777,6 +2125,37 @@ def create_club_signup():
         if exists:
             db.rollback()
             return jsonify({'success': False, 'error': '该学生已报名这门课程'}), 409
+
+        conflict = db.execute(
+            '''SELECT c.name
+               FROM club_signups cs
+               JOIN club_course_catalog c
+                 ON c.id = cs.course_id AND c.semester = cs.semester
+               WHERE cs.student_id = ? AND cs.semester = ?
+                 AND c.weekday = ?
+               LIMIT 1''',
+            (user['bound_id_card'], CLUB_SEMESTER, course['weekday'])
+        ).fetchone()
+        if conflict:
+            db.rollback()
+            return jsonify({
+                'success': False,
+                'error': f"上课时间冲突：{course['weekday']}已报名“{conflict['name']}”",
+                'code': 'CLUB_TIME_CONFLICT',
+            }), 409
+
+        student_signup_count = db.execute(
+            '''SELECT COUNT(*) AS count FROM club_signups
+               WHERE student_id = ? AND semester = ?''',
+            (user['bound_id_card'], CLUB_SEMESTER)
+        ).fetchone()['count']
+        if student_signup_count >= CLUB_MAX_SIGNUPS_PER_STUDENT:
+            db.rollback()
+            return jsonify({
+                'success': False,
+                'error': f'每名学生最多报名 {CLUB_MAX_SIGNUPS_PER_STUDENT} 门社团',
+                'code': 'CLUB_LIMIT_REACHED',
+            }), 409
 
         count = db.execute(
             'SELECT COUNT(*) AS count FROM club_signups WHERE course_id = ? AND semester = ?',
@@ -1810,11 +2189,10 @@ def delete_club_signup(course_id):
     user, error = _club_signup_user()
     if error:
         return error
-    if course_id not in COURSES_BY_ID:
-        return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
-
     _ensure_club_signups_table()
     db = get_db()
+    if not _club_course_from_db(db, course_id, include_inactive=True):
+        return jsonify({'success': False, 'error': '课程不存在'}), 404
     cursor = db.execute(
         '''DELETE FROM club_signups
            WHERE student_id = ? AND course_id = ? AND semester = ?''',
@@ -2514,6 +2892,201 @@ import shutil
 UPLOAD_DIR = os.path.join(BASE_DIR, 'assets', 'menu-uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_IMAGE_EXTS = {'.png','.jpg','.jpeg','.gif','.webp','.bmp'}
+ALLOWED_MENU_EXCEL_EXTS = {'.xlsx'}
+
+
+def _menu_service_days(parsed):
+    return [
+        {
+            'plan_date': day.get('plan_date'),
+            'weekday': day.get('weekday'),
+            'weekday_label': day.get('weekday_label'),
+            'service_status': day.get('service_status', 'normal'),
+            'service_note': day.get('service_note', ''),
+        }
+        for day in (parsed.get('days') or [])
+        if day.get('plan_date')
+    ]
+
+
+def _decode_menu_row(row):
+    item = dict(row)
+    try:
+        item['service_days'] = json.loads(item.pop('service_days_json', '') or '[]')
+    except (TypeError, json.JSONDecodeError):
+        item['service_days'] = []
+    return item
+
+
+def _required_menu_days(row):
+    """返回该周真正需要选择的周一至周五；旧菜单保持五天兼容。"""
+    try:
+        days = json.loads(row['service_days_json'] or '[]')
+    except (KeyError, TypeError, json.JSONDecodeError):
+        days = []
+    if not days:
+        return {1, 2, 3, 4, 5}
+    return {
+        int(day['weekday']) for day in days
+        if day.get('service_status') == 'normal'
+        and str(day.get('weekday', '')).isdigit()
+        and 1 <= int(day['weekday']) <= 5
+    }
+
+
+def _menu_edit_number(value):
+    if value in (None, ''):
+        return None
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_edited_menu(parsed):
+    """清洗并重新校验页面编辑后的菜单草稿。"""
+    raw_days = parsed.get('days') if isinstance(parsed, dict) else None
+    issues = []
+    days = []
+    if not isinstance(raw_days, list) or not raw_days:
+        return {}, [{
+            'severity':'error', 'code':'missing_days', 'field':'days',
+            'message':'至少需要保留一个菜单日期',
+        }]
+
+    seen_dates = set()
+    for index, raw_day in enumerate(raw_days[:7]):
+        if not isinstance(raw_day, dict):
+            issues.append({
+                'severity':'error', 'code':'invalid_day', 'field':f'days.{index}',
+                'message':f'第 {index + 1} 个日期数据无效',
+            })
+            continue
+        plan_date = str(raw_day.get('plan_date') or '').strip()
+        try:
+            parsed_date = datetime.strptime(plan_date, '%Y-%m-%d').date()
+        except ValueError:
+            issues.append({
+                'severity':'error', 'code':'invalid_date', 'field':f'days.{index}.plan_date',
+                'message':f'第 {index + 1} 个日期格式无效',
+            })
+            continue
+        weekday = parsed_date.weekday() + 1
+        if weekday > 5:
+            issues.append({
+                'severity':'error', 'code':'unsupported_weekday', 'field':f'days.{index}.plan_date',
+                'plan_date':plan_date, 'message':f'{plan_date} 为周末，当前系统仅支持周一至周五',
+            })
+        if plan_date in seen_dates:
+            issues.append({
+                'severity':'error', 'code':'duplicate_date', 'field':f'days.{index}.plan_date',
+                'plan_date':plan_date, 'message':f'{plan_date} 重复出现',
+            })
+        seen_dates.add(plan_date)
+        service_status = raw_day.get('service_status')
+        if service_status not in ('normal', 'no_service'):
+            service_status = 'normal'
+        day = {
+            'plan_date': plan_date,
+            'weekday': weekday,
+            'weekday_label': f"周{'一二三四五六日'[weekday - 1]}",
+            'service_status': service_status,
+            'service_note': str(raw_day.get('service_note') or '').strip()[:200],
+            'meals': [],
+        }
+        if service_status == 'no_service':
+            day['service_note'] = day['service_note'] or '非供餐日'
+            days.append(day)
+            continue
+
+        raw_meals = raw_day.get('meals') if isinstance(raw_day.get('meals'), list) else []
+        by_type = {
+            str(meal.get('plan_type') or '').upper(): meal
+            for meal in raw_meals if isinstance(meal, dict)
+        }
+        for plan_type in ('A', 'B'):
+            raw_meal = by_type.get(plan_type, {})
+            plan_name = str(raw_meal.get('plan_name') or '').strip()[:500]
+            menu_items = raw_meal.get('menu_items')
+            if not isinstance(menu_items, list):
+                menu_items = re.split(r'[、，,；;\n]+', plan_name)
+            menu_items = [str(item).strip()[:100] for item in menu_items if str(item).strip()][:30]
+            ingredients = raw_meal.get('ingredients')
+            if not isinstance(ingredients, list):
+                ingredients = re.split(r'[、，,；;\n]+', str(ingredients or ''))
+            ingredients = [str(item).strip()[:100] for item in ingredients if str(item).strip()][:50]
+            calories = _menu_edit_number(raw_meal.get('calories_kcal'))
+            protein_pct = _menu_edit_number(raw_meal.get('protein_pct'))
+            fat_pct = _menu_edit_number(raw_meal.get('fat_pct'))
+            vitamin_c = _menu_edit_number(raw_meal.get('vitamin_c_mg'))
+            field_prefix = f'days.{index}.meal_{plan_type}'
+            if not plan_name or not menu_items:
+                issues.append({
+                    'severity':'error', 'code':'missing_meal_items', 'field':field_prefix,
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐必须填写菜品名称',
+                })
+            if calories is None:
+                issues.append({
+                    'severity':'warning', 'code':'missing_calories', 'field':f'{field_prefix}.calories_kcal',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐缺少热量',
+                })
+            elif not 200 <= calories <= 1500:
+                issues.append({
+                    'severity':'warning', 'code':'calories_outlier', 'field':f'{field_prefix}.calories_kcal',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐热量 {calories:g} kcal 需要确认',
+                })
+            for value, field, label in (
+                (protein_pct, 'protein_pct', '蛋白质'),
+                (fat_pct, 'fat_pct', '脂肪'),
+            ):
+                if value is not None and not 0 <= value <= 100:
+                    issues.append({
+                        'severity':'error', 'code':'percentage_outlier', 'field':f'{field_prefix}.{field}',
+                        'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐{label}为 {value:g}%，请输入 0—100',
+                    })
+            if vitamin_c is not None and vitamin_c < 0:
+                issues.append({
+                    'severity':'error', 'code':'negative_nutrition', 'field':f'{field_prefix}.vitamin_c_mg',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐维生素C不能为负数',
+                })
+            day['meals'].append({
+                'plan_type': plan_type,
+                'plan_name': plan_name,
+                'menu_items': menu_items,
+                'ingredients': ingredients,
+                'calories_kcal': calories,
+                'protein_pct': protein_pct,
+                'fat_pct': fat_pct,
+                'vitamin_c_mg': vitamin_c,
+            })
+        days.append(day)
+
+    days.sort(key=lambda item: item['plan_date'])
+    if days:
+        span = (datetime.strptime(days[-1]['plan_date'], '%Y-%m-%d').date()
+                - datetime.strptime(days[0]['plan_date'], '%Y-%m-%d').date()).days
+        if span > 6:
+            issues.append({
+                'severity':'error', 'code':'multiple_weeks_detected', 'field':'date_range',
+                'message':'一个周次只能保留一个自然周，请调整日期',
+            })
+    normal_count = sum(day['service_status'] == 'normal' for day in days)
+    if not normal_count:
+        issues.append({
+            'severity':'error', 'code':'no_service_days', 'field':'days',
+            'message':'至少需要保留一个正常供餐日',
+        })
+    cleaned = {
+        'title': str(parsed.get('title') or '菜单编辑结果').strip()[:200],
+        'sheet_name': parsed.get('sheet_name'),
+        'date_start': days[0]['plan_date'] if days else None,
+        'date_end': days[-1]['plan_date'] if days else None,
+        'days': days,
+        'issues': issues,
+        'service_day_count': normal_count,
+        'original_issues': parsed.get('original_issues') or [],
+    }
+    return cleaned, issues
 
 @app.route('/api/menus', methods=['GET'])
 def list_menus():
@@ -2525,14 +3098,14 @@ def list_menus():
         cur = db.execute('SELECT * FROM weekly_menus WHERE week_number = ? ORDER BY parity', (week,))
     else:
         cur = db.execute('SELECT * FROM weekly_menus ORDER BY week_number DESC LIMIT 40')
-    items = [dict(r) for r in cur.fetchall()]
+    items = [_decode_menu_row(r) for r in cur.fetchall()]
     return jsonify({'menus': items})
 
 @app.route('/api/menus/upload', methods=['POST'])
 def upload_menu():
-    """总务老师上传周菜单（图片 + 周次 + 日期区间）"""
+    """总务老师上传菜单。图片+Excel先生成草稿；旧调用保持直接发布兼容。"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] not in (None,'general')):
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
         return jsonify({'error': '仅总务老师/管理员可上传'}), 403
     if not _rate_check(f'menu:{u["identity"]}'):
         return jsonify({'error': f'上传过于频繁(>{UPLOAD_RATE_PER_MIN} 次/分钟),请稍后重试'}), 429
@@ -2547,18 +3120,92 @@ def upload_menu():
         parity = request.form.get('parity')
         date_start = request.form.get('dateStart')
         date_end = request.form.get('dateEnd')
+        selection_deadline = request.form.get('selectionDeadline')
         notes = request.form.get('notes','')
+        excel_file = request.files.get('excel')
     else:
         data = request.get_json() or {}
         week = data.get('week')
         parity = data.get('parity')
         date_start = data.get('dateStart')
         date_end = data.get('dateEnd')
+        selection_deadline = data.get('selectionDeadline')
         notes = data.get('notes','')
         f = None
+        excel_file = None
     if not week or parity not in ('odd','even'):
         return jsonify({'error':'week 与 parity(odd|even) 必填'}), 400
+    selection_deadline = (selection_deadline or '').strip()
+    if not selection_deadline:
+        return jsonify({'error':'selectionDeadline 必填'}), 400
+    try:
+        datetime.fromisoformat(selection_deadline.replace('Z', '+00:00'))
+    except ValueError:
+        return jsonify({'error':'selectionDeadline 格式无效'}), 400
     image_path = None
+    if excel_file:
+        excel_ext = os.path.splitext(excel_file.filename or '')[1].lower()
+        if excel_ext not in ALLOWED_MENU_EXCEL_EXTS:
+            return jsonify({'error':'菜单数据仅支持 .xlsx 文件'}), 400
+        excel_bytes = excel_file.read()
+        if not excel_bytes:
+            return jsonify({'error':'Excel 文件为空'}), 400
+        if len(excel_bytes) > 20 * 1024 * 1024:
+            return jsonify({'error':'Excel 文件不能超过 20MB'}), 400
+        try:
+            parsed = parse_menu_workbook(excel_bytes)
+        except MenuWorkbookError as exc:
+            return jsonify({'error':str(exc)}), 400
+
+        issues = list(parsed.get('issues') or [])
+        parsed_start = parsed.get('date_start')
+        parsed_end = parsed.get('date_end')
+        if date_start and parsed_start != date_start:
+            issues.append({
+                'severity':'warning', 'code':'date_start_mismatch', 'field':'date_start',
+                'message':f'原开始日期 {date_start} 已按Excel识别结果更新为 {parsed_start}',
+            })
+        if date_end and parsed_end != date_end:
+            issues.append({
+                'severity':'warning', 'code':'date_end_mismatch', 'field':'date_end',
+                'message':f'原结束日期 {date_end} 已按Excel识别结果更新为 {parsed_end}',
+            })
+        date_start, date_end = parsed_start, parsed_end
+        parsed['original_issues'] = list(issues)
+
+        stamp = int(time.time() * 1000)
+        digest = hashlib.sha256(excel_bytes).hexdigest()[:10]
+        image_name = f'menu_w{week}_{parity}_{stamp}{ext}'
+        excel_name = f'menu_w{week}_{parity}_{stamp}_{digest}.xlsx'
+        image_full_path = os.path.join(UPLOAD_DIR, image_name)
+        excel_full_path = os.path.join(UPLOAD_DIR, excel_name)
+        f.save(image_full_path)
+        with open(excel_full_path, 'wb') as output:
+            output.write(excel_bytes)
+        image_path = f'assets/menu-uploads/{image_name}'
+        excel_path = f'assets/menu-uploads/{excel_name}'
+        parsed['issues'] = issues
+
+        db = get_db()
+        cur = db.execute(
+            '''INSERT INTO menu_import_batches
+               (week_number, parity, date_start, date_end, selection_deadline,
+                image_path, excel_path, parsed_json, issues_json, uploaded_by)
+               VALUES(?,?,?,?,?,?,?,?,?,?)''',
+            (week, parity, date_start, date_end, selection_deadline,
+             image_path, excel_path, json.dumps(parsed, ensure_ascii=False),
+             json.dumps(issues, ensure_ascii=False), u['identity'])
+        )
+        db.commit()
+        return jsonify({
+            'draftId': cur.lastrowid,
+            'imagePath': image_path,
+            'preview': parsed,
+            'issues': issues,
+            'canPublish': not any(issue.get('severity') == 'error' for issue in issues),
+            'message':'Excel解析完成，请核对后确认发布',
+        })
+
     if f:
         safe_name = f'menu_w{week}_{parity}_{int(time.time())}{ext}'
         full_path = os.path.join(UPLOAD_DIR, safe_name)
@@ -2572,15 +3219,170 @@ def upload_menu():
             try: os.remove(os.path.join(BASE_DIR, old['image_path']))
             except Exception: pass
         if not image_path: image_path = old['image_path']
-        db.execute('UPDATE weekly_menus SET date_start=?, date_end=?, image_path=?, notes=?, uploaded_by=? WHERE id=?',
-                   (date_start, date_end, image_path, notes, u['identity'], old['id']))
+        db.execute('''UPDATE weekly_menus
+                      SET date_start=?, date_end=?, selection_deadline=?,
+                          image_path=?, notes=?, uploaded_by=?
+                      WHERE id=?''',
+                   (date_start, date_end, selection_deadline, image_path,
+                    notes, u['identity'], old['id']))
         new_id = old['id']
     else:
-        cur = db.execute('INSERT INTO weekly_menus(week_number, parity, date_start, date_end, image_path, notes, uploaded_by) VALUES(?,?,?,?,?,?,?)',
-                         (week, parity, date_start, date_end, image_path, notes, u['identity']))
+        cur = db.execute(
+            '''INSERT INTO weekly_menus
+               (week_number, parity, date_start, date_end, selection_deadline,
+                image_path, notes, uploaded_by)
+               VALUES(?,?,?,?,?,?,?,?)''',
+            (week, parity, date_start, date_end, selection_deadline,
+             image_path, notes, u['identity'])
+        )
         new_id = cur.lastrowid
     db.commit()
     return jsonify({'id': new_id, 'imagePath': image_path, 'message':'已保存'})
+
+
+@app.route('/api/menu-imports/<int:batch_id>', methods=['PUT'])
+def update_menu_import(batch_id):
+    """总务老师在不修改原 Excel 的情况下编辑并重新校验菜单草稿。"""
+    u = _current_user()
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师/管理员可编辑菜单草稿'}), 403
+    _ensure_meal_tables()
+    db = get_db()
+    batch = db.execute('SELECT * FROM menu_import_batches WHERE id=?', (batch_id,)).fetchone()
+    if not batch:
+        return jsonify({'error':'菜单解析草稿不存在'}), 404
+    if batch['status'] != 'draft':
+        return jsonify({'error':'已发布菜单不能再修改'}), 409
+    try:
+        stored = json.loads(batch['parsed_json'] or '{}')
+    except json.JSONDecodeError:
+        return jsonify({'error':'菜单解析草稿已损坏，请重新上传'}), 409
+    data = request.get_json(silent=True) or {}
+    edited = {
+        'title': data.get('title', stored.get('title')),
+        'sheet_name': stored.get('sheet_name'),
+        'days': data.get('days'),
+        'original_issues': stored.get('original_issues') or stored.get('issues') or [],
+    }
+    cleaned, issues = _validate_edited_menu(edited)
+    cleaned['edited_at'] = datetime.now().isoformat(timespec='seconds')
+    cleaned['edited_by'] = u['identity']
+    selection_deadline = str(data.get('selectionDeadline') or batch['selection_deadline'] or '').strip()
+    try:
+        datetime.fromisoformat(selection_deadline.replace('Z', '+00:00'))
+    except ValueError:
+        issues.append({
+            'severity':'error', 'code':'invalid_deadline', 'field':'selection_deadline',
+            'message':'家长选餐截止时间格式无效',
+        })
+    cleaned['issues'] = issues
+    db.execute(
+        '''UPDATE menu_import_batches
+           SET date_start=?, date_end=?, selection_deadline=?, parsed_json=?, issues_json=?
+           WHERE id=?''',
+        (cleaned.get('date_start'), cleaned.get('date_end'), selection_deadline,
+         json.dumps(cleaned, ensure_ascii=False), json.dumps(issues, ensure_ascii=False), batch_id)
+    )
+    db.commit()
+    return jsonify({
+        'draftId': batch_id,
+        'preview': cleaned,
+        'issues': issues,
+        'canPublish': not any(issue.get('severity') == 'error' for issue in issues),
+        'message':'草稿已保存并重新检查',
+    })
+
+
+@app.route('/api/menu-imports/<int:batch_id>/publish', methods=['POST'])
+def publish_menu_import(batch_id):
+    """总务老师确认解析结果后，原子发布周菜单和每日 A/B 餐。"""
+    u = _current_user()
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师/管理员可发布'}), 403
+    _ensure_meal_tables()
+    db = get_db()
+    batch = db.execute('SELECT * FROM menu_import_batches WHERE id=?', (batch_id,)).fetchone()
+    if not batch:
+        return jsonify({'error':'菜单解析草稿不存在'}), 404
+    if batch['status'] == 'published':
+        return jsonify({'error':'该菜单已经发布'}), 409
+    try:
+        issues = json.loads(batch['issues_json'] or '[]')
+        parsed = json.loads(batch['parsed_json'] or '{}')
+    except json.JSONDecodeError:
+        return jsonify({'error':'菜单解析草稿已损坏，请重新上传'}), 409
+    blocking = [issue for issue in issues if issue.get('severity') == 'error']
+    if blocking:
+        return jsonify({'error':'菜单草稿仍有必须修正的异常，暂不能发布', 'issues':blocking}), 409
+    service_days = _menu_service_days(parsed)
+    if not any(day.get('service_status') == 'normal' for day in service_days):
+        return jsonify({'error':'Excel中没有可发布的正常供餐日'}), 409
+
+    old = db.execute(
+        'SELECT id, image_path FROM weekly_menus WHERE week_number=? AND parity=?',
+        (batch['week_number'], batch['parity'])
+    ).fetchone()
+    try:
+        if old:
+            menu_id = old['id']
+            db.execute(
+                '''UPDATE weekly_menus
+                   SET date_start=?, date_end=?, selection_deadline=?, image_path=?,
+                       notes=?, uploaded_by=?, import_batch_id=?, service_days_json=?
+                   WHERE id=?''',
+                (batch['date_start'], batch['date_end'], batch['selection_deadline'],
+                 batch['image_path'], parsed.get('title', ''), u['identity'], batch_id,
+                 json.dumps(service_days, ensure_ascii=False), menu_id)
+            )
+        else:
+            cur = db.execute(
+                '''INSERT INTO weekly_menus
+                   (week_number, parity, date_start, date_end, selection_deadline,
+                    image_path, notes, uploaded_by, import_batch_id, service_days_json)
+                   VALUES(?,?,?,?,?,?,?,?,?,?)''',
+                (batch['week_number'], batch['parity'], batch['date_start'], batch['date_end'],
+                 batch['selection_deadline'], batch['image_path'], parsed.get('title', ''),
+                 u['identity'], batch_id, json.dumps(service_days, ensure_ascii=False))
+            )
+            menu_id = cur.lastrowid
+
+        parsed_dates = [day['plan_date'] for day in parsed.get('days', []) if day.get('plan_date')]
+        for plan_date in parsed_dates:
+            db.execute('DELETE FROM nutrition_meal_plans WHERE plan_date=?', (plan_date,))
+        for day in parsed.get('days', []):
+            if day.get('service_status') != 'normal':
+                continue
+            for meal in day.get('meals', []):
+                db.execute(
+                    '''INSERT INTO nutrition_meal_plans
+                       (plan_date, plan_type, plan_name, ingredients, calories_kcal,
+                        protein_g, fat_g, allergens, suitable_tags, weekly_menu_id,
+                        service_status, menu_items, protein_pct, fat_pct,
+                        vitamin_c_mg, source_raw)
+                       VALUES(?,?,?,?,?,NULL,NULL,'[]','[]',?,'normal',?,?,?,?,?)''',
+                    (day['plan_date'], meal['plan_type'], meal.get('plan_name'),
+                     json.dumps(meal.get('ingredients') or [], ensure_ascii=False),
+                     meal.get('calories_kcal'), menu_id,
+                     json.dumps(meal.get('menu_items') or [], ensure_ascii=False),
+                     meal.get('protein_pct'), meal.get('fat_pct'), meal.get('vitamin_c_mg'),
+                     json.dumps(meal, ensure_ascii=False))
+                )
+        db.execute(
+            "UPDATE menu_import_batches SET status='published', published_at=CURRENT_TIMESTAMP WHERE id=?",
+            (batch_id,)
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return jsonify({
+        'id': menu_id,
+        'publishedMeals': sum(
+            len(day.get('meals', [])) for day in parsed.get('days', [])
+            if day.get('service_status') == 'normal'
+        ),
+        'message':'菜单与餐食数据已发布',
+    })
 
 # ==================== 家长 / 老师批量选餐 ====================
 
@@ -2612,10 +3414,14 @@ def _find_meal_student(db, id_card):
 
 @app.route('/api/meal-choice-students', methods=['GET'])
 def list_meal_choice_students():
-    """老师/管理员获取可管理的学生最小名单。"""
+    """班主任仅获取自己绑定班级的学生最小名单。"""
     u = _current_user()
-    if u['role'] not in ('teacher', 'admin'):
+    if u['role'] != 'teacher' or u.get('sub_role') != 'class':
         return jsonify({'error':'无权限'}), 403
+    grade = u.get('bound_grade')
+    klass = u.get('bound_class')
+    if not grade or not klass:
+        return jsonify({'error':'班主任账号尚未绑定年级和班级'}), 403
     _ensure_meal_tables()
     db = get_db()
     students = {}
@@ -2623,7 +3429,10 @@ def list_meal_choice_students():
     if table:
         rows = db.execute(
             f'''SELECT id_card, name, grade_name, class_name
-                FROM {table} ORDER BY grade_name, class_name, name'''
+                FROM {table}
+                WHERE grade_name=? AND class_name=?
+                ORDER BY name''',
+            (grade, klass),
         ).fetchall()
         for row in rows:
             students[row['id_card']] = {
@@ -2636,7 +3445,9 @@ def list_meal_choice_students():
         for row in db.execute(
             '''SELECT id_card, name, grade_name, class_name
                FROM meal_choices
+               WHERE grade_name=? AND class_name=?
                GROUP BY id_card, name, grade_name, class_name'''
+            , (grade, klass)
         ).fetchall():
             students[row['id_card']] = {
                 'idCard': row['id_card'],
@@ -2653,26 +3464,23 @@ def list_meal_choice_students():
 @app.route('/api/meal-choices', methods=['POST'])
 def submit_meal_choices():
     """
-    家长为绑定孩子提交，老师/管理员可为任意真实学生提交或修改 10 天选餐。
+    家长为绑定孩子提交或在截止前修改 10 天选餐。
     Body: {
       studentIdCard, week_odd, week_even,
       choices: { odd: {1:'A',2:'B',...,5:'A'}, even: {...} }
     }
     """
     u = _current_user()
-    if u['role'] not in ('parent', 'teacher', 'admin'):
-        return jsonify({'error':'仅家长、老师或管理员可提交选餐'}), 403
+    if u['role'] != 'parent':
+        return jsonify({'error':'仅学生家长可提交选餐'}), 403
 
     data = request.get_json() or {}
     student_name = data.get('studentName')   # demo 模式下没真实 id_card 时用 name
-    if u['role'] == 'parent':
-        id_card = u['bound_id_card']
-        if not id_card and not DISABLE_DEMO:
-            return jsonify({'error':'家长账号尚未绑定学生'}), 403
-        if not id_card:
-            id_card = data.get('studentIdCard')
-    else:
-        id_card = (data.get('studentIdCard') or '').strip()
+    id_card = u['bound_id_card']
+    if not id_card and not DISABLE_DEMO:
+        return jsonify({'error':'家长账号尚未绑定学生'}), 403
+    if not id_card:
+        id_card = data.get('studentIdCard')
     if not id_card and not student_name:
         return jsonify({'error':'studentIdCard 或 studentName 必填'}), 400
     week_odd = data.get('week_odd')
@@ -2687,7 +3495,7 @@ def submit_meal_choices():
         return jsonify({'error':'week_odd 与 week_even 必须是整数'}), 400
 
     normalized_choices = {}
-    required_days = {1, 2, 3, 4, 5}
+    allowed_days = {1, 2, 3, 4, 5}
     for parity in ('odd', 'even'):
         normalized_choices[parity] = {}
         for day, choice in (choices.get(parity) or {}).items():
@@ -2695,18 +3503,52 @@ def submit_meal_choices():
                 day = int(day)
             except (TypeError, ValueError):
                 return jsonify({'error':'选餐日期必须为周一至周五'}), 400
-            if day not in required_days or choice not in ('A', 'B'):
+            if day not in allowed_days or choice not in ('A', 'B'):
                 return jsonify({'error':'选餐内容无效'}), 400
             normalized_choices[parity][day] = choice
-        if set(normalized_choices[parity]) != required_days:
-            return jsonify({'error':'请完整选择奇偶周共 10 天的餐食'}), 400
 
     _ensure_meal_tables()
     db = get_db()
+    menu_rows = db.execute(
+        '''SELECT week_number, parity, selection_deadline, service_days_json
+           FROM weekly_menus
+           WHERE (week_number=? AND parity='odd')
+              OR (week_number=? AND parity='even')''',
+        (week_odd, week_even)
+    ).fetchall()
+    menu_by_parity = {row['parity']: row for row in menu_rows}
+    if set(menu_by_parity) != {'odd', 'even'}:
+        return jsonify({'error':'本轮两周菜单尚未完整发布，暂不能提交选餐'}), 409
+    for parity in ('odd', 'even'):
+        menu_row = menu_by_parity[parity]
+        required_days = _required_menu_days(menu_row)
+        if not required_days:
+            return jsonify({'error':f'{"奇数周" if parity == "odd" else "偶数周"}没有可选供餐日'}), 409
+        if set(normalized_choices[parity]) != required_days:
+            return jsonify({
+                'error':'请完整选择本轮所有正常供餐日的餐食',
+                'parity': parity,
+                'requiredDays': sorted(required_days),
+            }), 400
+        deadline_text = (menu_row['selection_deadline'] or '').strip()
+        if not deadline_text:
+            return jsonify({'error':'本轮选餐截止时间尚未发布，暂不能提交选餐'}), 409
+        try:
+            deadline = datetime.fromisoformat(
+                deadline_text.replace('Z', '+00:00')
+            )
+        except ValueError:
+            return jsonify({'error':'本轮选餐截止时间配置无效'}), 409
+        now = datetime.now(deadline.tzinfo) if deadline.tzinfo else datetime.now()
+        if now >= deadline:
+            return jsonify({
+                'error': '本轮选餐已截止，无法提交或修改',
+                'deadline': deadline_text,
+            }), 409
     if id_card:
         s = _find_meal_student(db, id_card)
         if not s:
-            if u['role'] in ('teacher', 'admin') or DISABLE_DEMO:
+            if DISABLE_DEMO:
                 return jsonify({'error':'学生不存在'}), 404
             # 没找到真实学生，用前端传的 name + 占位 demo 班级
             s = {'name': student_name or '未知', 'grade_name': data.get('grade') or 'demo', 'class_name': data.get('class') or 'demo'}
@@ -2716,15 +3558,6 @@ def submit_meal_choices():
         s = {'name': student_name, 'grade_name': data.get('grade') or 'demo', 'class_name': data.get('class') or 'demo'}
     # sqlite3.Row 不能 dict 操作；s 可能是 Row 也可能是 dict
     sname = s['name']; sgrade = s['grade_name']; sclass = s['class_name']
-    if u['role'] in ('teacher', 'admin'):
-        # “修改”同一学生同一周次时替换原记录，避免重复追加出多份答案。
-        db.execute(
-            '''DELETE FROM meal_choices
-               WHERE id_card = ?
-                 AND ((week_number = ? AND parity = 'odd')
-                   OR (week_number = ? AND parity = 'even'))''',
-            (id_card, week_odd, week_even)
-        )
     saved = 0
     for parity, week in (('odd', week_odd), ('even', week_even)):
         for wd, c in normalized_choices[parity].items():
@@ -2740,8 +3573,10 @@ def get_student_meal_choices(id_card):
     """学生（家长）查自己的选餐历史；id_card 也可以是 demo 模式下的"name:陈思麟"形式"""
     _ensure_meal_tables()
     db = get_db()
+    u = _current_user()
+    if u['role'] != 'parent':
+        return jsonify({'error':'无权限'}), 403
     if id_card.startswith('name:'):
-        u = _current_user()
         if DISABLE_DEMO or u['role'] != 'parent' or u.get('bound_id_card'):
             return jsonify({'error':'无权限'}), 403
         # 仅显式 demo 模式可按姓名查；正式账号必须使用绑定学籍号
@@ -2775,16 +3610,14 @@ def list_meal_choices():
             params.append(bound_id)
         else:
             return jsonify({'choices': [], 'total': 0})
-    elif u['role'] in ('teacher', 'admin'):
+    elif u['role'] == 'teacher' and u.get('sub_role') == 'class':
+        if not u.get('bound_grade') or not u.get('bound_class'):
+            return jsonify({'error':'班主任账号尚未绑定年级和班级'}), 403
+        where.extend(['grade_name = ?', 'class_name = ?'])
+        params.extend([u['bound_grade'], u['bound_class']])
         if week:
             where.append('week_number = ?')
             params.append(int(week))
-        if grade:
-            where.append('grade_name = ?')
-            params.append(grade)
-        if klass:
-            where.append('class_name = ?')
-            params.append(klass)
         if name:
             where.append('name = ?')
             params.append(name)
@@ -2804,6 +3637,9 @@ def list_meal_choices():
 @app.route('/api/grade-counts', methods=['GET'])
 def grade_counts():
     """各年级 / 全校 学生人数"""
+    u = _current_user()
+    if u['role'] not in ('teacher', 'admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看全校年级统计'}), 403
     db = get_db()
     rows = db.execute('SELECT grade_name, COUNT(*) AS cnt FROM students GROUP BY grade_name ORDER BY grade_name').fetchall()
     items = [{'grade': r['grade_name'] or '-', 'count': r['cnt']} for r in rows]
@@ -2927,8 +3763,8 @@ def class_fitness_stats():
 def stats_class_summary():
     """班级粒度 A/B 餐人数汇总（按 grade 过滤；不指定则全部）"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin'):
-        return jsonify({'error':'无权限'}), 403
+    if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看全校班级汇总'}), 403
     _ensure_meal_tables()
     db = get_db()
     grade = request.args.get('grade')
@@ -2962,8 +3798,8 @@ def stats_class_summary():
 def stats_grade():
     """总务老师：各年级各周一~周五 A / B 餐人数汇总。可指定 week_number"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin'):
-        return jsonify({'error':'无权限'}), 403
+    if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师可查看年级选餐统计'}), 403
     _ensure_meal_tables()
     db = get_db()
     week = request.args.get('week', type=int)
@@ -2991,6 +3827,8 @@ def stats_class():
     u = _current_user()
     if u['role'] not in ('teacher','admin'):
         return jsonify({'error':'无权限'}), 403
+    if u['role'] == 'teacher' and u.get('sub_role') not in ('general', 'class'):
+        return jsonify({'error':'当前老师账号未配置营养配餐权限'}), 403
     _ensure_meal_tables()
     grade = request.args.get('grade') or u['bound_grade']
     klass = request.args.get('class') or u['bound_class']
@@ -2999,36 +3837,101 @@ def stats_class():
         grade = u['bound_grade']
         klass = u['bound_class']
     if not grade or not klass:
-        return jsonify({'error':'grade & class 必填（班主任无须填，由账号决定）'}), 400
+        return jsonify({'error':'班主任账号尚未绑定年级和班级'}), 403
     week_odd = request.args.get('week_odd', type=int)
     week_even = request.args.get('week_even', type=int)
+    if not week_odd or not week_even:
+        return jsonify({'error':'week_odd 与 week_even 必填'}), 400
+    if week_even != week_odd + 1:
+        return jsonify({'error':'请选择连续的奇数周和偶数周'}), 400
     db = get_db()
+    menu_rows = db.execute(
+        '''SELECT parity, service_days_json FROM weekly_menus
+           WHERE (week_number=? AND parity='odd')
+              OR (week_number=? AND parity='even')''',
+        (week_odd, week_even),
+    ).fetchall()
+    required_by_parity = {'odd': {1,2,3,4,5}, 'even': {1,2,3,4,5}}
+    for menu_row in menu_rows:
+        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row)
+    required_keys = {
+        f'{parity}_{weekday}'
+        for parity, weekdays in required_by_parity.items()
+        for weekday in weekdays
+    }
+    required_count = len(required_keys)
     # 拿到该班所有学生
-    students = db.execute('SELECT id_card, name FROM students WHERE grade_name=? AND class_name=? ORDER BY name', (grade, klass)).fetchall()
+    student_table = _meal_student_source(db)
+    if student_table:
+        students = db.execute(
+            f'''SELECT id_card, name FROM {student_table}
+                WHERE grade_name=? AND class_name=? ORDER BY name''',
+            (grade, klass),
+        ).fetchall()
+    else:
+        students = db.execute(
+            '''SELECT id_card, name FROM meal_choices
+               WHERE grade_name=? AND class_name=?
+               GROUP BY id_card, name ORDER BY name''',
+            (grade, klass),
+        ).fetchall()
     # 拿到该班的选餐记录
     sql = 'SELECT id_card, week_number, parity, weekday, choice FROM meal_choices WHERE grade_name=? AND class_name=?'
     params = [grade, klass]
+    week_filters = []
     if week_odd:
-        sql += ' AND ((parity=\'odd\' AND week_number=?) OR parity=\'even\')'
+        week_filters.append("(parity='odd' AND week_number=?)")
         params.append(week_odd)
     if week_even:
-        sql += ' AND ((parity=\'even\' AND week_number=?) OR parity=\'odd\')'
+        week_filters.append("(parity='even' AND week_number=?)")
         params.append(week_even)
+    if week_filters:
+        sql += ' AND (' + ' OR '.join(week_filters) + ')'
     cur = db.execute(sql, params)
     by_student = {}
     for r in cur.fetchall():
         by_student.setdefault(r['id_card'], {})[f"{r['parity']}_{r['weekday']}"] = r['choice']
     rows = []
+    a_count = 0
+    b_count = 0
+    complete_count = 0
     for s in students:
+        choices = by_student.get(s['id_card'], {})
+        required_choices = {key: value for key, value in choices.items() if key in required_keys}
+        student_a_count = sum(1 for value in required_choices.values() if value == 'A')
+        student_b_count = sum(1 for value in required_choices.values() if value == 'B')
+        selected_count = student_a_count + student_b_count
+        a_count += student_a_count
+        b_count += student_b_count
+        if selected_count == required_count:
+            complete_count += 1
         row = {
             'idCard': s['id_card'],
-            'displayName': mask_name(s['name']),
+            'displayName': s['name'],
             'grade': grade,
             'class': klass,
+            'selectedCount': selected_count,
+            'missingCount': required_count - selected_count,
+            'requiredCount': required_count,
+            'isComplete': selected_count == required_count,
         }
-        row.update(by_student.get(s['id_card'], {}))
+        row.update(choices)
         rows.append(row)
-    return jsonify({'students': rows, 'grade': grade, 'class': klass})
+    student_count = len(rows)
+    return jsonify({
+        'students': rows,
+        'grade': grade,
+        'class': klass,
+        'weekOdd': week_odd,
+        'weekEven': week_even,
+        'summary': {
+            'studentCount': student_count,
+            'completeCount': complete_count,
+            'incompleteCount': student_count - complete_count,
+            'aCount': a_count,
+            'bCount': b_count,
+        },
+    })
 
 # ==================== Excel 导出（班主任 + 总务）====================
 from io import BytesIO
@@ -3167,10 +4070,10 @@ def export_class_fitness():
 def export_class_meal():
     """班主任：本班 10 天选餐 → Excel"""
     u = _current_user()
-    if u['role'] not in ('teacher','admin'):
+    if u['role'] != 'teacher' or u.get('sub_role') != 'class':
         return jsonify({'error':'无权限'}), 403
-    grade = request.args.get('grade') or u.get('bound_grade')
-    klass = request.args.get('class') or u.get('bound_class')
+    grade = u.get('bound_grade')
+    klass = u.get('bound_class')
     week_odd = request.args.get('week_odd', type=int) or 13
     week_even = request.args.get('week_even', type=int) or 14
     if not grade or not klass:
@@ -3178,9 +4081,14 @@ def export_class_meal():
     db = get_db()
     students = db.execute('SELECT id_card, name FROM students WHERE grade_name=? AND class_name=? ORDER BY name',
                           (grade, klass)).fetchall()
-    picks = db.execute('''SELECT id_card, week_number, parity, weekday, choice
-                          FROM meal_choices WHERE grade_name=? AND class_name=?''',
-                       (grade, klass)).fetchall()
+    picks = db.execute(
+        '''SELECT id_card, week_number, parity, weekday, choice
+           FROM meal_choices
+           WHERE grade_name=? AND class_name=?
+             AND ((week_number=? AND parity='odd')
+               OR (week_number=? AND parity='even'))''',
+        (grade, klass, week_odd, week_even),
+    ).fetchall()
     by_stu = {}
     for r in picks:
         by_stu.setdefault(r['id_card'], {})[f"{r['parity']}_{r['weekday']}"] = r['choice']

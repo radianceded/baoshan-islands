@@ -112,6 +112,7 @@
     padding:5px 14px 4px;border-radius:14px;
     box-shadow: 0 3px 0 #8C5028, 0 8px 16px rgba(0,0,0,0.22);
     position:relative;white-space:nowrap;text-align:center;
+    transform:translate(-50%,-50%);
   }
   .signpost::before{
     content:'';position:absolute;width:4px;height:18px;background:#5A3712;
@@ -352,6 +353,9 @@
   /* 切换身份小按钮 */
   .role-switch{padding:6px 12px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.15);color:#fff;font-weight:800;font-size:11.5px;cursor:pointer}
   .role-switch:hover{background:rgba(255,255,255,0.25)}
+
+  /* 新地图已内置主页标题；岛名继续使用原招牌与点击转场 */
+  .title-wrap{display:none}
 </style>
 </head>
 <body>
@@ -450,25 +454,25 @@
 </div>
 
 <div class="stage">
-  <img class="islands-bg" src="assets/islands.png" alt="学习群岛">
+  <img class="islands-bg" src="assets/islands-homepage-v2.png?v=20260804" alt="学习群岛">
 
   <!-- 招牌点击区（上排：档案、活动；下排：健康、阅读、成就） -->
-  <div class="hotspot" style="left:16%; top:33%;" onclick="enterIsland('growth', '成长岛', '🩷')">
+  <div class="hotspot" style="left:22%; top:33%;" onclick="enterIsland('growth', '成长岛', '🩷')">
     <div class="signpost"><span class="pin"></span>成长岛<span class="desc">领取奖状</span></div>
   </div>
-  <div class="hotspot" style="left:50%; top:31%;" onclick="enterIsland('interest', '兴趣岛', '❤️')">
+  <div class="hotspot" style="left:52%; top:33%;" onclick="enterIsland('interest', '兴趣岛', '❤️')">
     <div class="signpost"><span class="pin"></span>兴趣岛<span class="desc">社团+才艺</span></div>
   </div>
-  <div class="hotspot" style="left:84%; top:33%;" onclick="enterIsland('art', '审美岛', '💜')">
+  <div class="hotspot" style="left:82%; top:33%;" onclick="enterIsland('art', '审美岛', '💜')">
     <div class="signpost"><span class="pin"></span>审美岛<span class="desc">美术馆+影音</span></div>
   </div>
-  <div class="hotspot" style="left:7%; top:88%;" onclick="enterIsland('health', '健康岛', '💚')">
+  <div class="hotspot" style="left:17%; top:81%;" onclick="enterIsland('health', '健康岛', '💚')">
     <div class="signpost"><span class="pin"></span>健康岛<span class="desc">体能+午餐</span></div>
   </div>
-  <div class="hotspot" style="left:40%; top:90%;" onclick="enterIsland('literacy', '素养岛', '💙')">
+  <div class="hotspot" style="left:49%; top:81%;" onclick="enterIsland('literacy', '素养岛', '💙')">
     <div class="signpost"><span class="pin"></span>素养岛<span class="desc">阅读+朗读</span></div>
   </div>
-  <div class="hotspot" style="left:73%; top:88%;" onclick="enterIsland('labor', '劳动岛', '🧡')">
+  <div class="hotspot" style="left:81%; top:81%;" onclick="enterIsland('labor', '劳动岛', '🧡')">
     <div class="signpost"><span class="pin"></span>劳动岛<span class="desc">劳动实践</span></div>
   </div>
 

@@ -13,7 +13,11 @@ try:
 except ImportError:
     import security as sec
 
-DB_PATH = os.environ.get("NUTRITION_DB_PATH", os.path.join(os.path.dirname(__file__), "nutrition.db"))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.environ.get(
+    "NUTRITION_DB_PATH",
+    os.path.join(PROJECT_ROOT, "student_data.db"),
+)
 
 
 def get_db() -> sqlite3.Connection:
@@ -131,6 +135,20 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_audit_logs_type ON nutrition_audit_logs(target_type);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON nutrition_audit_logs(created_at);
     """)
+    meal_plan_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(nutrition_meal_plans)").fetchall()
+    }
+    for column, column_type in (
+        ("weekly_menu_id", "INTEGER"),
+        ("service_status", "TEXT DEFAULT 'normal'"),
+        ("menu_items", "TEXT DEFAULT '[]'"),
+        ("protein_pct", "REAL"),
+        ("fat_pct", "REAL"),
+        ("vitamin_c_mg", "REAL"),
+        ("source_raw", "TEXT"),
+    ):
+        if column not in meal_plan_cols:
+            conn.execute(f"ALTER TABLE nutrition_meal_plans ADD COLUMN {column} {column_type}")
     conn.commit()
 
     # 插入默认规则（如果不存在）
@@ -595,6 +613,8 @@ def list_recommendations(plan_date=None, confirmed=None, recommended_plan=None,
     params["offset"] = (page - 1) * page_size
     rows = conn.execute(f"""
         SELECT nr.*, nc.child_code, nc.display_name, nc.age, nc.gender,
+               nc.height_cm, nc.weight_kg, nc.bmi, nc.allergies,
+               nc.dietary_restrictions, nc.special_needs, nc.doctor_notes,
                nc.data_status, nc.campus
         FROM nutrition_recommendations nr
         JOIN nutrition_children nc ON nr.child_id = nc.id
