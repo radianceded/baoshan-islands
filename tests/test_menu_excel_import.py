@@ -167,17 +167,51 @@ class MenuImportApiTests(unittest.TestCase):
         self.assertIsNone(meals[0]["protein_g"])
         self.assertEqual(json.loads(meals[0]["menu_items"]), ["米饭A", "鸡肉时蔬A"])
 
-    def test_blocking_issue_prevents_publish(self):
+    def test_teacher_can_fix_blocking_issue_in_draft_without_editing_excel(self):
         upload = self._upload(build_menu_workbook(fat_value=3.57))
 
         self.assertEqual(upload.status_code, 200)
         draft = upload.get_json()
         self.assertFalse(draft["canPublish"])
+        blocked = self.client.post(
+            f"/api/menu-imports/{draft['draftId']}/publish",
+            headers=self.headers,
+        )
+        self.assertEqual(blocked.status_code, 409)
+
+        edited_days = draft["preview"]["days"]
+        for day in edited_days:
+            for meal in day["meals"]:
+                meal["fat_pct"] = 28
+        saved = self.client.put(
+            f"/api/menu-imports/{draft['draftId']}",
+            json={
+                "title": draft["preview"]["title"],
+                "selectionDeadline": "2099-12-31T20:00",
+                "days": edited_days,
+            },
+            headers=self.headers,
+        )
+        self.assertEqual(saved.status_code, 200)
+        self.assertTrue(saved.get_json()["canPublish"])
+        self.assertEqual(saved.get_json()["issues"], [])
+
         publish = self.client.post(
             f"/api/menu-imports/{draft['draftId']}/publish",
             headers=self.headers,
         )
-        self.assertEqual(publish.status_code, 409)
+        self.assertEqual(publish.status_code, 200)
+        self.assertEqual(publish.get_json()["publishedMeals"], 10)
+
+    def test_parent_cannot_edit_menu_draft(self):
+        draft = self._upload(build_menu_workbook()).get_json()
+        response = self.client.put(
+            f"/api/menu-imports/{draft['draftId']}",
+            json={"days": draft["preview"]["days"]},
+            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        )
+
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(self.client.get("/api/menus").get_json()["menus"], [])
 
     def test_parent_submits_only_published_service_days(self):

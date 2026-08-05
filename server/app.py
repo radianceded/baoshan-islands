@@ -2933,6 +2933,161 @@ def _required_menu_days(row):
         and 1 <= int(day['weekday']) <= 5
     }
 
+
+def _menu_edit_number(value):
+    if value in (None, ''):
+        return None
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_edited_menu(parsed):
+    """清洗并重新校验页面编辑后的菜单草稿。"""
+    raw_days = parsed.get('days') if isinstance(parsed, dict) else None
+    issues = []
+    days = []
+    if not isinstance(raw_days, list) or not raw_days:
+        return {}, [{
+            'severity':'error', 'code':'missing_days', 'field':'days',
+            'message':'至少需要保留一个菜单日期',
+        }]
+
+    seen_dates = set()
+    for index, raw_day in enumerate(raw_days[:7]):
+        if not isinstance(raw_day, dict):
+            issues.append({
+                'severity':'error', 'code':'invalid_day', 'field':f'days.{index}',
+                'message':f'第 {index + 1} 个日期数据无效',
+            })
+            continue
+        plan_date = str(raw_day.get('plan_date') or '').strip()
+        try:
+            parsed_date = datetime.strptime(plan_date, '%Y-%m-%d').date()
+        except ValueError:
+            issues.append({
+                'severity':'error', 'code':'invalid_date', 'field':f'days.{index}.plan_date',
+                'message':f'第 {index + 1} 个日期格式无效',
+            })
+            continue
+        weekday = parsed_date.weekday() + 1
+        if weekday > 5:
+            issues.append({
+                'severity':'error', 'code':'unsupported_weekday', 'field':f'days.{index}.plan_date',
+                'plan_date':plan_date, 'message':f'{plan_date} 为周末，当前系统仅支持周一至周五',
+            })
+        if plan_date in seen_dates:
+            issues.append({
+                'severity':'error', 'code':'duplicate_date', 'field':f'days.{index}.plan_date',
+                'plan_date':plan_date, 'message':f'{plan_date} 重复出现',
+            })
+        seen_dates.add(plan_date)
+        service_status = raw_day.get('service_status')
+        if service_status not in ('normal', 'no_service'):
+            service_status = 'normal'
+        day = {
+            'plan_date': plan_date,
+            'weekday': weekday,
+            'weekday_label': f"周{'一二三四五六日'[weekday - 1]}",
+            'service_status': service_status,
+            'service_note': str(raw_day.get('service_note') or '').strip()[:200],
+            'meals': [],
+        }
+        if service_status == 'no_service':
+            day['service_note'] = day['service_note'] or '非供餐日'
+            days.append(day)
+            continue
+
+        raw_meals = raw_day.get('meals') if isinstance(raw_day.get('meals'), list) else []
+        by_type = {
+            str(meal.get('plan_type') or '').upper(): meal
+            for meal in raw_meals if isinstance(meal, dict)
+        }
+        for plan_type in ('A', 'B'):
+            raw_meal = by_type.get(plan_type, {})
+            plan_name = str(raw_meal.get('plan_name') or '').strip()[:500]
+            menu_items = raw_meal.get('menu_items')
+            if not isinstance(menu_items, list):
+                menu_items = re.split(r'[、，,；;\n]+', plan_name)
+            menu_items = [str(item).strip()[:100] for item in menu_items if str(item).strip()][:30]
+            ingredients = raw_meal.get('ingredients')
+            if not isinstance(ingredients, list):
+                ingredients = re.split(r'[、，,；;\n]+', str(ingredients or ''))
+            ingredients = [str(item).strip()[:100] for item in ingredients if str(item).strip()][:50]
+            calories = _menu_edit_number(raw_meal.get('calories_kcal'))
+            protein_pct = _menu_edit_number(raw_meal.get('protein_pct'))
+            fat_pct = _menu_edit_number(raw_meal.get('fat_pct'))
+            vitamin_c = _menu_edit_number(raw_meal.get('vitamin_c_mg'))
+            field_prefix = f'days.{index}.meal_{plan_type}'
+            if not plan_name or not menu_items:
+                issues.append({
+                    'severity':'error', 'code':'missing_meal_items', 'field':field_prefix,
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐必须填写菜品名称',
+                })
+            if calories is None:
+                issues.append({
+                    'severity':'warning', 'code':'missing_calories', 'field':f'{field_prefix}.calories_kcal',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐缺少热量',
+                })
+            elif not 200 <= calories <= 1500:
+                issues.append({
+                    'severity':'warning', 'code':'calories_outlier', 'field':f'{field_prefix}.calories_kcal',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐热量 {calories:g} kcal 需要确认',
+                })
+            for value, field, label in (
+                (protein_pct, 'protein_pct', '蛋白质'),
+                (fat_pct, 'fat_pct', '脂肪'),
+            ):
+                if value is not None and not 0 <= value <= 100:
+                    issues.append({
+                        'severity':'error', 'code':'percentage_outlier', 'field':f'{field_prefix}.{field}',
+                        'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐{label}为 {value:g}%，请输入 0—100',
+                    })
+            if vitamin_c is not None and vitamin_c < 0:
+                issues.append({
+                    'severity':'error', 'code':'negative_nutrition', 'field':f'{field_prefix}.vitamin_c_mg',
+                    'plan_date':plan_date, 'message':f'{plan_date} {plan_type}餐维生素C不能为负数',
+                })
+            day['meals'].append({
+                'plan_type': plan_type,
+                'plan_name': plan_name,
+                'menu_items': menu_items,
+                'ingredients': ingredients,
+                'calories_kcal': calories,
+                'protein_pct': protein_pct,
+                'fat_pct': fat_pct,
+                'vitamin_c_mg': vitamin_c,
+            })
+        days.append(day)
+
+    days.sort(key=lambda item: item['plan_date'])
+    if days:
+        span = (datetime.strptime(days[-1]['plan_date'], '%Y-%m-%d').date()
+                - datetime.strptime(days[0]['plan_date'], '%Y-%m-%d').date()).days
+        if span > 6:
+            issues.append({
+                'severity':'error', 'code':'multiple_weeks_detected', 'field':'date_range',
+                'message':'一个周次只能保留一个自然周，请调整日期',
+            })
+    normal_count = sum(day['service_status'] == 'normal' for day in days)
+    if not normal_count:
+        issues.append({
+            'severity':'error', 'code':'no_service_days', 'field':'days',
+            'message':'至少需要保留一个正常供餐日',
+        })
+    cleaned = {
+        'title': str(parsed.get('title') or '菜单编辑结果').strip()[:200],
+        'sheet_name': parsed.get('sheet_name'),
+        'date_start': days[0]['plan_date'] if days else None,
+        'date_end': days[-1]['plan_date'] if days else None,
+        'days': days,
+        'issues': issues,
+        'service_day_count': normal_count,
+        'original_issues': parsed.get('original_issues') or [],
+    }
+    return cleaned, issues
+
 @app.route('/api/menus', methods=['GET'])
 def list_menus():
     """所有人可见：列出最近的周菜单（家长选餐时看，老师管理时看）"""
@@ -3007,15 +3162,16 @@ def upload_menu():
         parsed_end = parsed.get('date_end')
         if date_start and parsed_start != date_start:
             issues.append({
-                'severity':'error', 'code':'date_start_mismatch', 'field':'date_start',
-                'message':f'填写的开始日期 {date_start} 与Excel识别日期 {parsed_start} 不一致',
+                'severity':'warning', 'code':'date_start_mismatch', 'field':'date_start',
+                'message':f'原开始日期 {date_start} 已按Excel识别结果更新为 {parsed_start}',
             })
         if date_end and parsed_end != date_end:
             issues.append({
-                'severity':'error', 'code':'date_end_mismatch', 'field':'date_end',
-                'message':f'填写的结束日期 {date_end} 与Excel识别日期 {parsed_end} 不一致',
+                'severity':'warning', 'code':'date_end_mismatch', 'field':'date_end',
+                'message':f'原结束日期 {date_end} 已按Excel识别结果更新为 {parsed_end}',
             })
         date_start, date_end = parsed_start, parsed_end
+        parsed['original_issues'] = list(issues)
 
         stamp = int(time.time() * 1000)
         digest = hashlib.sha256(excel_bytes).hexdigest()[:10]
@@ -3084,6 +3240,59 @@ def upload_menu():
     return jsonify({'id': new_id, 'imagePath': image_path, 'message':'已保存'})
 
 
+@app.route('/api/menu-imports/<int:batch_id>', methods=['PUT'])
+def update_menu_import(batch_id):
+    """总务老师在不修改原 Excel 的情况下编辑并重新校验菜单草稿。"""
+    u = _current_user()
+    if u['role'] not in ('teacher','admin') or (u['role']=='teacher' and u['sub_role'] != 'general'):
+        return jsonify({'error':'仅总务老师/管理员可编辑菜单草稿'}), 403
+    _ensure_meal_tables()
+    db = get_db()
+    batch = db.execute('SELECT * FROM menu_import_batches WHERE id=?', (batch_id,)).fetchone()
+    if not batch:
+        return jsonify({'error':'菜单解析草稿不存在'}), 404
+    if batch['status'] != 'draft':
+        return jsonify({'error':'已发布菜单不能再修改'}), 409
+    try:
+        stored = json.loads(batch['parsed_json'] or '{}')
+    except json.JSONDecodeError:
+        return jsonify({'error':'菜单解析草稿已损坏，请重新上传'}), 409
+    data = request.get_json(silent=True) or {}
+    edited = {
+        'title': data.get('title', stored.get('title')),
+        'sheet_name': stored.get('sheet_name'),
+        'days': data.get('days'),
+        'original_issues': stored.get('original_issues') or stored.get('issues') or [],
+    }
+    cleaned, issues = _validate_edited_menu(edited)
+    cleaned['edited_at'] = datetime.now().isoformat(timespec='seconds')
+    cleaned['edited_by'] = u['identity']
+    selection_deadline = str(data.get('selectionDeadline') or batch['selection_deadline'] or '').strip()
+    try:
+        datetime.fromisoformat(selection_deadline.replace('Z', '+00:00'))
+    except ValueError:
+        issues.append({
+            'severity':'error', 'code':'invalid_deadline', 'field':'selection_deadline',
+            'message':'家长选餐截止时间格式无效',
+        })
+    cleaned['issues'] = issues
+    db.execute(
+        '''UPDATE menu_import_batches
+           SET date_start=?, date_end=?, selection_deadline=?, parsed_json=?, issues_json=?
+           WHERE id=?''',
+        (cleaned.get('date_start'), cleaned.get('date_end'), selection_deadline,
+         json.dumps(cleaned, ensure_ascii=False), json.dumps(issues, ensure_ascii=False), batch_id)
+    )
+    db.commit()
+    return jsonify({
+        'draftId': batch_id,
+        'preview': cleaned,
+        'issues': issues,
+        'canPublish': not any(issue.get('severity') == 'error' for issue in issues),
+        'message':'草稿已保存并重新检查',
+    })
+
+
 @app.route('/api/menu-imports/<int:batch_id>/publish', methods=['POST'])
 def publish_menu_import(batch_id):
     """总务老师确认解析结果后，原子发布周菜单和每日 A/B 餐。"""
@@ -3104,7 +3313,7 @@ def publish_menu_import(batch_id):
         return jsonify({'error':'菜单解析草稿已损坏，请重新上传'}), 409
     blocking = [issue for issue in issues if issue.get('severity') == 'error']
     if blocking:
-        return jsonify({'error':'仍有必须修正的Excel异常，暂不能发布', 'issues':blocking}), 409
+        return jsonify({'error':'菜单草稿仍有必须修正的异常，暂不能发布', 'issues':blocking}), 409
     service_days = _menu_service_days(parsed)
     if not any(day.get('service_status') == 'normal' for day in service_days):
         return jsonify({'error':'Excel中没有可发布的正常供餐日'}), 409
