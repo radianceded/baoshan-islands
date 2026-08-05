@@ -223,11 +223,26 @@
   .gt-import-preview{display:none;gap:10px;padding:12px;border:1px solid var(--nutrition-line);border-radius:10px;background:var(--nutrition-surface-soft)}
   .gt-import-preview.is-visible{display:grid}
   .gt-import-summary{display:flex;justify-content:space-between;gap:10px;color:var(--nutrition-text);font-size:12px;font-weight:800}
-  .gt-import-days{display:grid;gap:7px;max-height:280px;overflow:auto}
-  .gt-import-day{display:grid;gap:5px;padding:9px;border:1px solid var(--nutrition-line);border-radius:8px;background:#fff;font-size:11px}
+  .gt-import-days{display:grid;gap:7px;max-height:520px;overflow:auto}
+  .gt-import-day{display:grid;gap:10px;padding:12px;border:1px solid var(--nutrition-line);border-radius:8px;background:#fff;font-size:11px}
   .gt-import-day strong{color:var(--nutrition-ink)}
   .gt-import-day span{color:var(--nutrition-muted);line-height:1.5}
   .gt-import-day.is-off{border-style:dashed;background:#f5f7f7}
+  .gt-import-day-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,.7fr);gap:8px;align-items:end}
+  .gt-edit-field{display:grid;gap:4px;min-width:0}
+  .gt-edit-field label{font-size:10px;font-weight:800;color:var(--nutrition-muted)}
+  .gt-edit-input,.gt-edit-select,.gt-edit-textarea{width:100%;min-width:0;border:1px solid var(--nutrition-line);border-radius:7px;background:#fff;color:var(--nutrition-text);font:inherit;padding:7px 8px}
+  .gt-edit-input:focus,.gt-edit-select:focus,.gt-edit-textarea:focus{outline:2px solid rgba(49,127,158,.18);border-color:var(--nutrition-primary)}
+  .gt-edit-textarea{min-height:58px;resize:vertical;line-height:1.45}
+  .gt-edit-note[hidden],.gt-edit-meals[hidden]{display:none}
+  .gt-edit-meals{display:grid;gap:8px}
+  .gt-edit-meal{display:grid;gap:8px;padding:10px;border-radius:8px;background:var(--nutrition-surface-soft)}
+  .gt-edit-meal-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .gt-edit-meal-head b{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:#fff;color:var(--nutrition-primary-strong)}
+  .gt-edit-meal-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+  .gt-edit-meal-grid .is-wide{grid-column:span 2}
+  .gt-edit-dirty{padding:8px 10px;border-radius:7px;background:#eef6fa;color:var(--nutrition-primary-strong);font-size:11px;font-weight:800}
+  @media (max-width:720px){.gt-import-day-head,.gt-edit-meal-grid{grid-template-columns:1fr 1fr}.gt-edit-meal-grid .is-wide{grid-column:1/-1}}
   .gt-import-issues{display:grid;gap:5px}
   .gt-import-issue{padding:7px 8px;border-radius:7px;background:#fff7df;color:#806018;font-size:11px;line-height:1.45}
   .gt-import-issue.is-error{background:var(--nutrition-danger-bg);color:var(--nutrition-danger)}
@@ -610,6 +625,7 @@
             <div id="menuUploadStatus" class="gt-upload-status" aria-live="polite">尚未选择图片</div>
             <div id="menuImportPreview" class="gt-import-preview" aria-live="polite"></div>
             <button class="btn btn-primary" type="submit" id="menuUploadBtn">解析菜单</button>
+            <button class="btn btn-outline" type="button" id="menuDraftSaveBtn" hidden disabled>保存修改并重新检查</button>
             <button class="btn btn-outline" type="button" id="menuPublishBtn" hidden disabled>确认发布</button>
           </form>
         </section>
@@ -1341,11 +1357,13 @@
   let gtParityFilter = 'all';
   let gtPreviewUrl = null;
   let gtMenuDraftId = null;
+  let gtMenuDraft = null;
 
   function initGeneralTeacherView() {
     document.getElementById('menuUploadForm').addEventListener('submit', uploadMenuImage);
     document.getElementById('menuImage').addEventListener('change', previewSelectedMenu);
     document.getElementById('menuExcel').addEventListener('change', updateSelectedMenuFiles);
+    document.getElementById('menuDraftSaveBtn').addEventListener('click', saveMenuDraftEdits);
     document.getElementById('menuPublishBtn').addEventListener('click', publishParsedMenu);
     document.getElementById('menuWeek').addEventListener('change', () => { clearMenuDraft(); loadPublishedMenu(); });
     document.getElementById('menuParity').addEventListener('change', () => { clearMenuDraft(); loadPublishedMenu(); });
@@ -1402,15 +1420,67 @@
 
   function clearMenuDraft() {
     gtMenuDraftId = null;
+    gtMenuDraft = null;
     const preview = document.getElementById('menuImportPreview');
     preview.classList.remove('is-visible');
     preview.innerHTML = '';
     const publish = document.getElementById('menuPublishBtn');
     publish.hidden = true;
     publish.disabled = true;
+    const save = document.getElementById('menuDraftSaveBtn');
+    save.hidden = true;
+    save.disabled = true;
+  }
+
+  function menuDraftMeal(day, planType) {
+    return (day?.meals || []).find(meal => meal.plan_type === planType) || {
+      plan_type: planType,
+      plan_name: '',
+      ingredients: [],
+      calories_kcal: null,
+      protein_pct: null,
+      fat_pct: null,
+      vitamin_c_mg: null,
+    };
+  }
+
+  function renderMenuMealEditor(day, dayIndex, planType) {
+    const meal = menuDraftMeal(day, planType);
+    const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients.join('、') : (meal.ingredients || '');
+    return `
+      <section class="gt-edit-meal" data-meal="${planType}">
+        <div class="gt-edit-meal-head"><b>${planType}</b><span>${planType} 餐发布内容</span></div>
+        <div class="gt-edit-meal-grid">
+          <div class="gt-edit-field is-wide">
+            <label for="draft-${dayIndex}-${planType}-name">菜品名称</label>
+            <input id="draft-${dayIndex}-${planType}-name" class="gt-edit-input" data-field="plan_name" value="${escHtml(meal.plan_name || '')}" placeholder="例如：香菇鸡肉饭、冬瓜肉丸汤">
+          </div>
+          <div class="gt-edit-field is-wide">
+            <label for="draft-${dayIndex}-${planType}-ingredients">食材与份量</label>
+            <textarea id="draft-${dayIndex}-${planType}-ingredients" class="gt-edit-textarea" data-field="ingredients" placeholder="使用顿号或换行分隔">${escHtml(ingredients)}</textarea>
+          </div>
+          <div class="gt-edit-field">
+            <label>热量 kcal</label>
+            <input class="gt-edit-input" data-field="calories_kcal" type="number" min="0" step="0.1" value="${meal.calories_kcal ?? ''}">
+          </div>
+          <div class="gt-edit-field">
+            <label>蛋白质 %</label>
+            <input class="gt-edit-input" data-field="protein_pct" type="number" min="0" max="100" step="0.1" value="${meal.protein_pct ?? ''}">
+          </div>
+          <div class="gt-edit-field">
+            <label>脂肪 %</label>
+            <input class="gt-edit-input" data-field="fat_pct" type="number" min="0" max="100" step="0.1" value="${meal.fat_pct ?? ''}">
+          </div>
+          <div class="gt-edit-field">
+            <label>维生素C mg</label>
+            <input class="gt-edit-input" data-field="vitamin_c_mg" type="number" min="0" step="0.1" value="${meal.vitamin_c_mg ?? ''}">
+          </div>
+        </div>
+      </section>`;
   }
 
   function renderMenuImportPreview(parsed, issues, canPublish) {
+    gtMenuDraft = parsed;
     const target = document.getElementById('menuImportPreview');
     const days = parsed?.days || [];
     const errorCount = (issues || []).filter(issue => issue.severity === 'error').length;
@@ -1420,25 +1490,138 @@
         <span>${escHtml(parsed?.title || '菜单解析结果')}</span>
         <span>${days.filter(day => day.service_status === 'normal').length} 个供餐日</span>
       </div>
+      <div class="gt-edit-dirty">可以直接修改下面的识别结果；原 Excel 文件不会被改动。</div>
       <div class="gt-import-days">
-        ${days.map(day => `
-          <div class="gt-import-day${day.service_status === 'normal' ? '' : ' is-off'}">
-            <strong>${escHtml(day.weekday_label || '')} · ${escHtml(day.plan_date || '')}</strong>
-            ${day.service_status === 'normal'
-              ? (day.meals || []).map(meal => `<span><b>${escHtml(meal.plan_type)}餐</b> ${escHtml(meal.plan_name || '菜品待补充')} · ${meal.calories_kcal ?? '-'} kcal · 蛋白质${meal.protein_pct ?? '-'}%</span>`).join('')
-              : `<span>${escHtml(day.service_note || '非供餐日，不计入家长必选数量')}</span>`}
-          </div>`).join('')}
+        ${days.map((day, dayIndex) => `
+          <article class="gt-import-day${day.service_status === 'normal' ? '' : ' is-off'}" data-day-index="${dayIndex}">
+            <div class="gt-import-day-head">
+              <div class="gt-edit-field">
+                <label for="draft-date-${dayIndex}">供餐日期</label>
+                <input id="draft-date-${dayIndex}" class="gt-edit-input" data-field="plan_date" type="date" value="${escHtml(day.plan_date || '')}">
+              </div>
+              <div class="gt-edit-field">
+                <label for="draft-status-${dayIndex}">当天状态</label>
+                <select id="draft-status-${dayIndex}" class="gt-edit-select" data-field="service_status">
+                  <option value="normal" ${day.service_status === 'normal' ? 'selected' : ''}>正常供餐</option>
+                  <option value="no_service" ${day.service_status !== 'normal' ? 'selected' : ''}>不供餐</option>
+                </select>
+              </div>
+            </div>
+            <div class="gt-edit-note" ${day.service_status === 'normal' ? 'hidden' : ''}>
+              <div class="gt-edit-field">
+                <label>不供餐说明</label>
+                <input class="gt-edit-input" data-field="service_note" value="${escHtml(day.service_note || '')}" placeholder="例如：学校秋游">
+              </div>
+            </div>
+            <div class="gt-edit-meals" ${day.service_status === 'normal' ? '' : 'hidden'}>
+              ${renderMenuMealEditor(day, dayIndex, 'A')}
+              ${renderMenuMealEditor(day, dayIndex, 'B')}
+            </div>
+          </article>`).join('')}
       </div>
       ${(issues || []).length ? `
         <div class="gt-import-issues">
           ${(issues || []).map(issue => `<div class="gt-import-issue${issue.severity === 'error' ? ' is-error' : ''}">${issue.severity === 'error' ? '必须修正' : '请确认'}：${escHtml(issue.message || '')}</div>`).join('')}
-        </div>` : '<div class="gt-import-issue">解析检查通过，没有发现异常。</div>'}
+        </div>` : '<div class="gt-import-issue">重新检查通过，没有发现异常。</div>'}
       <div class="gt-import-summary"><span>错误 ${errorCount} 项</span><span>提醒 ${warningCount} 项</span></div>`;
     target.classList.add('is-visible');
+    target.querySelectorAll('input,textarea,select').forEach(control => {
+      control.addEventListener('input', markMenuDraftDirty);
+      control.addEventListener('change', event => {
+        if (event.target.dataset.field === 'service_status') toggleMenuServiceEditor(event.target);
+        markMenuDraftDirty();
+      });
+    });
+    const save = document.getElementById('menuDraftSaveBtn');
+    save.hidden = false;
+    save.disabled = false;
+    save.textContent = '保存修改并重新检查';
     const publish = document.getElementById('menuPublishBtn');
     publish.hidden = false;
     publish.disabled = !canPublish;
-    publish.textContent = canPublish ? '确认发布' : '请修正Excel后重新解析';
+    publish.textContent = canPublish ? '确认发布' : '请先修改并保存';
+  }
+
+  function toggleMenuServiceEditor(select) {
+    const day = select.closest('.gt-import-day');
+    const noService = select.value === 'no_service';
+    day.classList.toggle('is-off', noService);
+    day.querySelector('.gt-edit-note').hidden = !noService;
+    day.querySelector('.gt-edit-meals').hidden = noService;
+  }
+
+  function markMenuDraftDirty() {
+    if (!gtMenuDraftId) return;
+    const save = document.getElementById('menuDraftSaveBtn');
+    save.disabled = false;
+    save.textContent = '保存修改并重新检查';
+    const publish = document.getElementById('menuPublishBtn');
+    publish.disabled = true;
+    publish.textContent = '请先保存修改';
+  }
+
+  function splitMenuDraftText(value) {
+    return String(value || '').split(/[、，,；;\n]+/).map(item => item.trim()).filter(Boolean);
+  }
+
+  function menuDraftNumber(input) {
+    return input && input.value !== '' ? Number(input.value) : null;
+  }
+
+  function collectMenuDraftDays() {
+    return [...document.querySelectorAll('#menuImportPreview .gt-import-day')].map(day => ({
+      plan_date: day.querySelector('[data-field="plan_date"]').value,
+      service_status: day.querySelector('[data-field="service_status"]').value,
+      service_note: day.querySelector('[data-field="service_note"]')?.value || '',
+      meals: [...day.querySelectorAll('.gt-edit-meal')].map(meal => {
+        const planName = meal.querySelector('[data-field="plan_name"]').value.trim();
+        return {
+          plan_type: meal.dataset.meal,
+          plan_name: planName,
+          menu_items: splitMenuDraftText(planName),
+          ingredients: splitMenuDraftText(meal.querySelector('[data-field="ingredients"]').value),
+          calories_kcal: menuDraftNumber(meal.querySelector('[data-field="calories_kcal"]')),
+          protein_pct: menuDraftNumber(meal.querySelector('[data-field="protein_pct"]')),
+          fat_pct: menuDraftNumber(meal.querySelector('[data-field="fat_pct"]')),
+          vitamin_c_mg: menuDraftNumber(meal.querySelector('[data-field="vitamin_c_mg"]')),
+        };
+      }),
+    }));
+  }
+
+  async function saveMenuDraftEdits() {
+    if (!gtMenuDraftId) return;
+    const save = document.getElementById('menuDraftSaveBtn');
+    const publish = document.getElementById('menuPublishBtn');
+    save.disabled = true;
+    publish.disabled = true;
+    save.textContent = '正在保存并检查...';
+    try {
+      const response = await fetch(`${NUTRITION_PLATFORM_BASE}/api/menu-imports/${gtMenuDraftId}`, {
+        method: 'PUT',
+        headers: {...nutritionAuthHeaders(), 'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          title: gtMenuDraft?.title || '菜单编辑结果',
+          selectionDeadline: document.getElementById('menuSelectionDeadline').value,
+          days: collectMenuDraftDays(),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      document.getElementById('menuDateStart').value = data.preview?.date_start || '';
+      document.getElementById('menuDateEnd').value = data.preview?.date_end || '';
+      renderMenuImportPreview(data.preview, data.issues || [], Boolean(data.canPublish));
+      save.disabled = true;
+      save.textContent = '修改已保存';
+      setMenuUploadStatus(
+        data.canPublish ? '修改已保存，重新检查通过，可以发布' : '修改已保存，仍有必须修正的项目',
+        data.canPublish ? 'success' : 'error'
+      );
+    } catch (error) {
+      save.disabled = false;
+      save.textContent = '保存修改并重新检查';
+      setMenuUploadStatus(`保存失败：${error.message}`, 'error');
+    }
   }
 
   async function loadPublishedMenu() {
