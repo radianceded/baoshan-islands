@@ -47,8 +47,15 @@ class NutritionRoleViewTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         cls.common_js = (root / "nutrition" / "common.js").read_text(encoding="utf-8")
 
-    def test_health_island_passes_teacher_scope_to_nutrition(self):
-        self.assertIn('data-show-for="teacher,parent,admin"', self.health_html)
+    def test_health_island_has_scoped_parent_and_teacher_nutrition_entries(self):
+        self.assertIn(
+            'id="parent-nutrition-entry" data-show-for="parent"',
+            self.health_html,
+        )
+        self.assertIn(
+            'id="nutrition-entry" data-show-for="teacher,admin"',
+            self.health_html,
+        )
         self.assertIn("params.set('subRole', subRole)", self.health_html)
         self.assertIn("params.set('grade', grade)", self.health_html)
         self.assertIn("params.set('class', klass)", self.health_html)
