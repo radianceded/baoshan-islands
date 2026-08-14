@@ -1023,7 +1023,7 @@ def _ensure_meal_tables():
     ):
         if column not in meal_plan_cols:
             db.execute(f'ALTER TABLE nutrition_meal_plans ADD COLUMN {column} {column_type}')
-    # 学生 10 天选餐（家长一次性提交奇/偶周 5 天）
+    # 学生选餐（家长一次性提交奇/偶周周一~周日）
     db.execute('''CREATE TABLE IF NOT EXISTS meal_choices(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_card TEXT NOT NULL,
@@ -1032,12 +1032,36 @@ def _ensure_meal_tables():
         class_name TEXT,
         week_number INTEGER NOT NULL,
         parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
-        weekday INTEGER NOT NULL CHECK(weekday BETWEEN 1 AND 5),   -- 1=周一..5=周五
+        weekday INTEGER NOT NULL CHECK(weekday BETWEEN 1 AND 7),   -- 1=周一..7=周日
         choice TEXT NOT NULL CHECK(choice IN ('A','B')),
         chosen_by TEXT,                                            -- dt:unionId / ip:xxx
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(id_card, week_number, parity, weekday) ON CONFLICT REPLACE
     )''')
+    # 迁移：旧表 weekday 约束 1-5 → 1-7（支持周六/周日选餐）
+    _old = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='meal_choices'").fetchone()
+    if _old and _old[0] and re.search(r'weekday\s+BETWEEN\s+1\s+AND\s+5', _old[0], re.IGNORECASE):
+        db.execute('DROP INDEX IF EXISTS idx_meal_choices_week')
+        db.execute('DROP INDEX IF EXISTS idx_meal_choices_class')
+        db.execute('ALTER TABLE meal_choices RENAME TO meal_choices_old')
+        db.execute('''CREATE TABLE meal_choices(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_card TEXT NOT NULL,
+            name TEXT,
+            grade_name TEXT,
+            class_name TEXT,
+            week_number INTEGER NOT NULL,
+            parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
+            weekday INTEGER NOT NULL CHECK(weekday BETWEEN 1 AND 7),
+            choice TEXT NOT NULL CHECK(choice IN ('A','B')),
+            chosen_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(id_card, week_number, parity, weekday) ON CONFLICT REPLACE
+        )''')
+        db.execute('''INSERT INTO meal_choices (id, id_card, name, grade_name, class_name, week_number, parity, weekday, choice, chosen_by, created_at)
+                      SELECT id, id_card, name, grade_name, class_name, week_number, parity, weekday, choice, chosen_by, created_at FROM meal_choices_old''')
+        db.execute('DROP TABLE meal_choices_old')
+        db.execute("UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(id),0) FROM meal_choices) WHERE name='meal_choices'")
     db.execute('CREATE INDEX IF NOT EXISTS idx_meal_choices_week ON meal_choices(week_number, parity)')
     db.execute('CREATE INDEX IF NOT EXISTS idx_meal_choices_class ON meal_choices(grade_name, class_name)')
     db.commit()
@@ -2919,7 +2943,7 @@ def _decode_menu_row(row):
 
 
 def _required_menu_days(row):
-    """返回该周真正需要选择的周一至周五；旧菜单保持五天兼容。"""
+    """返回该周真正需要选择的周一至周日；旧菜单保持五天兼容。"""
     try:
         days = json.loads(row['service_days_json'] or '[]')
     except (KeyError, TypeError, json.JSONDecodeError):
@@ -2930,7 +2954,7 @@ def _required_menu_days(row):
         int(day['weekday']) for day in days
         if day.get('service_status') == 'normal'
         and str(day.get('weekday', '')).isdigit()
-        and 1 <= int(day['weekday']) <= 5
+        and 1 <= int(day['weekday']) <= 7
     }
 
 
@@ -2972,11 +2996,6 @@ def _validate_edited_menu(parsed):
             })
             continue
         weekday = parsed_date.weekday() + 1
-        if weekday > 5:
-            issues.append({
-                'severity':'error', 'code':'unsupported_weekday', 'field':f'days.{index}.plan_date',
-                'plan_date':plan_date, 'message':f'{plan_date} 为周末，当前系统仅支持周一至周五',
-            })
         if plan_date in seen_dates:
             issues.append({
                 'severity':'error', 'code':'duplicate_date', 'field':f'days.{index}.plan_date',
@@ -3464,10 +3483,10 @@ def list_meal_choice_students():
 @app.route('/api/meal-choices', methods=['POST'])
 def submit_meal_choices():
     """
-    家长为绑定孩子提交或在截止前修改 10 天选餐。
+    家长为绑定孩子提交或在截止前修改两周（周一~周日）选餐。
     Body: {
       studentIdCard, week_odd, week_even,
-      choices: { odd: {1:'A',2:'B',...,5:'A'}, even: {...} }
+      choices: { odd: {1:'A',2:'B',...,7:'B'}, even: {...} }
     }
     """
     u = _current_user()
@@ -3495,14 +3514,14 @@ def submit_meal_choices():
         return jsonify({'error':'week_odd 与 week_even 必须是整数'}), 400
 
     normalized_choices = {}
-    allowed_days = {1, 2, 3, 4, 5}
+    allowed_days = {1, 2, 3, 4, 5, 6, 7}
     for parity in ('odd', 'even'):
         normalized_choices[parity] = {}
         for day, choice in (choices.get(parity) or {}).items():
             try:
                 day = int(day)
             except (TypeError, ValueError):
-                return jsonify({'error':'选餐日期必须为周一至周五'}), 400
+                return jsonify({'error':'选餐日期必须为周一至周日'}), 400
             if day not in allowed_days or choice not in ('A', 'B'):
                 return jsonify({'error':'选餐内容无效'}), 400
             normalized_choices[parity][day] = choice
@@ -3796,7 +3815,7 @@ def stats_class_summary():
 
 @app.route('/api/meal-stats/grade', methods=['GET'])
 def stats_grade():
-    """总务老师：各年级各周一~周五 A / B 餐人数汇总。可指定 week_number"""
+    """总务老师：各年级各周一~周日 A / B 餐人数汇总。可指定 week_number"""
     u = _current_user()
     if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
         return jsonify({'error':'仅总务老师可查看年级选餐统计'}), 403
@@ -3822,7 +3841,7 @@ def stats_grade():
 
 @app.route('/api/meal-stats/class', methods=['GET'])
 def stats_class():
-    """班主任：自己班 N 学生 × 10 天的 A/B 选择明细。
+    """班主任：自己班学生在当前两周实际供餐日的 A/B 选择明细。
        总务老师可指定 grade & class 看任意班。"""
     u = _current_user()
     if u['role'] not in ('teacher','admin'):
@@ -3924,6 +3943,10 @@ def stats_class():
         'class': klass,
         'weekOdd': week_odd,
         'weekEven': week_even,
+        'requiredDays': {
+            parity: sorted(weekdays)
+            for parity, weekdays in required_by_parity.items()
+        },
         'summary': {
             'studentCount': student_count,
             'completeCount': complete_count,
@@ -4068,7 +4091,7 @@ def export_class_fitness():
 
 @app.route('/api/export/class-meal.xlsx', methods=['GET'])
 def export_class_meal():
-    """班主任：本班 10 天选餐 → Excel"""
+    """班主任：本班当前两周实际供餐日选餐 → Excel"""
     u = _current_user()
     if u['role'] != 'teacher' or u.get('sub_role') != 'class':
         return jsonify({'error':'无权限'}), 403
@@ -4089,20 +4112,37 @@ def export_class_meal():
                OR (week_number=? AND parity='even'))''',
         (grade, klass, week_odd, week_even),
     ).fetchall()
+    menu_rows = db.execute(
+        '''SELECT parity, service_days_json FROM weekly_menus
+           WHERE (week_number=? AND parity='odd')
+              OR (week_number=? AND parity='even')''',
+        (week_odd, week_even),
+    ).fetchall()
+    required_by_parity = {'odd': {1,2,3,4,5}, 'even': {1,2,3,4,5}}
+    for menu_row in menu_rows:
+        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row)
+    required_keys = {
+        f'{parity}_{weekday}'
+        for parity, weekdays in required_by_parity.items()
+        for weekday in weekdays
+    }
     by_stu = {}
     for r in picks:
         by_stu.setdefault(r['id_card'], {})[f"{r['parity']}_{r['weekday']}"] = r['choice']
-    DAY = ['周一','周二','周三','周四','周五']
-    headers = ['学籍号','姓名'] + [f'奇数周·{d}' for d in DAY] + [f'偶数周·{d}' for d in DAY] + ['总 A','总 B','未选']
+    day_labels = {1:'周一', 2:'周二', 3:'周三', 4:'周四', 5:'周五', 6:'周六', 7:'周日'}
+    odd_days = sorted(required_by_parity['odd'])
+    even_days = sorted(required_by_parity['even'])
+    headers = ['学籍号','姓名'] + [f'奇数周·{day_labels[d]}' for d in odd_days] + [f'偶数周·{day_labels[d]}' for d in even_days] + ['总 A','总 B','未选']
     data = []
     for s in students:
         picks_s = by_stu.get(s['id_card'], {})
-        a_cnt = sum(1 for k,v in picks_s.items() if v=='A')
-        b_cnt = sum(1 for k,v in picks_s.items() if v=='B')
-        unset = 10 - a_cnt - b_cnt
+        required_picks = {k: v for k, v in picks_s.items() if k in required_keys}
+        a_cnt = sum(1 for v in required_picks.values() if v=='A')
+        b_cnt = sum(1 for v in required_picks.values() if v=='B')
+        unset = len(required_keys) - a_cnt - b_cnt
         row = [s['id_card'], mask_name(s['name'])]
-        for d in range(1, 6): row.append(picks_s.get(f'odd_{d}', ''))
-        for d in range(1, 6): row.append(picks_s.get(f'even_{d}', ''))
+        for d in odd_days: row.append(picks_s.get(f'odd_{d}', ''))
+        for d in even_days: row.append(picks_s.get(f'even_{d}', ''))
         row += [a_cnt, b_cnt, unset]
         data.append(row)
     wb = _xlsx_simple_table(f'{grade}{klass}选餐W{week_odd}-{week_even}', headers, data)
@@ -4138,7 +4178,7 @@ def export_school_meal():
     _auto_width(ws)
 
     # ─ Sheet 2/3: 各年级 A/B 餐（奇 + 偶周分两表）─
-    DAY = ['周一','周二','周三','周四','周五']
+    DAY = ['周一','周二','周三','周四','周五','周六','周日']
     for parity_key, parity_label in (('odd','奇数周'),('even','偶数周')):
         ws = wb.create_sheet(f'各年级{parity_label}')
         headers = ['年级'] + [f'{d}{c}' for d in DAY for c in ('A','B')] + ['总 A','总 B']
@@ -4158,13 +4198,13 @@ def export_school_meal():
         for r_idx, (g, m) in enumerate(sorted(agg.items()), 2):
             ws.cell(row=r_idx, column=1, value=g)
             total_a, total_b = 0, 0
-            for d in range(1, 6):
+            for d in range(1, 8):
                 a = m.get(f'{d}A', 0); b = m.get(f'{d}B', 0)
                 ws.cell(row=r_idx, column=2 + (d-1)*2, value=a)
                 ws.cell(row=r_idx, column=3 + (d-1)*2, value=b)
                 total_a += a; total_b += b
-            ws.cell(row=r_idx, column=12, value=total_a)
-            ws.cell(row=r_idx, column=13, value=total_b)
+            ws.cell(row=r_idx, column=16, value=total_a)
+            ws.cell(row=r_idx, column=17, value=total_b)
         _auto_width(ws)
 
     # ─ Sheet 4: 班级粒度明细 ─
@@ -4189,13 +4229,13 @@ def export_school_meal():
         ws.cell(row=r_idx, column=3, value=key[2])
         ws.cell(row=r_idx, column=4, value='奇' if key[3]=='odd' else '偶')
         total_a, total_b = 0, 0
-        for d in range(1, 6):
+        for d in range(1, 8):
             a = m.get(f'{d}A', 0); b = m.get(f'{d}B', 0)
             ws.cell(row=r_idx, column=5 + (d-1)*2, value=a)
             ws.cell(row=r_idx, column=6 + (d-1)*2, value=b)
             total_a += a; total_b += b
-        ws.cell(row=r_idx, column=15, value=total_a)
-        ws.cell(row=r_idx, column=16, value=total_b)
+        ws.cell(row=r_idx, column=19, value=total_a)
+        ws.cell(row=r_idx, column=20, value=total_b)
     _auto_width(ws)
 
     fname = f'全校健康岛数据{"_W"+str(week) if week else ""}.xlsx'

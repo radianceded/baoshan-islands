@@ -197,12 +197,6 @@ def parse_menu_workbook(content: bytes) -> dict:
             "",
         )
         service_status = "normal" if type_a == "A套餐" and type_b == "B套餐" else "no_service"
-        if service_status == "normal" and actual_weekday > 5:
-            issues.append(_issue(
-                "error", "unsupported_weekday",
-                f"{plan_date} 是{expected_weekday}，当前选餐系统只支持周一至周五", plan_date, "weekday",
-            ))
-
         day = {
             "plan_date": plan_date,
             "weekday": actual_weekday,
@@ -276,7 +270,7 @@ def parse_menu_workbook(content: bytes) -> dict:
     days.sort(key=lambda item: item["plan_date"])
     date_span = (date.fromisoformat(days[-1]["plan_date"]) - date.fromisoformat(days[0]["plan_date"])).days
     normal_days = [day for day in days if day["service_status"] == "normal"]
-    if date_span > 6 or len(normal_days) > 5:
+    if date_span > 6 or len(normal_days) > 7:
         issues.append(_issue(
             "error",
             "multiple_weeks_detected",

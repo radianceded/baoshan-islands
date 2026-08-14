@@ -13,7 +13,7 @@ from server import app as server_app
 from server.menu_excel import parse_menu_workbook
 
 
-def build_menu_workbook(start=date(2026, 8, 3), no_service_weekday=None, fat_value=0.28):
+def build_menu_workbook(start=date(2026, 8, 3), no_service_weekday=None, fat_value=0.28, day_count=5):
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "学生菜单"
@@ -32,11 +32,11 @@ def build_menu_workbook(start=date(2026, 8, 3), no_service_weekday=None, fat_val
     for row, label in rows.items():
         sheet.cell(row, 2, label)
 
-    for index in range(5):
+    for index in range(day_count):
         plan_date = start + timedelta(days=index)
         column = 3 + index * 2
         sheet.cell(3, column, plan_date)
-        sheet.cell(3, column + 1, f"周{'一二三四五'[index]}")
+        sheet.cell(3, column + 1, f"周{'一二三四五六日'[index]}")
         if index + 1 == no_service_weekday:
             sheet.cell(4, column, "学校秋游，不供餐")
             continue
@@ -79,6 +79,15 @@ class MenuWorkbookParserTests(unittest.TestCase):
 
         issues = [item for item in parsed["issues"] if item["severity"] == "error"]
         self.assertTrue(any(item["code"] == "percentage_outlier" for item in issues))
+
+    def test_parses_saturday_and_sunday_service_days(self):
+        parsed = parse_menu_workbook(build_menu_workbook(day_count=7))
+
+        self.assertEqual(parsed["date_start"], "2026-08-03")
+        self.assertEqual(parsed["date_end"], "2026-08-09")
+        self.assertEqual(parsed["service_day_count"], 7)
+        self.assertEqual([day["weekday"] for day in parsed["days"]], list(range(1, 8)))
+        self.assertFalse(any(item["code"] == "unsupported_weekday" for item in parsed["issues"]))
 
 
 class MenuImportApiTests(unittest.TestCase):
@@ -246,6 +255,55 @@ class MenuImportApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["saved"], 8)
+
+    def test_weekend_menus_require_and_accept_fourteen_choices(self):
+        odd = self._upload(
+            build_menu_workbook(start=date(2026, 7, 27), day_count=7),
+            week=17,
+            parity="odd",
+        ).get_json()
+        even = self._upload(
+            build_menu_workbook(start=date(2026, 8, 3), day_count=7),
+            week=18,
+            parity="even",
+        ).get_json()
+        for draft in (odd, even):
+            response = self.client.post(
+                f"/api/menu-imports/{draft['draftId']}/publish",
+                headers=self.headers,
+            )
+            self.assertEqual(response.status_code, 200)
+
+        choices = {str(day): "A" for day in range(1, 8)}
+        response = self.client.post(
+            "/api/meal-choices",
+            json={
+                "studentIdCard": "BS001",
+                "week_odd": 17,
+                "week_even": 18,
+                "choices": {"odd": choices, "even": choices},
+            },
+            headers={"X-Demo-Role": "parent", "X-Demo-Kid": "BS001"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["saved"], 14)
+
+        stats = self.client.get(
+            "/api/meal-stats/class?week_odd=17&week_even=18",
+            headers={
+                "X-Demo-Role": "teacher",
+                "X-Demo-Sub": "class",
+                "X-Demo-Grade": "三年级",
+                "X-Demo-Class": "1班",
+            },
+        )
+        self.assertEqual(stats.status_code, 200)
+        self.assertEqual(stats.get_json()["requiredDays"], {
+            "odd": list(range(1, 8)),
+            "even": list(range(1, 8)),
+        })
+        self.assertEqual(stats.get_json()["students"][0]["requiredCount"], 14)
 
 
 if __name__ == "__main__":

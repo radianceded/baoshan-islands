@@ -699,7 +699,7 @@
 
       <section class="ct-summary" aria-label="本班选餐概览">
         <div class="ct-metric"><strong id="ctStudentCount">0</strong><span>班级学生</span></div>
-        <div class="ct-metric"><strong id="ctCompleteCount">0</strong><span>已完成 10 天</span></div>
+        <div class="ct-metric"><strong id="ctCompleteCount">0</strong><span id="ctCompleteLabel">已完成 10 天</span></div>
         <div class="ct-metric"><strong id="ctIncompleteCount">0</strong><span>尚未完成</span></div>
         <div class="ct-metric is-a"><strong id="ctACount">0</strong><span>A 餐选择人次</span></div>
         <div class="ct-metric is-b"><strong id="ctBCount">0</strong><span>B 餐选择人次</span></div>
@@ -798,7 +798,7 @@
   let parentDeadlineTimer = null;
   const parentChoices = {odd:{}, even:{}};
   const PARENT_CHILD_CODE = NUTRITION_CHILD_CODE || sessionStorage.getItem('bs_bound_id_card') || '';
-  const PARENT_DAY_NAMES = ['周一','周二','周三','周四','周五'];
+  const PARENT_DAY_NAMES = ['周一','周二','周三','周四','周五','周六','周日'];
 
   function parentPlanLabel(plan) {
     return plan === 'A' ? 'A 餐' : plan === 'B' ? 'B 餐' : '需要人工确认';
@@ -1210,7 +1210,7 @@
   function menuServiceDays(menu) {
     if (Array.isArray(menu?.service_days) && menu.service_days.length) {
       return menu.service_days
-        .filter(day => day && day.plan_date && Number(day.weekday) >= 1 && Number(day.weekday) <= 5)
+        .filter(day => day && day.plan_date && Number(day.weekday) >= 1 && Number(day.weekday) <= 7)
         .sort((a, b) => Number(a.weekday) - Number(b.weekday));
     }
     return parentWeekDates(menu?.date_start).map((planDate, index) => ({
@@ -1749,9 +1749,9 @@
     const scopeLabel = gtParityFilter === 'odd' ? '奇数周' : gtParityFilter === 'even' ? '偶数周' : '全部周类型';
     document.getElementById('gtStatsScope').textContent = `第 ${odd}—${even} 周，${scopeLabel}`;
     const aCount = rows.reduce((sum, row) =>
-      sum + [1,2,3,4,5].reduce((daySum, day) => daySum + Number(row[day + 'A'] || 0), 0), 0);
+      sum + [1,2,3,4,5,6,7].reduce((daySum, day) => daySum + Number(row[day + 'A'] || 0), 0), 0);
     const bCount = rows.reduce((sum, row) =>
-      sum + [1,2,3,4,5].reduce((daySum, day) => daySum + Number(row[day + 'B'] || 0), 0), 0);
+      sum + [1,2,3,4,5,6,7].reduce((daySum, day) => daySum + Number(row[day + 'B'] || 0), 0), 0);
     const gradeCount = new Set(rows.map(row => row.gradeName).filter(Boolean)).size;
     document.getElementById('gtTotalCount').textContent = aCount + bCount;
     document.getElementById('gtACount').textContent = aCount;
@@ -1764,7 +1764,7 @@
         </div>`;
       return;
     }
-    const days = ['周一','周二','周三','周四','周五'];
+    const days = ['周一','周二','周三','周四','周五','周六','周日'];
     target.innerHTML = `
       <table class="gt-table">
         <thead>
@@ -1775,7 +1775,7 @@
           <tr>
             <td><strong>${escHtml(row.gradeName || '-')}</strong></td>
             <td>第 ${row.week} 周 · ${row.parity === 'odd' ? '奇数周' : '偶数周'}</td>
-            ${[1,2,3,4,5].map(day => `<td class="gt-a">${row[day + 'A'] || 0}</td><td class="gt-b">${row[day + 'B'] || 0}</td>`).join('')}
+            ${[1,2,3,4,5,6,7].map(day => `<td class="gt-a">${row[day + 'A'] || 0}</td><td class="gt-b">${row[day + 'B'] || 0}</td>`).join('')}
           </tr>
         `).join('')}</tbody>
       </table>`;
@@ -1784,6 +1784,7 @@
   let ctStudents = [];
   let ctMenus = [];
   let ctMealPlans = [];
+  let ctRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
 
   function initClassTeacherView() {
     document.getElementById('classIncompleteOnly').addEventListener('change', renderClassMealStats);
@@ -1819,7 +1820,7 @@
     const odd = document.getElementById('classWeekOdd').value;
     const even = document.getElementById('classWeekEven').value;
     document.getElementById('classMealPeriod').textContent =
-      `第 ${odd} 周和第 ${even} 周，共 10 个用餐日`;
+      `第 ${odd} 周和第 ${even} 周`;
     const params = new URLSearchParams({
       grade,
       class: klass,
@@ -1837,12 +1838,21 @@
     renderClassMenuBoard(Number(odd), Number(even));
     if (!data) {
       ctStudents = [];
+      ctRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
       setClassSummary();
       document.getElementById('classResultCount').textContent = '加载失败';
       target.innerHTML = '<div class="ct-error"><strong>统计加载失败</strong><span>请检查本地服务或网络连接后重试。</span><button class="btn btn-outline btn-sm" type="button" onclick="loadClassMealStats()">重新加载</button></div>';
       return;
     }
     ctStudents = data.students || [];
+    ctRequiredDays = {
+      odd: Array.isArray(data.requiredDays?.odd) ? data.requiredDays.odd : [1,2,3,4,5],
+      even: Array.isArray(data.requiredDays?.even) ? data.requiredDays.even : [1,2,3,4,5],
+    };
+    const requiredCount = ctRequiredDays.odd.length + ctRequiredDays.even.length;
+    document.getElementById('classMealPeriod').textContent =
+      `第 ${odd} 周和第 ${even} 周，共 ${requiredCount} 个用餐日`;
+    document.getElementById('ctCompleteLabel').textContent = `已完成 ${requiredCount} 天`;
     setClassSummary(data.summary);
     renderClassMealStats();
   }
@@ -1870,7 +1880,7 @@
           </div>
         </article>`;
     }
-    const dates = parentWeekDates(menu.date_start);
+    const serviceDays = menuServiceDays(menu);
     return `
       <article class="shared-menu-card">
         <div class="shared-menu-image">
@@ -1886,15 +1896,17 @@
           </div>
           ${menu.notes ? `<div class="shared-menu-meta"><span>${escHtml(menu.notes)}</span></div>` : ''}
           <div class="shared-menu-days">
-            ${dates.map((date, index) => {
+            ${serviceDays.map(day => {
+              const date = day.plan_date;
               const mealA = ctMealPlans.find(item => item.plan_date === date && item.plan_type === 'A');
               const mealB = ctMealPlans.find(item => item.plan_date === date && item.plan_type === 'B');
               return `
                 <div class="shared-menu-day">
-                  <strong>${PARENT_DAY_NAMES[index]}</strong>
+                  <strong>${escHtml(day.weekday_label || PARENT_DAY_NAMES[Number(day.weekday) - 1])}</strong>
                   <div>
-                    <span>A：${escHtml(parentPlanSummary(mealA))}</span>
-                    <span>B：${escHtml(parentPlanSummary(mealB))}</span>
+                    ${day.service_status === 'normal'
+                      ? `<span>A：${escHtml(parentPlanSummary(mealA))}</span><span>B：${escHtml(parentPlanSummary(mealB))}</span>`
+                      : `<span>${escHtml(day.service_note || '当天不供餐')}</span>`}
                   </div>
                 </div>`;
             }).join('') || '<div class="shared-menu-day"><strong>日期</strong><span>开始日期尚未发布</span></div>'}
@@ -1930,32 +1942,38 @@
       const b = students.filter(student => student[`${parity}_${day}`] === 'B').length;
       return `<span class="ct-day-total"><span class="is-a">A ${a}</span><span class="is-b">B ${b}</span></span>`;
     };
-    const days = daysForClass();
+    const dayLabels = daysForClass();
+    const oddDays = ctRequiredDays.odd;
+    const evenDays = ctRequiredDays.even;
     const dateLabels = classDateLabels();
+    const headerCell = (parity, day) => {
+      const date = dateLabels[parity]?.[day] || '';
+      return `<th>${dayLabels[day - 1]}<small>${escHtml(date)}</small></th>`;
+    };
     target.innerHTML = `
       <table class="ct-table">
         <thead>
           <tr>
             <th class="ct-student" rowspan="2">学生</th>
-            <th colspan="5">奇数周</th>
-            <th colspan="5">偶数周</th>
+            <th colspan="${oddDays.length}">奇数周</th>
+            <th colspan="${evenDays.length}">偶数周</th>
             <th rowspan="2">完成情况</th>
           </tr>
-          <tr>${dateLabels.map((date, index) => `<th>周${days[index % 5]}<small>${escHtml(date)}</small></th>`).join('')}</tr>
+          <tr>${oddDays.map(day => headerCell('odd', day)).join('')}${evenDays.map(day => headerCell('even', day)).join('')}</tr>
         </thead>
         <tbody>${students.map(student => `
           <tr>
             <td class="ct-student"><strong>${escHtml(student.displayName || '-')}</strong></td>
-            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`odd_${day}`], `奇数周周${days[day - 1]}`)}</td>`).join('')}
-            ${[1,2,3,4,5].map(day => `<td>${choiceCell(student[`even_${day}`], `偶数周周${days[day - 1]}`)}</td>`).join('')}
-            <td><span class="ct-completion${student.isComplete ? '' : ' is-incomplete'}">${student.selectedCount || 0}/${student.requiredCount || 10}</span></td>
+            ${oddDays.map(day => `<td>${choiceCell(student[`odd_${day}`], `奇数周${dayLabels[day - 1]}`)}</td>`).join('')}
+            ${evenDays.map(day => `<td>${choiceCell(student[`even_${day}`], `偶数周${dayLabels[day - 1]}`)}</td>`).join('')}
+            <td><span class="ct-completion${student.isComplete ? '' : ' is-incomplete'}">${student.selectedCount || 0}/${student.requiredCount ?? (oddDays.length + evenDays.length)}</span></td>
           </tr>
         `).join('')}</tbody>
         <tfoot>
           <tr>
             <td class="ct-student">当前列表合计</td>
-            ${[1,2,3,4,5].map(day => `<td>${dayTotal('odd', day)}</td>`).join('')}
-            ${[1,2,3,4,5].map(day => `<td>${dayTotal('even', day)}</td>`).join('')}
+            ${oddDays.map(day => `<td>${dayTotal('odd', day)}</td>`).join('')}
+            ${evenDays.map(day => `<td>${dayTotal('even', day)}</td>`).join('')}
             <td>${students.reduce((sum, student) => sum + Number(student.selectedCount || 0), 0)} 项</td>
           </tr>
         </tfoot>
@@ -1963,24 +1981,25 @@
   }
 
   function daysForClass() {
-    return ['一','二','三','四','五'];
+    return ['周一','周二','周三','周四','周五','周六','周日'];
   }
 
   function classDateLabels() {
     const odd = Number(document.getElementById('classWeekOdd').value);
     const even = Number(document.getElementById('classWeekEven').value);
-    return [
+    const result = {odd:{}, even:{}};
+    [
       {parity: 'odd', week: odd},
       {parity: 'even', week: even},
-    ].flatMap(item => {
+    ].forEach(item => {
       const menu = ctMenus.find(menu =>
         menu.parity === item.parity && Number(menu.week_number) === item.week
       );
-      const dates = parentWeekDates(menu?.date_start);
-      return [0,1,2,3,4].map(index =>
-        dates[index] ? parentDateLabel(dates[index]) : ''
-      );
+      menuServiceDays(menu).forEach(day => {
+        result[item.parity][Number(day.weekday)] = parentDateLabel(day.plan_date);
+      });
     });
+    return result;
   }
 </script>
 </body>

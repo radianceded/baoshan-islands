@@ -864,6 +864,53 @@ class MealChoiceAuthorizationTests(unittest.TestCase):
         self.assertTrue(image_path.endswith(".png"))
         self.assertTrue(os.path.exists(os.path.join(self.temp_dir.name, os.path.basename(image_path))))
 
+    def test_weekday_constraint_migration_preserves_existing_choices(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute("DROP INDEX IF EXISTS idx_meal_choices_week")
+        conn.execute("DROP INDEX IF EXISTS idx_meal_choices_class")
+        conn.execute("DROP TABLE meal_choices")
+        conn.execute(
+            """CREATE TABLE meal_choices(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_card TEXT NOT NULL,
+                name TEXT,
+                grade_name TEXT,
+                class_name TEXT,
+                week_number INTEGER NOT NULL,
+                parity TEXT NOT NULL CHECK(parity IN ('odd','even')),
+                weekday INTEGER NOT NULL CHECK(weekday BETWEEN 1 AND 5),
+                choice TEXT NOT NULL CHECK(choice IN ('A','B')),
+                chosen_by TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(id_card, week_number, parity, weekday) ON CONFLICT REPLACE
+            )"""
+        )
+        conn.execute(
+            """INSERT INTO meal_choices
+               (id_card, name, grade_name, class_name, week_number, parity, weekday, choice)
+               VALUES ('BS001', '学生甲', '五年级', '1班', 17, 'odd', 1, 'A')"""
+        )
+        conn.commit()
+        conn.close()
+
+        with server_app.app.app_context():
+            server_app._ensure_meal_tables()
+
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            preserved = conn.execute(
+                "SELECT id_card, weekday, choice FROM meal_choices"
+            ).fetchall()
+            conn.execute(
+                """INSERT INTO meal_choices
+                   (id_card, week_number, parity, weekday, choice)
+                   VALUES ('BS001', 17, 'odd', 7, 'B')"""
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        self.assertEqual(preserved, [("BS001", 1, "A")])
+
 
 class ClubSignupRegressionTests(unittest.TestCase):
     def setUp(self):

@@ -525,7 +525,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       </button>
       <div class="meal-flow-content" id="pmPickerContent">
         <div class="meal-picker-meta">
-          <span>请为两个自然周各选 5 天午餐，提交后将同步给食堂。</span>
+          <span id="pmInstruction">请完成两个自然周的午餐选择，提交后将同步给食堂。</span>
           <span class="meal-progress" id="pmProgress">已选 0 / 10 天</span>
         </div>
         <div id="pmMenuImages" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px;max-width:100%"></div>
@@ -989,7 +989,7 @@ function renderWeekPicker(){
   if(wl) wl.textContent = `第 ${currentWeek} 周 · 共 ${WEEKS_LIST.length} 周`;
 }
 
-const DAY_ICONS = {'周一':'utensils','周二':'cooking-pot','周三':'soup','周四':'utensils-crossed','周五':'salad'};
+const DAY_ICONS = {'周一':'utensils','周二':'cooking-pot','周三':'soup','周四':'utensils-crossed','周五':'salad','周六':'drumstick','周日':'coffee'};
 function renderWeek(){
   // 只显示当前周里存在的天
   const days = Object.keys(MEALS).sort((a,b)=>{
@@ -1633,11 +1633,16 @@ StudentRoster.attachPicker(document.querySelector('.student-pill'), {
 applyStudent(curStudentIdx);
 
 /* ═══════════════════════ 家长 10 天选餐 ═══════════════════════ */
-const DAY_LABELS = ['周一','周二','周三','周四','周五'];
+const DAY_LABELS = ['周一','周二','周三','周四','周五','周六','周日'];
 
 let _pmExisting = {odd:{}, even:{}};   // { odd:{1:'A',2:'B'...}, even:{...} }
+let _pmRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
 let _pmReadOnly = false;
 let _pmOpenSection = 'picker';
+
+function parentMealRequiredCount(){
+  return _pmRequiredDays.odd.length + _pmRequiredDays.even.length;
+}
 
 function mealChoiceAuthHeaders(){
   const token = sessionStorage.getItem('bs_session_token');
@@ -1673,8 +1678,9 @@ function updateParentMealProgress(){
   const selected = document.querySelectorAll('#pmChoices input[type="radio"]:checked').length;
   const progress = document.getElementById('pmProgress');
   const btn = document.getElementById('pmSubmit');
-  if(progress) progress.textContent = _pmReadOnly ? '已提交 10 / 10 天' : `已选 ${selected} / 10 天`;
-  if(btn && !_pmReadOnly) btn.disabled = selected !== 10;
+  const totalDays = parentMealRequiredCount();
+  if(progress) progress.textContent = _pmReadOnly ? `已提交 ${totalDays} / ${totalDays} 天` : `已选 ${selected} / ${totalDays} 天`;
+  if(btn && !_pmReadOnly) btn.disabled = selected !== totalDays;
   return selected;
 }
 
@@ -1711,8 +1717,11 @@ async function renderParentMealPicker(){
   document.getElementById('pmWeekEven').value = wkEven;
   document.getElementById('pmWeekLabel').textContent = `第 ${wkOdd} 周（奇数） + 第 ${wkEven} 周（偶数）`;
 
-  // 拉取菜单图（每周只一张，按 parity 找）
-  fetchMenuImages(wkOdd, wkEven);
+  // 拉取菜单图和实际供餐日（每周只一张，按 parity 找）
+  await fetchMenuImages(wkOdd, wkEven);
+  const requiredCount = parentMealRequiredCount();
+  const instruction = document.getElementById('pmInstruction');
+  if(instruction) instruction.textContent = `请完成两个自然周共 ${requiredCount} 个供餐日的午餐选择，提交后将同步给食堂。`;
 
   // 先查"已选过"
   await loadExistingChoices(wkOdd, wkEven);
@@ -1724,20 +1733,21 @@ async function renderParentMealPicker(){
     return `
       <div class="meal-week-column">
         <div class="meal-week-heading" style="background:linear-gradient(135deg,${titleBg})">${tag} · 第 ${week} 周</div>
-        ${DAY_LABELS.map((d,i)=>{
-          const prev = _pmExisting[parity][i+1];
+        ${_pmRequiredDays[parity].map(day=>{
+          const d = DAY_LABELS[day - 1];
+          const prev = _pmExisting[parity][day];
           const aSel = prev === 'A' ? 'checked' : '';
           const bSel = prev === 'B' ? 'checked' : '';
           const lock = _pmReadOnly ? 'disabled' : '';
           const tag2 = prev ? `<span style="color:var(--sea-deep);font-weight:800;font-size:11px;margin-left:6px">✓ 已选 ${prev}餐</span>` : '';
           return `
-            <div class="pm-choice-row" data-choice-row="pm_${parity}_${i+1}">
+            <div class="pm-choice-row" data-choice-row="pm_${parity}_${day}">
               <span class="pm-choice-day">${d}${tag2}</span>
               <label class="pm-choice-option option-a" style="cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
-                <input type="radio" name="pm_${parity}_${i+1}" value="A" ${aSel} ${lock}> A 餐
+                <input type="radio" name="pm_${parity}_${day}" value="A" ${aSel} ${lock}> A 餐
               </label>
               <label class="pm-choice-option option-b" style="cursor:${_pmReadOnly?'not-allowed':'pointer'};opacity:${_pmReadOnly && !prev ? '0.4':'1'}">
-                <input type="radio" name="pm_${parity}_${i+1}" value="B" ${bSel} ${lock}> B 餐
+                <input type="radio" name="pm_${parity}_${day}" value="B" ${bSel} ${lock}> B 餐
               </label>
             </div>
           `;
@@ -1794,19 +1804,26 @@ async function loadExistingChoices(wkOdd, wkEven){
         _pmExisting.even[c.weekday] = c.choice;
       }
     }
-    const total = Object.keys(_pmExisting.odd).length + Object.keys(_pmExisting.even).length;
-    _pmReadOnly = total >= 10;   // 全部 10 天都有 → 锁住
+    _pmReadOnly = ['odd','even'].every(parity =>
+      _pmRequiredDays[parity].every(day => _pmExisting[parity][day])
+    );
   } catch(e){ console.warn('[loadExistingChoices]', e.message); }
 }
 
 async function fetchMenuImages(wkOdd, wkEven){
   const box = document.getElementById('pmMenuImages');
   box.innerHTML = '';
+  _pmRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
   for(const [parity, wk, bg] of [['odd',wkOdd,'#FFD86A'],['even',wkEven,'#7BC8E8']]){
     try {
       const r = await fetch(`/api/menus?week=${wk}`);
       const data = await r.json();
       const m = (data.menus || []).find(x => x.parity === parity);
+      const hasPublishedDays = Boolean(m && Array.isArray(m.service_days) && m.service_days.length);
+      const serviceDays = (hasPublishedDays ? m.service_days : [])
+        .filter(day => day && day.service_status === 'normal' && Number(day.weekday) >= 1 && Number(day.weekday) <= 7)
+        .map(day => Number(day.weekday));
+      if(hasPublishedDays) _pmRequiredDays[parity] = [...new Set(serviceDays)].sort((a,b)=>a-b);
       const div = document.createElement('div');
       div.style.cssText = 'background:#fff;border:1.5px solid #DCEBF3;border-radius:12px;padding:10px;text-align:center';
       div.innerHTML = `
@@ -1829,7 +1846,7 @@ async function submitParentMeals(){
   const choices = { odd:{}, even:{} };
   const missing = [];
   for(const parity of ['odd','even']){
-    for(let d=1; d<=5; d++){
+    for(const d of _pmRequiredDays[parity]){
       const sel = document.querySelector(`input[name="pm_${parity}_${d}"]:checked`);
       if(sel){ choices[parity][d] = sel.value; }
       else { missing.push(`pm_${parity}_${d}`); }
@@ -1919,9 +1936,11 @@ async function renderDailyMeals(){
   };
 
   let odd='', even='';
-  for(let i=0; i<5; i++){
-    odd += renderDayCard('odd', wkOdd, i, DAY_LABELS[i]);
-    even += renderDayCard('even', wkEven, i, DAY_LABELS[i]);
+  for(const day of _pmRequiredDays.odd){
+    odd += renderDayCard('odd', wkOdd, day - 1, DAY_LABELS[day - 1]);
+  }
+  for(const day of _pmRequiredDays.even){
+    even += renderDayCard('even', wkEven, day - 1, DAY_LABELS[day - 1]);
   }
   if($('pdDaysOdd')) $('pdDaysOdd').innerHTML = odd;
   if($('pdDaysEven')) $('pdDaysEven').innerHTML = even;
@@ -1986,7 +2005,7 @@ async function generateParentDinnerAI(){
   const wkEven = document.getElementById('pmWeekEven')?.value || '18';
   let picks = [];
   for(const parity of ['odd','even']){
-    for(let d=1; d<=5; d++){
+    for(const d of _pmRequiredDays[parity]){
       const sel = document.querySelector(`input[name="pm_${parity}_${d}"]:checked`);
       picks.push({
         week: parity==='odd' ? wkOdd : wkEven,
@@ -2004,7 +2023,7 @@ async function generateParentDinnerAI(){
 
   const prompt = `${AIHelper.SAFETY}
 学生姓名：${kidName}
-选餐情况：共10天，A餐${aCount}天，B餐${bCount}天（${pickStr}）
+选餐情况：共${parentMealRequiredCount()}天，A餐${aCount}天，B餐${bCount}天（${pickStr}）
 
 请根据这个学生的选餐偏好，分析他的饮食倾向，并给出 2-3 条家里晚餐的建议。
 要求：
@@ -2164,7 +2183,7 @@ async function loadClassSummary(){
       <td style="padding:8px 10px;color:var(--ink-1)">${r.week}周</td>
       <td style="padding:8px 10px;font-weight:700">${r.grade}</td>
       <td style="padding:8px 10px;font-weight:700;color:#13718E">${r['class']}</td>
-      ${[1,2,3,4,5].map(d=>`<td style="padding:6px 8px;text-align:center;color:#C2410C;font-weight:700">${r[d+'A']||0}</td><td style="padding:6px 8px;text-align:center;color:#13718E;font-weight:700">${r[d+'B']||0}</td>`).join('')}
+      ${DAY_LABELS.map((_,di)=>`<td style="padding:6px 8px;text-align:center;color:#C2410C;font-weight:700">${r[(di+1)+'A']||0}</td><td style="padding:6px 8px;text-align:center;color:#13718E;font-weight:700">${r[(di+1)+'B']||0}</td>`).join('')}
     </tr>`).join('');
     document.getElementById('gtClassTable').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px">${head}<tbody>${body}</tbody></table>`;
   } catch(e){
@@ -2204,7 +2223,7 @@ async function loadGradeStats(){
             ${rs.map(r=>`
               <tr style="border-top:1px solid #E0EBF0">
                 <td style="padding:8px;font-weight:800;color:#1F3A4D">${r.gradeName||'-'}</td>
-                ${[1,2,3,4,5].map(d=>`<td style="padding:8px;text-align:center;font-weight:700;color:#C2410C">${r[d+'A']||0}</td><td style="padding:8px;text-align:center;font-weight:700;color:#13718E">${r[d+'B']||0}</td>`).join('')}
+                ${DAY_LABELS.map((_,di)=>`<td style="padding:8px;text-align:center;font-weight:700;color:#C2410C">${r[(di+1)+'A']||0}</td><td style="padding:8px;text-align:center;font-weight:700;color:#13718E">${r[(di+1)+'B']||0}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -2250,16 +2269,24 @@ function exportAnyClass(kind){
   showToast('下载中…');
 }
 
-/* ═══════════════════════ 班主任：本班学生 10 天 ═══════════════════════ */
+/* ═══════════════════════ 班主任：本班学生实际供餐日 ═══════════════════════ */
 async function loadClassTable(){
   if(!window.UserAuth || !UserAuth.isClassTeacher()) return;
   const grade = UserAuth.getBoundGrade() || '五年级';
   const klass = UserAuth.getBoundClass() || '1班';
-  document.getElementById('ctSubtitle').textContent = `${grade} ${klass} · 共 10 天`;
+  const weekOdd = parseInt(document.getElementById('pmWeekOdd')?.value, 10) || 17;
+  const weekEven = parseInt(document.getElementById('pmWeekEven')?.value, 10) || 18;
+  document.getElementById('ctSubtitle').textContent = `${grade} ${klass} · 第 ${weekOdd}—${weekEven} 周`;
   try {
-    const r = await fetch(`/api/meal-stats/class?grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+    const r = await fetch(`/api/meal-stats/class?grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}&week_odd=${weekOdd}&week_even=${weekEven}`);
     const data = await r.json();
+    if(!r.ok) throw new Error(data.error || '加载失败');
     const students = data.students || [];
+    const requiredDays = {
+      odd: Array.isArray(data.requiredDays?.odd) ? data.requiredDays.odd : [1,2,3,4,5],
+      even: Array.isArray(data.requiredDays?.even) ? data.requiredDays.even : [1,2,3,4,5],
+    };
+    document.getElementById('ctSubtitle').textContent = `${grade} ${klass} · 共 ${requiredDays.odd.length + requiredDays.even.length} 天`;
     if(!students.length){
       document.getElementById('ctClassTable').innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700">本班暂无学生选餐数据</div>';
       return;
@@ -2274,21 +2301,21 @@ async function loadClassTable(){
         <thead style="background:#F4FAFD">
           <tr>
             <th style="padding:8px;text-align:left">学生</th>
-            <th colspan="5" style="padding:8px;background:#FFE7B0;color:#7A4F1B">奇数周</th>
-            <th colspan="5" style="padding:8px;background:#C9EBFB;color:#13718E">偶数周</th>
+            <th colspan="${requiredDays.odd.length}" style="padding:8px;background:#FFE7B0;color:#7A4F1B">奇数周</th>
+            <th colspan="${requiredDays.even.length}" style="padding:8px;background:#C9EBFB;color:#13718E">偶数周</th>
           </tr>
           <tr>
             <th></th>
-            ${DAY_LABELS.map(d=>`<th style="padding:6px">${d}</th>`).join('')}
-            ${DAY_LABELS.map(d=>`<th style="padding:6px">${d}</th>`).join('')}
+            ${requiredDays.odd.map(day=>`<th style="padding:6px">${DAY_LABELS[day - 1]}</th>`).join('')}
+            ${requiredDays.even.map(day=>`<th style="padding:6px">${DAY_LABELS[day - 1]}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
           ${students.map(s=>`
             <tr style="border-top:1px solid #E0EBF0">
               <td style="padding:8px;font-weight:800;color:#1F3A4D">${s.displayName||'-'}</td>
-              ${[1,2,3,4,5].map(d=>`<td style="padding:6px;text-align:center">${cell(s['odd_'+d])}</td>`).join('')}
-              ${[1,2,3,4,5].map(d=>`<td style="padding:6px;text-align:center">${cell(s['even_'+d])}</td>`).join('')}
+              ${requiredDays.odd.map(day=>`<td style="padding:6px;text-align:center">${cell(s['odd_'+day])}</td>`).join('')}
+              ${requiredDays.even.map(day=>`<td style="padding:6px;text-align:center">${cell(s['even_'+day])}</td>`).join('')}
             </tr>
           `).join('')}
         </tbody>
