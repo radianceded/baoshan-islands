@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>历史记录 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="card">
+    <div class="card-header">
+      <h2>📜 推荐记录查询</h2>
+      <div class="btn-group">
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">📤 导出CSV</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" class="form-control" id="filterDate" onchange="loadHistory()">
+      <select class="form-control" id="filterPlan" onchange="loadHistory()">
+        <option value="">全部推荐</option>
+        <option value="A">A餐</option><option value="B">B餐</option><option value="MANUAL">人工处理</option>
+      </select>
+      <select class="form-control" id="filterConfirmed" onchange="loadHistory()">
+        <option value="">全部状态</option>
+        <option value="0">未确认</option><option value="1">已确认</option>
+      </select>
+      <select class="form-control" id="filterCampus" onchange="loadHistory()">
+        <option value="">全部校区</option>
+        <option value="本部">本部</option><option value="宝林">宝林</option><option value="罗泾">罗泾</option>
+      </select>
+    </div>
+
+    <div class="table-wrap" id="historyTable">
+      <div class="loading"><span class="spinner"></span> 加载中...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  let currentPage = 1;
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+  loadHistory();
+
+  async function loadHistory() {
+    const d = document.getElementById('filterDate').value;
+    const plan = document.getElementById('filterPlan').value;
+    const confirmed = document.getElementById('filterConfirmed').value;
+    const campus = document.getElementById('filterCampus').value;
+    const params = new URLSearchParams({ page: currentPage, page_size: 50 });
+    if (d) params.set('plan_date', d);
+    if (plan) params.set('recommended_plan', plan);
+    if (confirmed) params.set('confirmed', confirmed);
+    if (campus) params.set('campus', campus);
+
+    const data = await apiFetch(`/recommendations?${params.toString()}`);
+    if (!data) return;
+
+    document.getElementById('historyTable').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>日期</th><th>儿童编号</th><th>姓名</th><th>年龄</th><th>校区</th>
+          <th>A餐得分</th><th>B餐得分</th><th>推荐</th><th>规则版本</th>
+          <th>风险提示</th><th>确认状态</th><th>确认时间</th><th>操作</th>
+        </tr></thead>
+        <tbody>${data.items.map(r => `
+          <tr>
+            <td>${formatDate(r.plan_date)}</td>
+            <td><code>${escHtml(r.child_code)}</code></td>
+            <td>${escHtml(r.display_name||'-')}</td>
+            <td>${r.age??'-'}</td>
+            <td>${escHtml(r.campus||'-')}</td>
+            <td class="text-right">${formatNum(r.score_a)}</td>
+            <td class="text-right">${formatNum(r.score_b)}</td>
+            <td><span class="badge ${r.recommended_plan==='A'?'badge-info':r.recommended_plan==='B'?'badge-success':'badge-danger'}">
+              ${r.recommended_plan==='MANUAL'?'人工':r.recommended_plan+'餐'}</span></td>
+            <td><small>${escHtml(r.rule_version||'-')}</small></td>
+            <td>${r.risk_notes?`<small class="text-warning">${escHtml(r.risk_notes)}</small>`:'-'}</td>
+            <td>${r.confirmed?`<span class="badge badge-success">${r.confirmed_by||'已确认'}</span>`:'<span class="badge badge-neutral">待确认</span>'}</td>
+            <td><small>${r.confirmed_at ? formatDateTime(r.confirmed_at) : '-'}</small></td>
+            <td><button class="btn btn-outline btn-sm" onclick="showDetail(${r.id})">详情</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="13" class="text-center">暂无历史记录</td></tr>'}</tbody>
+      </table>`;
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadHistory(); });
+  }
+
+  async function showDetail(recId) {
+    const r = await apiFetch(`/recommendations/${recId}`);
+    if (!r) return;
+    showModal('推荐详情', `
+      <div class="detail-grid">
+        <div class="detail-item"><label>日期</label><span class="value">${formatDate(r.plan_date)}</span></div>
+        <div class="detail-item"><label>规则版本</label><span class="value">${escHtml(r.rule_version||'-')}</span></div>
+        <div class="detail-item"><label>推荐结果</label><span class="value"><span class="badge ${r.recommended_plan==='A'?'badge-info':r.recommended_plan==='B'?'badge-success':'badge-danger'}">${r.recommended_plan}</span></span></div>
+        <div class="detail-item"><label>确认状态</label><span class="value">${r.confirmed? '已确认 by '+escHtml(r.confirmed_by||'') : '未确认'}</span></div>
+      </div>
+      <div class="mt-2">
+        <h4>推荐原因</h4>
+        <p class="text-sm">${escHtml(r.reason||'-')}</p>
+        ${r.exclusion_reason?`<h4 class="mt-1">排除原因</h4><p class="text-sm text-danger">${escHtml(r.exclusion_reason)}</p>`:''}
+        ${r.risk_notes?`<h4 class="mt-1">风险提示</h4><p class="text-sm text-warning">${escHtml(r.risk_notes)}</p>`:''}
+        <h4 class="mt-1">得分</h4><p class="text-sm">A餐: ${formatNum(r.score_a)} | B餐: ${formatNum(r.score_b)}</p>
+      </div>
+    `);
+  }
+
+  function exportCSV() {
+    window.open(`${API_BASE}/recommendations/export?plan_date=${document.getElementById('filterDate').value}&format=csv`, '_blank');
+  }
+</script>
+</body>
+</html>

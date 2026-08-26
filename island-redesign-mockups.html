@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>首页重设计 · 三套方案</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#f3f0ec;color:#2a2a2a;
+    font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+    padding:40px 24px 80px;-webkit-font-smoothing:antialiased;
+  }
+  .page-title{
+    max-width:1180px;margin:0 auto 32px;
+    font-size:24px;font-weight:700;color:#222;letter-spacing:1px;
+  }
+  .page-title .sub{display:block;font-size:14px;font-weight:400;color:#6a6a6a;margin-top:6px;letter-spacing:0}
+  .deck{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+  .card{
+    background:#fff;border-radius:18px;
+    box-shadow:0 6px 20px rgba(20,30,50,0.08);
+    overflow:hidden;border:1px solid #eee;
+  }
+  .card-head{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    padding:22px 26px 0;
+  }
+  .card-head h2{font-size:19px;font-weight:700;color:#222;letter-spacing:1px}
+  .card-head h2 .tag{
+    display:inline-block;font-size:11px;background:#222;color:#fff;
+    padding:3px 9px;border-radius:12px;margin-right:10px;letter-spacing:1.5px;
+    vertical-align:middle;font-weight:600;
+  }
+  .card-head p{font-size:13px;color:#6a6a6a;margin-top:6px;max-width:640px;line-height:1.65}
+  .palette{display:flex;gap:6px;margin-top:6px}
+  .palette span{
+    width:18px;height:18px;border-radius:4px;
+    border:1px solid rgba(0,0,0,0.08);
+    display:inline-block;
+  }
+  .preview{margin:18px 0 0;background:#000;line-height:0}
+  .preview svg{width:100%;height:auto;display:block}
+  .notes{padding:14px 26px 22px;font-size:12.5px;color:#777;line-height:1.7;border-top:1px solid #f0f0f0;margin-top:14px}
+  .notes b{color:#333}
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  首页岛屿 + 背景 · 三套设计方向
+  <span class="sub">每个方案都是同一张「群岛全景」的全宽截图；选一个，我把这套语言贯彻到完整 HTML 里。</span>
+</div>
+
+<div class="deck">
+
+<!-- ════════════════════════════════════════════════════════════
+     方案 A · 现代等距 (Modern Isometric)
+     ════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-head">
+    <div>
+      <h2><span class="tag">方案 A</span>现代等距 · MODERN ISOMETRIC</h2>
+      <p>等距视角，建筑改成几何体块（顶面+两个亮暗侧面），克制的莫兰迪色板，发丝级描边。整体像 Figma / Behance 风格的高级品牌插画，适合教育集团对外展示与发布会。</p>
+    </div>
+    <div class="palette" title="主色">
+      <span style="background:#3F4D5A"></span>
+      <span style="background:#C97B5E"></span>
+      <span style="background:#7A8A6B"></span>
+      <span style="background:#E8DFD1"></span>
+      <span style="background:#D9C28B"></span>
+    </div>
+  </div>
+
+  <div class="preview">
+    <svg viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="aSky" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#DDE3E8"/>
+          <stop offset="0.55" stop-color="#E8DFD1"/>
+          <stop offset="1" stop-color="#F1E8DB"/>
+        </linearGradient>
+        <linearGradient id="aWater" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#C7D3D7"/>
+          <stop offset="1" stop-color="#8FA0A8"/>
+        </linearGradient>
+        <linearGradient id="aIsleTop" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#9CAE85"/>
+          <stop offset="1" stop-color="#7A8A6B"/>
+        </linearGradient>
+        <linearGradient id="aIsleSide" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#6A5944"/>
+          <stop offset="1" stop-color="#4B3F30"/>
+        </linearGradient>
+      </defs>
+
+      <!-- 天空 -->
+      <rect width="1200" height="380" fill="url(#aSky)"/>
+      <!-- 太阳光晕 -->
+      <circle cx="960" cy="120" r="170" fill="#F5EAD0" opacity="0.55"/>
+      <circle cx="960" cy="120" r="48"  fill="#F4D9A5" opacity="0.9"/>
+      <!-- 远山三层 -->
+      <path d="M0 340 L180 270 L360 320 L560 250 L760 310 L960 260 L1200 310 L1200 380 L0 380 Z" fill="#A8B2B8" opacity="0.45"/>
+      <path d="M0 360 L160 310 L340 350 L540 290 L740 345 L950 305 L1200 350 L1200 380 L0 380 Z" fill="#8C99A1" opacity="0.55"/>
+      <!-- 水面 -->
+      <rect y="380" width="1200" height="160" fill="url(#aWater)"/>
+      <!-- 水面反光条 -->
+      <g opacity="0.35" stroke="#fff" fill="none" stroke-width="1.2">
+        <line x1="60"  y1="430" x2="200" y2="430"/>
+        <line x1="320" y1="460" x2="500" y2="460"/>
+        <line x1="650" y1="425" x2="820" y2="425"/>
+        <line x1="900" y1="470" x2="1080" y2="470"/>
+      </g>
+
+      <!-- ===== 5 座等距岛 ===== -->
+      <!-- 每座岛 = 椭圆顶 + 土层侧面 + 1 主建筑 + 1 树 -->
+      <g id="isoIsland">
+        <!-- structure declared once below via <use> -->
+      </g>
+
+      <!-- 岛 1 - 档案 -->
+      <g transform="translate(120 420)">
+        <ellipse cx="0" cy="14" rx="90" ry="10" fill="#000" opacity="0.18"/>
+        <path d="M-78 0 Q-78 12 0 18 Q78 12 78 0 L78 26 Q78 40 0 46 Q-78 40 -78 26 Z" fill="url(#aIsleSide)"/>
+        <ellipse cx="0" cy="0" rx="78" ry="14" fill="url(#aIsleTop)"/>
+        <!-- 等距建筑：档案馆（暖砖红体块） -->
+        <g transform="translate(-22 -38)">
+          <!-- 体块前面 -->
+          <polygon points="0,0 36,12 36,42 0,30" fill="#C97B5E"/>
+          <!-- 顶面 -->
+          <polygon points="0,0 36,12 18,-10 -18,2" fill="#E2987B"/>
+          <!-- 侧面 -->
+          <polygon points="0,0 -18,2 -18,32 0,30" fill="#8E5740"/>
+          <!-- 窗 -->
+          <rect x="6" y="10" width="6" height="8" fill="#F2E6CE" opacity=".9"/>
+          <rect x="20" y="14" width="6" height="8" fill="#F2E6CE" opacity=".9"/>
+        </g>
+        <!-- 几何树 -->
+        <g transform="translate(28 -22)">
+          <rect x="-2" y="0" width="4" height="12" fill="#4B3F30"/>
+          <polygon points="-12,0 12,0 0,-18" fill="#5B7048"/>
+          <polygon points="-9,-8 9,-8 0,-22" fill="#7A8A6B"/>
+        </g>
+      </g>
+
+      <!-- 岛 2 - 健康 -->
+      <g transform="translate(345 442)">
+        <ellipse cx="0" cy="14" rx="100" ry="10" fill="#000" opacity="0.18"/>
+        <path d="M-88 0 Q-88 12 0 18 Q88 12 88 0 L88 26 Q88 40 0 46 Q-88 40 -88 26 Z" fill="url(#aIsleSide)"/>
+        <ellipse cx="0" cy="0" rx="88" ry="14" fill="url(#aIsleTop)"/>
+        <!-- 双联体块：食堂 -->
+        <g transform="translate(-32 -42)">
+          <polygon points="0,0 28,9 28,38 0,30" fill="#E8DFD1"/>
+          <polygon points="0,0 28,9 14,-7 -14,2" fill="#D9C28B"/>
+          <polygon points="0,0 -14,2 -14,28 0,30" fill="#A39279"/>
+          <rect x="4" y="10" width="5" height="7" fill="#3F4D5A" opacity=".85"/>
+          <rect x="16" y="14" width="5" height="7" fill="#3F4D5A" opacity=".85"/>
+        </g>
+        <g transform="translate(8 -36)">
+          <polygon points="0,0 28,9 28,32 0,24" fill="#8FA48A"/>
+          <polygon points="0,0 28,9 14,-7 -14,2" fill="#B0C29F"/>
+          <polygon points="0,0 -14,2 -14,22 0,24" fill="#5C6E54"/>
+        </g>
+        <g transform="translate(50 -18)">
+          <rect x="-2" y="0" width="4" height="10" fill="#4B3F30"/>
+          <circle cx="0" cy="-4" r="9" fill="#5B7048"/>
+          <circle cx="-5" cy="-7" r="6" fill="#7A8A6B"/>
+        </g>
+      </g>
+
+      <!-- 岛 3 - 阅读（中央，更高） -->
+      <g transform="translate(600 410)">
+        <ellipse cx="0" cy="14" rx="110" ry="11" fill="#000" opacity="0.20"/>
+        <path d="M-96 0 Q-96 12 0 18 Q96 12 96 0 L96 28 Q96 42 0 48 Q-96 42 -96 28 Z" fill="url(#aIsleSide)"/>
+        <ellipse cx="0" cy="0" rx="96" ry="15" fill="url(#aIsleTop)"/>
+        <!-- 中央灯塔：高瘦体块+尖顶 -->
+        <g transform="translate(-10 -90)">
+          <polygon points="0,0 20,6 20,70 0,64" fill="#E8DFD1"/>
+          <polygon points="0,0 20,6 10,-5 -10,1" fill="#F1E8DB"/>
+          <polygon points="0,0 -10,1 -10,65 0,64" fill="#B6A98E"/>
+          <!-- 红环 -->
+          <polygon points="0,15 20,21 20,30 0,24" fill="#C9554F"/>
+          <polygon points="0,40 20,46 20,55 0,49" fill="#C9554F"/>
+          <!-- 顶帽 -->
+          <polygon points="0,-5 20,1 10,-18 -10,-12" fill="#3F4D5A"/>
+          <line x1="10" y1="-18" x2="10" y2="-30" stroke="#3F4D5A" stroke-width="1.5"/>
+          <circle cx="10" cy="-32" r="3" fill="#D9C28B"/>
+        </g>
+        <!-- 配楼 -->
+        <g transform="translate(28 -34)">
+          <polygon points="0,0 30,10 30,32 0,22" fill="#7A8A6B"/>
+          <polygon points="0,0 30,10 15,-7 -15,3" fill="#9CAE85"/>
+        </g>
+      </g>
+
+      <!-- 岛 4 - 活动 -->
+      <g transform="translate(855 442)">
+        <ellipse cx="0" cy="14" rx="100" ry="10" fill="#000" opacity="0.18"/>
+        <path d="M-88 0 Q-88 12 0 18 Q88 12 88 0 L88 26 Q88 40 0 46 Q-88 40 -88 26 Z" fill="url(#aIsleSide)"/>
+        <ellipse cx="0" cy="0" rx="88" ry="14" fill="url(#aIsleTop)"/>
+        <!-- 帐篷三角 -->
+        <g transform="translate(-20 -28)">
+          <polygon points="0,0 36,12 18,-20" fill="#D9C28B"/>
+          <polygon points="0,0 36,12 36,28 0,16" fill="#C9554F"/>
+          <line x1="18" y1="-20" x2="18" y2="22" stroke="#fff" stroke-width="1.2" opacity=".6"/>
+        </g>
+        <g transform="translate(20 -28)">
+          <polygon points="0,0 24,8 12,-14" fill="#A8C2A0"/>
+          <polygon points="0,0 24,8 24,22 0,14" fill="#5C7E55"/>
+        </g>
+      </g>
+
+      <!-- 岛 5 - 成就 -->
+      <g transform="translate(1080 422)">
+        <ellipse cx="0" cy="14" rx="92" ry="10" fill="#000" opacity="0.18"/>
+        <path d="M-80 0 Q-80 12 0 18 Q80 12 80 0 L80 26 Q80 40 0 46 Q-80 40 -80 26 Z" fill="url(#aIsleSide)"/>
+        <ellipse cx="0" cy="0" rx="80" ry="14" fill="url(#aIsleTop)"/>
+        <!-- 殿堂柱廊 -->
+        <g transform="translate(-30 -56)">
+          <!-- 基座 -->
+          <polygon points="0,30 60,42 60,52 0,40" fill="#3F4D5A"/>
+          <!-- 柱 -->
+          <g fill="#E8DFD1">
+            <polygon points="6,12 12,14 12,32 6,30"/>
+            <polygon points="22,15 28,17 28,35 22,33"/>
+            <polygon points="38,18 44,20 44,38 38,36"/>
+            <polygon points="54,21 60,23 60,41 54,39"/>
+          </g>
+          <!-- 三角山墙 -->
+          <polygon points="0,10 60,22 30,-8" fill="#C9554F"/>
+          <polygon points="0,10 60,22 60,28 0,16" fill="#A03B3A"/>
+        </g>
+      </g>
+
+      <!-- 标牌（每岛底下小色块） -->
+      <g font-family="'PingFang SC',sans-serif" font-weight="700" font-size="11" fill="#fff" text-anchor="middle">
+        <g transform="translate(120 490)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="#3F4D5A"/>
+          <text y="4">档案岛</text>
+        </g>
+        <g transform="translate(345 510)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="#3F4D5A"/>
+          <text y="4">健康岛</text>
+        </g>
+        <g transform="translate(600 480)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="#3F4D5A"/>
+          <text y="4">阅读岛</text>
+        </g>
+        <g transform="translate(855 510)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="#3F4D5A"/>
+          <text y="4">活动岛</text>
+        </g>
+        <g transform="translate(1080 490)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="#3F4D5A"/>
+          <text y="4">成就岛</text>
+        </g>
+      </g>
+
+      <!-- 顶部品牌横条预览 -->
+      <g>
+        <rect width="1200" height="42" fill="rgba(20,32,46,0.55)"/>
+        <rect x="26" y="9" width="24" height="24" rx="6" fill="#D9A56A"/>
+        <text x="60" y="22" font-family="'PingFang SC',sans-serif" font-size="12.5" font-weight="700" fill="#fff" letter-spacing="2">上海市宝山区实验小学教育集团</text>
+        <text x="60" y="34" font-family="sans-serif" font-size="8.5" fill="rgba(255,255,255,0.65)" letter-spacing="2">BAOSHAN EXPERIMENTAL PRIMARY EDUCATION GROUP</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="notes">
+    <b>设计关键词：</b>克制、专业、几何 ｜
+    <b>建筑：</b>等距几何体块，三面受光分明 ｜
+    <b>纹理：</b>纯色平涂 + 微渐变，无描边 ｜
+    <b>气质：</b>像高端 SaaS 品牌官网的插画
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     方案 B · 水墨意境 (Chinese Ink Wash / Jiangnan)
+     ════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-head">
+    <div>
+      <h2><span class="tag">方案 B</span>水墨江南 · INK &amp; JIANGNAN</h2>
+      <p>横向长卷感，远山墨色递退、雾气盈水。建筑改成江南粉墙黛瓦小屋（白墙、深灰瓦、马头墙），点缀竹影梅枝；只在屋脊与小灯笼上用一点朱砂。是最有文化重量、最不卡通的方向，适合区域名校。</p>
+    </div>
+    <div class="palette">
+      <span style="background:#F4EAD6"></span>
+      <span style="background:#2C2C2C"></span>
+      <span style="background:#6E8B82"></span>
+      <span style="background:#B85450"></span>
+      <span style="background:#7E7466"></span>
+    </div>
+  </div>
+
+  <div class="preview">
+    <svg viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bSky" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#F4EAD6"/>
+          <stop offset="0.7" stop-color="#EFE3CB"/>
+          <stop offset="1" stop-color="#E2D9C3"/>
+        </linearGradient>
+        <linearGradient id="bWater" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#D8DED2"/>
+          <stop offset="1" stop-color="#A8B0A0"/>
+        </linearGradient>
+        <filter id="bFog" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <filter id="bSoftShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+          <feOffset dx="0" dy="4"/>
+          <feComponentTransfer><feFuncA type="linear" slope="0.30"/></feComponentTransfer>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- 纸底 -->
+      <rect width="1200" height="540" fill="url(#bSky)"/>
+      <!-- 纸纹颗粒 -->
+      <g opacity="0.07" fill="#7E7466">
+        <circle cx="120" cy="80" r="1"/><circle cx="340" cy="50" r="1"/><circle cx="620" cy="120" r="1"/>
+        <circle cx="880" cy="60" r="1"/><circle cx="1080" cy="160" r="1"/><circle cx="220" cy="200" r="1"/>
+        <circle cx="540" cy="240" r="1"/><circle cx="780" cy="280" r="1"/><circle cx="1000" cy="320" r="1"/>
+      </g>
+
+      <!-- 远山 3 层（墨色递退） -->
+      <g filter="url(#bFog)" opacity="0.22">
+        <path d="M0 320 Q200 200 420 300 Q620 200 820 280 Q1000 220 1200 290 L1200 380 L0 380 Z" fill="#7E7466"/>
+      </g>
+      <g filter="url(#bFog)" opacity="0.35">
+        <path d="M0 360 Q180 280 380 340 Q580 260 760 330 Q960 280 1200 340 L1200 400 L0 400 Z" fill="#6E8B82"/>
+      </g>
+      <g opacity="0.55">
+        <path d="M0 400 Q160 340 320 380 Q500 320 680 380 Q860 330 1040 380 Q1140 360 1200 380 L1200 420 L0 420 Z" fill="#4F5C58"/>
+      </g>
+
+      <!-- 月/落日：留白圆 -->
+      <circle cx="1000" cy="110" r="60" fill="#F8F1E2" opacity="0.95"/>
+      <circle cx="1000" cy="110" r="60" fill="none" stroke="#C0B5A0" stroke-width="0.5" opacity="0.6"/>
+
+      <!-- 飞鸟简笔 -->
+      <g stroke="#2C2C2C" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <path d="M180 130 q6 -5 12 0 q6 -5 12 0"/>
+        <path d="M250 100 q5 -4 10 0 q5 -4 10 0"/>
+        <path d="M320 150 q4 -3 8 0 q4 -3 8 0"/>
+      </g>
+
+      <!-- 水面 -->
+      <rect y="420" width="1200" height="120" fill="url(#bWater)"/>
+      <g stroke="#fff" stroke-width="0.8" fill="none" opacity="0.6">
+        <path d="M100 460 q40 -5 80 0"/>
+        <path d="M340 480 q40 -5 80 0"/>
+        <path d="M640 470 q40 -5 80 0"/>
+        <path d="M900 490 q40 -5 80 0"/>
+      </g>
+
+      <!-- 雾带（横向白纱） -->
+      <rect y="395" width="1200" height="40" fill="#F4EAD6" opacity="0.55" filter="url(#bFog)"/>
+
+      <!-- ===== 5 座岛 ===== -->
+      <!-- 通用：圆润岛形 + 白墙黛瓦小屋 + 一两丛竹 -->
+      <!-- 岛 1 -->
+      <g transform="translate(140 410)" filter="url(#bSoftShadow)">
+        <path d="M-70 0 Q-70 22 0 28 Q70 22 70 0 Q60 -4 0 -6 Q-60 -4 -70 0 Z" fill="#8A9A8E"/>
+        <!-- 小屋 -->
+        <g transform="translate(-22 -26)">
+          <rect x="0" y="6" width="44" height="20" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <!-- 黛瓦坡顶 -->
+          <polygon points="-3,8 47,8 39,-2 5,-2" fill="#3A3A3A"/>
+          <polygon points="-3,8 47,8 47,10 -3,10" fill="#2C2C2C"/>
+          <!-- 马头墙小折 -->
+          <polygon points="-3,8 -3,-2 -1,-4 1,-2 1,8" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="43,8 43,-2 45,-4 47,-2 47,8" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <!-- 窗 -->
+          <rect x="6" y="14" width="6" height="8" fill="#5E6C68"/>
+          <rect x="20" y="14" width="6" height="8" fill="#5E6C68"/>
+          <rect x="32" y="14" width="6" height="8" fill="#5E6C68"/>
+          <!-- 小灯笼朱砂点 -->
+          <circle cx="22" cy="6" r="1.6" fill="#B85450"/>
+        </g>
+        <!-- 竹 -->
+        <g stroke="#4D5E48" stroke-width="1.4" stroke-linecap="round" fill="none">
+          <line x1="40" y1="-2" x2="36" y2="-32"/>
+          <line x1="44" y1="-2" x2="46" y2="-28"/>
+          <path d="M36 -22 q-6 -3 -10 0"/>
+          <path d="M46 -18 q6 -3 10 0"/>
+        </g>
+      </g>
+
+      <!-- 岛 2 -->
+      <g transform="translate(360 425)" filter="url(#bSoftShadow)">
+        <path d="M-80 0 Q-80 22 0 28 Q80 22 80 0 Q70 -4 0 -6 Q-70 -4 -80 0 Z" fill="#8A9A8E"/>
+        <g transform="translate(-30 -28)">
+          <rect x="0" y="8" width="60" height="20" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="-3,10 63,10 52,-2 8,-2" fill="#3A3A3A"/>
+          <polygon points="-3,10 63,10 63,12 -3,12" fill="#2C2C2C"/>
+          <polygon points="-3,10 -3,-2 -1,-4 1,-2 1,10" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="59,10 59,-2 61,-4 63,-2 63,10" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="6" y="16" width="7" height="8" fill="#5E6C68"/>
+          <rect x="20" y="16" width="7" height="8" fill="#5E6C68"/>
+          <rect x="34" y="16" width="7" height="8" fill="#5E6C68"/>
+          <rect x="48" y="16" width="7" height="8" fill="#5E6C68"/>
+        </g>
+        <!-- 梅枝 -->
+        <g stroke="#3A2A22" stroke-width="1.4" fill="none">
+          <path d="M50 -2 q10 -10 20 -22"/>
+          <path d="M58 -10 q4 -3 8 -2"/>
+        </g>
+        <g fill="#B85450">
+          <circle cx="68" cy="-22" r="1.6"/><circle cx="64" cy="-15" r="1.4"/><circle cx="70" cy="-12" r="1.3"/>
+        </g>
+      </g>
+
+      <!-- 岛 3 中心：拱桥+主屋 -->
+      <g transform="translate(600 400)" filter="url(#bSoftShadow)">
+        <path d="M-100 0 Q-100 24 0 30 Q100 24 100 0 Q86 -4 0 -6 Q-86 -4 -100 0 Z" fill="#8A9A8E"/>
+        <!-- 主屋（两层） -->
+        <g transform="translate(-32 -52)">
+          <rect x="0" y="20" width="64" height="22" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="6" y="6" width="52" height="16" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="-4,8 68,8 52,-4 12,-4" fill="#3A3A3A"/>
+          <polygon points="-4,8 68,8 68,10 -4,10" fill="#2C2C2C"/>
+          <polygon points="3,22 61,22 51,16 13,16" fill="#3A3A3A"/>
+          <polygon points="-4,8 -4,-4 -2,-6 0,-4 0,8" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="64,8 64,-4 66,-6 68,-4 68,8" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="14" y="12" width="6" height="6" fill="#5E6C68"/>
+          <rect x="44" y="12" width="6" height="6" fill="#5E6C68"/>
+          <rect x="10" y="28" width="8" height="10" fill="#5E6C68"/>
+          <rect x="28" y="28" width="8" height="10" fill="#5E6C68"/>
+          <rect x="46" y="28" width="8" height="10" fill="#5E6C68"/>
+        </g>
+        <!-- 小竹丛 -->
+        <g stroke="#4D5E48" stroke-width="1.2" stroke-linecap="round" fill="none">
+          <line x1="50" y1="-2" x2="48" y2="-34"/>
+          <line x1="54" y1="-2" x2="56" y2="-30"/>
+          <line x1="58" y1="-2" x2="62" y2="-28"/>
+          <path d="M48 -24 q-6 -2 -10 1"/>
+          <path d="M62 -20 q5 -2 9 1"/>
+        </g>
+      </g>
+
+      <!-- 岛 4 -->
+      <g transform="translate(840 425)" filter="url(#bSoftShadow)">
+        <path d="M-80 0 Q-80 22 0 28 Q80 22 80 0 Q70 -4 0 -6 Q-70 -4 -80 0 Z" fill="#8A9A8E"/>
+        <g transform="translate(-26 -28)">
+          <rect x="0" y="8" width="52" height="20" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="-3,10 55,10 46,-2 6,-2" fill="#3A3A3A"/>
+          <polygon points="-3,10 55,10 55,12 -3,12" fill="#2C2C2C"/>
+          <polygon points="-3,10 -3,-2 -1,-4 1,-2 1,10" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <polygon points="51,10 51,-2 53,-4 55,-2 55,10" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="6" y="16" width="6" height="8" fill="#5E6C68"/>
+          <rect x="20" y="16" width="6" height="8" fill="#5E6C68"/>
+          <rect x="34" y="16" width="6" height="8" fill="#5E6C68"/>
+        </g>
+        <!-- 旗 -->
+        <line x1="30" y1="-28" x2="30" y2="-50" stroke="#2C2C2C" stroke-width="1"/>
+        <polygon points="30,-50 46,-46 30,-42" fill="#B85450"/>
+      </g>
+
+      <!-- 岛 5 -->
+      <g transform="translate(1070 410)" filter="url(#bSoftShadow)">
+        <path d="M-72 0 Q-72 22 0 28 Q72 22 72 0 Q62 -4 0 -6 Q-62 -4 -72 0 Z" fill="#8A9A8E"/>
+        <!-- 牌坊 -->
+        <g transform="translate(-26 -40)">
+          <rect x="0" y="14" width="6" height="32" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="46" y="14" width="6" height="32" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <rect x="0" y="14" width="52" height="6" fill="#3A3A3A"/>
+          <polygon points="-4,14 56,14 26,2" fill="#3A3A3A"/>
+          <rect x="14" y="22" width="24" height="6" fill="#FAF6EB" stroke="#2C2C2C" stroke-width="0.6"/>
+          <circle cx="26" cy="25" r="1.4" fill="#B85450"/>
+        </g>
+      </g>
+
+      <!-- 顶部品牌横条 -->
+      <g>
+        <rect width="1200" height="42" fill="rgba(40,38,32,0.78)"/>
+        <rect x="26" y="9" width="24" height="24" rx="3" fill="#B85450"/>
+        <text x="34" y="26" font-family="'STSong','SimSun',serif" font-size="14" font-weight="700" fill="#FAF6EB" text-anchor="middle">宝</text>
+        <text x="60" y="22" font-family="'STSong','SimSun','PingFang SC',serif" font-size="13" font-weight="600" fill="#F4EAD6" letter-spacing="3">上海市宝山区实验小学教育集团</text>
+        <text x="60" y="34" font-family="sans-serif" font-size="8.5" fill="rgba(244,234,214,0.6)" letter-spacing="2">BAOSHAN EXPERIMENTAL PRIMARY EDUCATION GROUP</text>
+      </g>
+
+      <!-- 印章红章 -->
+      <g transform="translate(1140 90)">
+        <rect x="-18" y="-18" width="36" height="36" fill="none" stroke="#B85450" stroke-width="1.6"/>
+        <text x="0" y="6" font-family="'STSong',serif" font-size="14" font-weight="700" fill="#B85450" text-anchor="middle">学</text>
+      </g>
+
+      <!-- 岛名（手写感） -->
+      <g font-family="'STSong','SimSun',serif" font-weight="600" font-size="13" fill="#2C2C2C" text-anchor="middle">
+        <text x="140" y="495">档案岛</text>
+        <text x="360" y="510">健康岛</text>
+        <text x="600" y="485">阅读岛</text>
+        <text x="840" y="510">活动岛</text>
+        <text x="1070" y="495">成就岛</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="notes">
+    <b>设计关键词：</b>东方、宁静、文化重量 ｜
+    <b>建筑：</b>江南粉墙黛瓦 + 马头墙 ｜
+    <b>色彩：</b>米纸 + 墨灰 + 一点朱砂 ｜
+    <b>气质：</b>有文化底蕴的区域名校官网／文教机构
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     方案 C · 暖光油画 (Painted Dawn Campus)
+     ════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-head">
+    <div>
+      <h2><span class="tag">方案 C</span>暖光油画 · PAINTED DAWN</h2>
+      <p>柔笔触油画风：晨光金色天 → 雾蓝远山 → 镜面水。建筑改成现代校园建筑（坡顶玻璃幕、木百叶、小庭院），植被是分层柔色块。整体像 Studio Ghibli 中景，温暖但不幼稚，最有"成长氛围"。</p>
+    </div>
+    <div class="palette">
+      <span style="background:#F2C078"></span>
+      <span style="background:#E8A07A"></span>
+      <span style="background:#6E91B8"></span>
+      <span style="background:#4F7858"></span>
+      <span style="background:#3A3F50"></span>
+    </div>
+  </div>
+
+  <div class="preview">
+    <svg viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="cSky" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#FBD9A3"/>
+          <stop offset="0.30" stop-color="#F4B98A"/>
+          <stop offset="0.55" stop-color="#D9B3A8"/>
+          <stop offset="0.80" stop-color="#9CB0C6"/>
+          <stop offset="1" stop-color="#7A92AC"/>
+        </linearGradient>
+        <radialGradient id="cSun" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#FFF1C5"/>
+          <stop offset="0.5" stop-color="#FFD79A" stop-opacity="0.7"/>
+          <stop offset="1" stop-color="#F2C078" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="cWater" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#D1B59C"/>
+          <stop offset="0.4" stop-color="#A097A0"/>
+          <stop offset="1" stop-color="#536782"/>
+        </linearGradient>
+        <linearGradient id="cIsle" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#7BA070"/>
+          <stop offset="1" stop-color="#3F5C46"/>
+        </linearGradient>
+        <linearGradient id="cTree" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#7CA76A"/>
+          <stop offset="1" stop-color="#3F5C44"/>
+        </linearGradient>
+        <filter id="cDepth" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+          <feOffset dx="2" dy="6"/>
+          <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- 天空 -->
+      <rect width="1200" height="540" fill="url(#cSky)"/>
+      <!-- 太阳光晕 -->
+      <circle cx="940" cy="150" r="240" fill="url(#cSun)"/>
+      <circle cx="940" cy="150" r="38" fill="#FFEDC0" opacity="0.85"/>
+      <!-- 光柱 -->
+      <g opacity="0.18" fill="#FFE7B0">
+        <polygon points="940,150 700,420 1180,420"/>
+      </g>
+
+      <!-- 远山三层 -->
+      <path d="M0 320 Q200 240 400 290 Q620 220 820 280 Q1000 240 1200 290 L1200 380 L0 380 Z" fill="#B5A5B8" opacity="0.55"/>
+      <path d="M0 350 Q200 280 400 320 Q620 260 820 320 Q1000 280 1200 320 L1200 400 L0 400 Z" fill="#8A95A8" opacity="0.65"/>
+      <path d="M0 380 Q200 320 400 360 Q620 300 820 360 Q1000 320 1200 360 L1200 420 L0 420 Z" fill="#5E7388"/>
+      <!-- 晨雾 -->
+      <rect y="365" width="1200" height="50" fill="#F4D9B8" opacity="0.45"/>
+
+      <!-- 水 -->
+      <rect y="415" width="1200" height="125" fill="url(#cWater)"/>
+      <!-- 倒影笔触 -->
+      <g opacity="0.30">
+        <rect x="130" y="430" width="22" height="60" fill="#3F5C46"/>
+        <rect x="360" y="440" width="28" height="55" fill="#3F5C46"/>
+        <rect x="590" y="425" width="36" height="80" fill="#3F5C46"/>
+        <rect x="830" y="440" width="28" height="55" fill="#3F5C46"/>
+        <rect x="1060" y="430" width="22" height="60" fill="#3F5C46"/>
+      </g>
+      <g opacity="0.5" stroke="#fff" fill="none" stroke-width="1">
+        <path d="M40 450 q40 -4 80 0"/>
+        <path d="M260 480 q40 -4 80 0"/>
+        <path d="M520 470 q40 -4 80 0"/>
+        <path d="M780 490 q40 -4 80 0"/>
+        <path d="M1020 460 q40 -4 80 0"/>
+      </g>
+
+      <!-- 5 座岛 -->
+      <!-- 岛 1 -->
+      <g transform="translate(140 425)" filter="url(#cDepth)">
+        <ellipse cx="0" cy="14" rx="78" ry="8" fill="#000" opacity="0.30"/>
+        <path d="M-70 0 Q-70 16 0 22 Q70 16 70 0 Q60 -4 0 -6 Q-60 -4 -70 0 Z" fill="url(#cIsle)"/>
+        <!-- 现代坡顶建筑 -->
+        <g transform="translate(-22 -36)">
+          <rect x="0" y="14" width="50" height="20" fill="#EFE2CB"/>
+          <polygon points="-4,16 54,16 50,2 0,2" fill="#3A3F50"/>
+          <!-- 大玻璃 -->
+          <rect x="6" y="18" width="36" height="12" fill="#9CB0C6" opacity="0.85"/>
+          <line x1="18" y1="18" x2="18" y2="30" stroke="#fff" stroke-width="0.6" opacity=".7"/>
+          <line x1="30" y1="18" x2="30" y2="30" stroke="#fff" stroke-width="0.6" opacity=".7"/>
+          <line x1="42" y1="18" x2="42" y2="30" stroke="#fff" stroke-width="0.6" opacity=".7"/>
+        </g>
+        <!-- 树 -->
+        <g transform="translate(30 -16)">
+          <rect x="-1.5" y="0" width="3" height="10" fill="#3A2A22"/>
+          <ellipse cx="0" cy="-3" rx="9" ry="11" fill="url(#cTree)"/>
+        </g>
+      </g>
+
+      <!-- 岛 2 -->
+      <g transform="translate(370 442)" filter="url(#cDepth)">
+        <ellipse cx="0" cy="14" rx="86" ry="8" fill="#000" opacity="0.30"/>
+        <path d="M-78 0 Q-78 16 0 22 Q78 16 78 0 Q68 -4 0 -6 Q-68 -4 -78 0 Z" fill="url(#cIsle)"/>
+        <g transform="translate(-30 -36)">
+          <rect x="0" y="14" width="60" height="20" fill="#E8A07A"/>
+          <polygon points="-4,16 64,16 58,2 2,2" fill="#3A3F50"/>
+          <rect x="6" y="18" width="14" height="14" fill="#3A3F50"/>
+          <rect x="24" y="20" width="12" height="12" fill="#9CB0C6" opacity="0.85"/>
+          <rect x="42" y="20" width="12" height="12" fill="#9CB0C6" opacity="0.85"/>
+        </g>
+        <g transform="translate(40 -14)">
+          <rect x="-1.5" y="0" width="3" height="8" fill="#3A2A22"/>
+          <ellipse cx="0" cy="-2" rx="8" ry="9" fill="#A8C796"/>
+          <ellipse cx="-4" cy="-5" rx="5" ry="6" fill="#7CA76A"/>
+        </g>
+      </g>
+
+      <!-- 岛 3（中心） -->
+      <g transform="translate(610 410)" filter="url(#cDepth)">
+        <ellipse cx="0" cy="14" rx="100" ry="9" fill="#000" opacity="0.32"/>
+        <path d="M-90 0 Q-90 18 0 24 Q90 18 90 0 Q78 -4 0 -6 Q-78 -4 -90 0 Z" fill="url(#cIsle)"/>
+        <!-- 高大主楼 -->
+        <g transform="translate(-26 -78)">
+          <rect x="0" y="16" width="54" height="60" fill="#EFE2CB"/>
+          <polygon points="-4,18 58,18 50,2 4,2" fill="#3A3F50"/>
+          <!-- 网格玻璃 -->
+          <g fill="#9CB0C6" opacity="0.85">
+            <rect x="6"  y="22" width="10" height="10"/>
+            <rect x="20" y="22" width="10" height="10"/>
+            <rect x="34" y="22" width="10" height="10"/>
+            <rect x="6"  y="36" width="10" height="10"/>
+            <rect x="20" y="36" width="10" height="10"/>
+            <rect x="34" y="36" width="10" height="10"/>
+            <rect x="6"  y="50" width="10" height="10"/>
+            <rect x="20" y="50" width="10" height="10"/>
+            <rect x="34" y="50" width="10" height="10"/>
+          </g>
+          <!-- 入口暖光 -->
+          <rect x="22" y="66" width="10" height="12" fill="#FFCD8A"/>
+        </g>
+        <!-- 旗杆 -->
+        <line x1="34" y1="-6" x2="34" y2="-90" stroke="#3A3F50" stroke-width="1.4"/>
+        <polygon points="34,-90 56,-84 34,-78" fill="#E8584A"/>
+        <!-- 树 -->
+        <g transform="translate(-48 -10)">
+          <rect x="-1.5" y="0" width="3" height="8" fill="#3A2A22"/>
+          <ellipse cx="0" cy="-2" rx="9" ry="10" fill="url(#cTree)"/>
+        </g>
+        <g transform="translate(50 -12)">
+          <rect x="-1.5" y="0" width="3" height="10" fill="#3A2A22"/>
+          <ellipse cx="0" cy="-3" rx="10" ry="12" fill="url(#cTree)"/>
+        </g>
+      </g>
+
+      <!-- 岛 4 -->
+      <g transform="translate(850 442)" filter="url(#cDepth)">
+        <ellipse cx="0" cy="14" rx="86" ry="8" fill="#000" opacity="0.30"/>
+        <path d="M-78 0 Q-78 16 0 22 Q78 16 78 0 Q68 -4 0 -6 Q-68 -4 -78 0 Z" fill="url(#cIsle)"/>
+        <!-- 馆 + 圆顶 -->
+        <g transform="translate(-30 -40)">
+          <rect x="0" y="20" width="60" height="18" fill="#EFE2CB"/>
+          <ellipse cx="30" cy="20" rx="32" ry="18" fill="#6E91B8"/>
+          <ellipse cx="30" cy="20" rx="32" ry="6" fill="#3A3F50" opacity=".3"/>
+          <line x1="30" y1="2" x2="30" y2="-10" stroke="#3A3F50" stroke-width="1.2"/>
+          <circle cx="30" cy="-12" r="2.5" fill="#E8584A"/>
+        </g>
+        <g transform="translate(40 -16)">
+          <rect x="-1.5" y="0" width="3" height="10" fill="#3A2A22"/>
+          <ellipse cx="0" cy="-3" rx="8" ry="10" fill="#A8C796"/>
+        </g>
+      </g>
+
+      <!-- 岛 5 -->
+      <g transform="translate(1070 425)" filter="url(#cDepth)">
+        <ellipse cx="0" cy="14" rx="78" ry="8" fill="#000" opacity="0.30"/>
+        <path d="M-70 0 Q-70 16 0 22 Q70 16 70 0 Q60 -4 0 -6 Q-60 -4 -70 0 Z" fill="url(#cIsle)"/>
+        <!-- 殿堂：温暖油画版 -->
+        <g transform="translate(-30 -54)">
+          <!-- 基座 -->
+          <rect x="0" y="42" width="60" height="8" fill="#3A3F50"/>
+          <!-- 柱 -->
+          <g fill="#EFE2CB">
+            <rect x="4"  y="18" width="6" height="24"/>
+            <rect x="16" y="18" width="6" height="24"/>
+            <rect x="28" y="18" width="6" height="24"/>
+            <rect x="40" y="18" width="6" height="24"/>
+            <rect x="50" y="18" width="6" height="24"/>
+          </g>
+          <!-- 山墙 -->
+          <polygon points="-4,20 64,20 30,4" fill="#C9554F"/>
+          <polygon points="-4,20 64,20 64,28 -4,28" fill="#3A3F50"/>
+          <!-- 暖入口光 -->
+          <rect x="24" y="34" width="12" height="8" fill="#FFCD8A"/>
+        </g>
+      </g>
+
+      <!-- 顶部品牌 -->
+      <g>
+        <rect width="1200" height="42" fill="rgba(20,28,40,0.50)"/>
+        <rect x="26" y="9" width="24" height="24" rx="6" fill="#F2C078"/>
+        <text x="38" y="26" font-family="'PingFang SC',sans-serif" font-size="11" font-weight="900" fill="#3A2A22" text-anchor="middle">宝实</text>
+        <text x="60" y="22" font-family="'PingFang SC',sans-serif" font-size="12.5" font-weight="700" fill="#fff" letter-spacing="2">上海市宝山区实验小学教育集团</text>
+        <text x="60" y="34" font-family="sans-serif" font-size="8.5" fill="rgba(255,255,255,0.7)" letter-spacing="2">BAOSHAN EXPERIMENTAL PRIMARY EDUCATION GROUP</text>
+      </g>
+
+      <!-- 岛名牌 -->
+      <g font-family="'PingFang SC',sans-serif" font-weight="700" font-size="11" fill="#fff" text-anchor="middle">
+        <g transform="translate(140 500)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="rgba(58,63,80,0.85)"/>
+          <text y="4">档案岛</text>
+        </g>
+        <g transform="translate(370 515)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="rgba(58,63,80,0.85)"/>
+          <text y="4">健康岛</text>
+        </g>
+        <g transform="translate(610 485)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="rgba(58,63,80,0.85)"/>
+          <text y="4">阅读岛</text>
+        </g>
+        <g transform="translate(850 515)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="rgba(58,63,80,0.85)"/>
+          <text y="4">活动岛</text>
+        </g>
+        <g transform="translate(1070 500)">
+          <rect x="-26" y="-9" width="52" height="18" rx="9" fill="rgba(58,63,80,0.85)"/>
+          <text y="4">成就岛</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="notes">
+    <b>设计关键词：</b>温暖、电影感、成长 ｜
+    <b>建筑：</b>现代校园（坡顶+大玻璃+暖入口光） ｜
+    <b>光线：</b>晨光金色 + 雾蓝远山 + 水面反射 ｜
+    <b>气质：</b>像 Studio Ghibli / 高端绘本，温暖但不卡通
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>

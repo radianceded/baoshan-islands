@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成就岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{background: linear-gradient(180deg,#FFEBC0 0%, #FFD080 25%, #BFE6FF 60%, #6FC8F0 100%);overflow-x:hidden;min-height:100vh}
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,140,66,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  .banner{position:relative;height:360px;overflow:hidden;background: linear-gradient(180deg,#FFEBC0 0%, #FFD080 100%);border-bottom:4px solid #FFB37A}
+  .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#C2410C;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#FFC23F;box-shadow:0 0 0 3px rgba(255,194,63,.3)}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+
+  /* 分类切换 */
+  .subj-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;justify-content:center}
+  .subj-tab{padding:10px 18px;border-radius:14px;background:#fff;border:2px solid #E0EBF0;color:#5C7A8C;font-weight:800;font-size:13px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 10px rgba(0,0,0,0.06)}
+  .subj-tab:hover{transform:translateY(-2px);border-color:#FFC23F}
+  .subj-tab.active{background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;border-color:#FF9F4A;box-shadow:0 6px 14px rgba(255,159,74,.4)}
+  .subj-tab .ic{font-size:16px}
+
+  /* 颁奖台 */
+  .podium-card{background:linear-gradient(135deg,#FFF6E5,#FFE3B0);border:3px solid #F0CC8A;border-radius:24px;padding:24px;margin-bottom:20px;box-shadow:0 10px 30px rgba(180,120,40,0.15)}
+  .podium-h{text-align:center;margin-bottom:16px}
+  .podium-h h2{font-size:22px;font-weight:900;color:#3D2812;letter-spacing:2px}
+  .podium-h p{font-size:12px;color:#7A4F1B;margin-top:4px;font-weight:700;letter-spacing:1px}
+  .podium{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px;align-items:end;max-width:780px;margin:0 auto}
+  .pod{position:relative;border-radius:18px 18px 0 0;padding:60px 12px 16px;text-align:center;color:#fff;font-weight:900;box-shadow:inset 0 -10px 0 rgba(0,0,0,.15)}
+  .pod.gold{background:linear-gradient(180deg,#FFE672,#A06B12);height:200px;order:2}
+  .pod.silver{background:linear-gradient(180deg,#F0F0F0,#8C8C8C);height:170px;order:1}
+  .pod.bronze{background:linear-gradient(180deg,#E0945C,#7A4F1B);height:140px;order:3}
+  .pod .rank{font-size:48px;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.18)}
+  .pod .nm{font-size:15px;letter-spacing:1px;margin-top:8px;text-shadow:0 2px 4px rgba(0,0,0,.2)}
+  .pod .desc{font-size:11px;font-weight:700;margin-top:4px;opacity:.95}
+  .pod .crown{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:32px;animation:bounce 1.6s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+  .pod .star{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:36px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.2);animation:rotate 6s linear infinite}
+  @keyframes rotate{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
+
+  /* 奖项卡片网格 */
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,80,120,0.08);border:1px solid rgba(180,220,240,.6)}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:linear-gradient(135deg,#FFE7B0,#FFB37A)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  .award-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .award-card{background:#fff;border:2px solid #E0EBF0;border-radius:18px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;position:relative}
+  .award-card:hover{transform:translateY(-3px);border-color:#FFC23F;box-shadow:0 8px 18px rgba(255,194,63,0.3)}
+  .award-card .av{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .award-card .av.gold{background:linear-gradient(135deg,#FFE672,#A06B12);color:#fff}
+  .award-card .av.silver{background:linear-gradient(135deg,#F0F0F0,#8C8C8C);color:#fff}
+  .award-card .av.bronze{background:linear-gradient(135deg,#E0945C,#7A4F1B);color:#fff}
+  .award-card .av.normal{background:linear-gradient(135deg,#C9EBFB,#7BC8E8);color:#fff}
+  .award-card .info{flex:1;min-width:0}
+  .award-card .nm{font-size:13.5px;font-weight:800;color:#1F3A4D;line-height:1.3;letter-spacing:.3px}
+  .award-card .who{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:3px}
+  .award-card .prize{font-size:11px;color:#C2410C;font-weight:800;margin-top:3px;background:#FFF3E0;display:inline-block;padding:1px 6px;border-radius:6px}
+
+  /* 总览统计 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .stat{background:#fff;border-radius:18px;padding:14px;text-align:center;border:2px solid #E0EBF0;position:relative;overflow:hidden}
+  .stat .e{font-size:28px;line-height:1}
+  .stat .v{font-size:24px;font-weight:900;color:#1F3A4D;margin-top:4px}
+  .stat .l{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px;letter-spacing:1px}
+  .stat.gold{border-color:#FFC23F;background:linear-gradient(180deg,#FFF8E5,#FFEBC0)}
+  .stat.gold .v{color:#C2410C}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#C2410C;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(194,65,12,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>🏆 成就岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar">林</div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+      <div class="stu-info">
+        <div class="name">林**</div>
+        <div class="meta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 满载横幅 -->
+<div class="banner">
+  <img class="banner-img" src="assets/成就岛.png" alt="成就岛">
+  <div class="banner-text">
+    <h1>🏆 成就岛</h1>
+    <p data-text-teacher="看奖牌 · 找荣誉 · 颁勋章"
+       data-text-parent="我的孩子获奖记录 · 看看成长足迹"
+    >看奖牌 · 找荣誉 · 颁勋章</p>
+    <span class="tag" data-hide-for="parent"><span class="dot"></span>共 <strong>320</strong> 个奖项 · <strong>191</strong> 名同学获奖</span>
+    <span class="tag" data-show-for="parent"><span class="dot"></span>家长账号 · 仅展示我的孩子</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 总览统计 -->
+  <div class="stats">
+    <div class="stat gold">
+      <div class="e">🥇</div>
+      <div class="v" id="goldCount">85</div>
+      <div class="l">金奖 (一等奖)</div>
+    </div>
+    <div class="stat">
+      <div class="e">🥈</div>
+      <div class="v" id="silverCount">112</div>
+      <div class="l">银奖 (二等奖)</div>
+    </div>
+    <div class="stat">
+      <div class="e">🥉</div>
+      <div class="v" id="bronzeCount">73</div>
+      <div class="l">铜奖 (三等奖)</div>
+    </div>
+    <div class="stat">
+      <div class="e">🏅</div>
+      <div class="v" id="otherCount">50</div>
+      <div class="l">其他荣誉</div>
+    </div>
+  </div>
+
+  <!-- 颁奖台 -->
+  <div class="podium-card">
+    <div class="podium-h">
+      <h2>🌟 本月之星</h2>
+      <p>本月获奖最多的三位同学</p>
+    </div>
+    <div class="podium">
+      <div class="pod silver">
+        <div class="star">★</div>
+        <div class="rank">2</div>
+        <div class="nm">陈**</div>
+        <div class="desc">5 项 · 学科+体育</div>
+      </div>
+      <div class="pod gold">
+        <div class="crown">👑</div>
+        <div class="star">★</div>
+        <div class="rank">1</div>
+        <div class="nm">万**</div>
+        <div class="desc">7 项 · 游泳+学科</div>
+      </div>
+      <div class="pod bronze">
+        <div class="star">★</div>
+        <div class="rank">3</div>
+        <div class="nm">林**</div>
+        <div class="desc">4 项 · 艺术+学科</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 我的社团（家长视图） -->
+  <div class="card" data-show-for="parent" id="myClubsCard" style="display:none;margin-bottom:16px">
+    <div class="card-h">
+      <div class="icon" style="background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff">🎭</div>
+      <h2>我的社团</h2>
+      <div class="sub" id="myClubsSub">历年拓展课</div>
+    </div>
+    <div id="myClubsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px"></div>
+  </div>
+
+  <!-- 奖项列表 -->
+  <div class="card">
+    <div class="card-h">
+      <div class="icon">🏆</div>
+      <h2>获奖记录</h2>
+      <div class="sub" id="awardCount">显示 320 项</div>
+    </div>
+
+    <div class="subj-tabs" id="subjTabs"></div>
+    <!-- 教师上传按钮（仅教师可见） -->
+    <div data-hide-for="parent" style="margin-bottom:12px;text-align:right">
+      <input type="file" id="awardUploadInput" accept="image/*,.zip" style="display:none" onchange="handleAwardUpload(event)">
+      <button class="subj-tab" style="border-color:#FFC23F;color:#C2410C" onclick="document.getElementById('awardUploadInput').click()">📤 上传奖状（图片/ZIP）</button>
+      <span id="awardUploadMsg" style="display:none;margin-left:8px;font-size:12px;color:#7BB8DA;font-weight:700"></span>
+    </div>
+    <div class="award-grid" id="awardGrid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUBJECTS = [
+  {key:'all', name:'全部', ic:'🌟'},
+  {key:'体育', name:'体育', ic:'⚽'},
+  {key:'学科', name:'学科', ic:'📚'},
+  {key:'艺术', name:'艺术', ic:'🎨'},
+  {key:'科技', name:'科技', ic:'🤖'},
+];
+
+let AWARDS = [];
+let currentSubj = 'all';
+
+async function loadData(){
+  const isParent = window.UserAuth && UserAuth.isParent && UserAuth.isParent();
+  const boundIdc = isParent && UserAuth.getBoundIdCard && UserAuth.getBoundIdCard();
+
+  // 家长：一站从 /api/students/<id> 拉 award_certs + 学科赛事 awards
+  if(isParent && boundIdc){
+    try {
+      const r = await fetch('/api/students/' + encodeURIComponent(boundIdc) + '?nomask=1');
+      if(r.ok){
+        const stu = await r.json();
+        const certs = (stu.award_certs || []).map(c => ({
+          name: c.student_name, class_name: c.class_name,
+          competition: c.competition || '校级表彰', prize: c.prize || '校级奖状',
+          subject: classifySubj(c.subject || c.competition || ''), teacher: c.teacher || '',
+          image_path: c.image_path, source_sheet: c.source || c.subject,
+        }));
+        const subj = (stu.awards || []).map(a => ({
+          name: a.name, class_name: a.class_name,
+          competition: a.competition, prize: a.prize,
+          subject: classifySubj(a.subject || a.source_sheet || ''),
+          teacher: a.teacher || '', image_path: null,
+          source_sheet: a.source_sheet || a.subject,
+        }));
+        AWARDS = certs.concat(subj);
+        applyParentFilter();
+        renderTabs(); renderAwards();
+        return;
+      }
+    } catch(e){ /* fallthrough to teacher path */ }
+  }
+
+  // 老师 / 全量：data.json 旧奖 + 全部证书 + awards 表
+  let baseAwards = [], certAwards = [], dbAwards = [];
+  try{
+    const r = await fetch('data.json');
+    const d = await r.json();
+    baseAwards = d.awards || [];
+  }catch(e){ /* skip */ }
+  try{
+    const r2 = await fetch('/api/award-certs?limit=500');
+    if(r2.ok){
+      const d2 = await r2.json();
+      certAwards = (d2.certs || []).map(c => ({
+        name: c.student_name, class_name: c.class_name,
+        competition: c.competition, prize: c.prize,
+        subject: classifySubj(c.subject || ''), teacher: c.teacher || '',
+        image_path: c.image_path, source_sheet: c.source || c.subject,
+      }));
+    }
+  }catch(e){ /* skip */ }
+  try{
+    const r3 = await fetch('/api/awards?limit=2000');
+    if(r3.ok){
+      const d3 = await r3.json();
+      dbAwards = (d3.awards || []).map(a => ({
+        name: a.name, class_name: a.class_name,
+        competition: a.competition, prize: a.prize,
+        subject: classifySubj(a.subject || ''), teacher: a.teacher || '',
+        image_path: null, source_sheet: a.source_sheet,
+      }));
+    }
+  }catch(e){ /* skip */ }
+  AWARDS = baseAwards.concat(certAwards).concat(dbAwards);
+  if(AWARDS.length === 0) AWARDS = mockAwards();
+  applyParentFilter();
+  renderTabs();
+  renderAwards();
+}
+
+// 把 source_sheet/subject 归一到 4 个 tab
+function classifySubj(raw){
+  const s = String(raw || '');
+  if(!s) return '学科';
+  if(/体育|跳|跑|球|武术|田径/.test(s)) return '体育';
+  if(/科技|机器|编程|3D|设计|创客|无人机/.test(s)) return '科技';
+  if(/音乐|乐器|合唱|歌|打击|声乐/.test(s)) return '艺术';
+  if(/美术|绘画|书法|画|手工/.test(s)) return '艺术';
+  if(/艺术/.test(s)) return '艺术';
+  return '学科';
+}
+
+/* 家长模式：只保留绑定学生的奖项
+   优先级：UserAuth.getKidName() / URL ?kidName=X / bound.displayName 模糊匹配 / 合成 demo */
+function applyParentFilter(){
+  if(!window.UserAuth || !UserAuth.isParent()) return;
+  const qs = new URLSearchParams(location.search);
+  const realName = (UserAuth.getKidName && UserAuth.getKidName()) || qs.get('kidName');
+  const bound = UserAuth.getBoundStudent();
+
+  // 1. 优先按真名精确匹配
+  if(realName){
+    const exact = AWARDS.filter(a => (a.name || '') === realName);
+    AWARDS = exact;
+    return;
+  }
+  // 2. 否则按绑定学生 displayName 匹配
+  if(!bound){ AWARDS = []; return; }
+  let mine = AWARDS.filter(a => (a.name || '') === bound.displayName);
+  // 3. 找不到 → 合成 3 条 demo 奖项（仅 demo 模式）
+  if(!mine.length && window.StudentRoster){
+    const idx = UserAuth.getBoundIdx();
+    const rs = idx != null ? StudentRoster.get(idx) : null;
+    const seed = (rs && rs.interests) || ['艺术','学科','科技'];
+    const subjMap = {'画画':'艺术','科幻':'科技','机器人':'科技','足球':'体育','篮球':'体育','阅读':'学科','诗词':'学科','数学':'学科','编程':'科技','动手做':'科技'};
+    mine = seed.slice(0,3).map((interest,i) => ({
+      name: bound.displayName,
+      class_name: (rs && rs.class) || bound.class || '五(1)',
+      competition: ['校园文化节','学科竞赛','区级少儿创新赛'][i] || `${interest}比赛`,
+      prize: ['一等奖','二等奖','优秀奖'][i] || '一等奖',
+      subject: subjMap[interest] || '艺术',
+      teacher: ['张老师','李老师','王老师'][i] || '陈老师',
+      remark: `demo·${interest} 方向`,
+      source_sheet: subjMap[interest] || '艺术',
+    }));
+  }
+  AWARDS = mine;
+}
+
+function mockAwards(){
+  const list = [];
+  const surnames = ['林','王','陈','张','李','刘','黄','周','吴','徐','孙','马','胡','郭','何'];
+  const subjs = ['体育','学科','艺术','科技'];
+  const sportComps = ['游泳锦标赛','田径运动会','篮球联赛','乒乓球比赛','足球友谊赛'];
+  const sportPrizes = ['100米蝶泳第一名','200米混合泳第二名','男子跳远第一名','女子1500米第三名','100米接力第二名'];
+  const subjComps = ['数学希望杯','英语口语大赛','语文写作大赛','奥林匹克竞赛','古诗词大会'];
+  const subjPrizes = ['一等奖','二等奖','三等奖','优秀奖','特等奖'];
+  const artComps = ['校园文化节','器乐独奏比赛','合唱比赛','美术展','书法展'];
+  const artPrizes = ['一等奖','金奖','最佳表演奖','优秀作品奖','银奖'];
+  const techComps = ['机器人挑战赛','创客大赛','少儿编程比赛','科创大赛','科技小制作'];
+  const techPrizes = ['一等奖','二等奖','创新奖','三等奖','金奖'];
+  const teachers = ['教师03','示例教师B','示例教师C','示例教师D','示例教师E','示例教师F','示例教师G','示例教师H'];
+
+  for(let i=0;i<60;i++){
+    const subj = subjs[i%4];
+    let comps, prizes;
+    if(subj==='体育'){comps=sportComps;prizes=sportPrizes}
+    else if(subj==='学科'){comps=subjComps;prizes=subjPrizes}
+    else if(subj==='艺术'){comps=artComps;prizes=artPrizes}
+    else {comps=techComps;prizes=techPrizes}
+    list.push({
+      name: surnames[i%surnames.length]+'**',
+      class_name: '五('+(i%6+1)+')',
+      competition: comps[i%comps.length],
+      prize: prizes[i%prizes.length],
+      subject: subj,
+      teacher: teachers[i%teachers.length],
+    });
+  }
+  return list;
+}
+
+function rankClass(prize){
+  const p = (prize||'').toLowerCase();
+  if(p.includes('一等')||p.includes('第一')||p.includes('金奖')||p.includes('特等')) return 'gold';
+  if(p.includes('二等')||p.includes('第二')||p.includes('银奖')) return 'silver';
+  if(p.includes('三等')||p.includes('第三')||p.includes('铜奖')) return 'bronze';
+  return 'normal';
+}
+function rankIcon(cls){
+  return {gold:'🥇',silver:'🥈',bronze:'🥉',normal:'🏅'}[cls]||'🏅';
+}
+
+function renderTabs(){
+  document.getElementById('subjTabs').innerHTML = SUBJECTS.map(s=>{
+    const cnt = s.key==='all' ? AWARDS.length : AWARDS.filter(a=>a.subject===s.key).length;
+    return `<button class="subj-tab ${s.key===currentSubj?'active':''}" onclick="setSubj('${s.key}')">
+      <span class="ic">${s.ic}</span><span>${s.name}</span><span style="opacity:.7">(${cnt})</span>
+    </button>`;
+  }).join('');
+}
+
+function setSubj(k){ currentSubj=k; renderTabs(); renderAwards(); }
+
+function renderAwards(){
+  const list = currentSubj==='all' ? AWARDS : AWARDS.filter(a=>a.subject===currentSubj);
+  document.getElementById('awardCount').textContent = `显示 ${list.length} 项`;
+
+  document.getElementById('awardGrid').innerHTML = list.slice(0, 60).map((a,i)=>{
+    const cls = rankClass(a.prize);
+    // 扫描证书：左侧用缩略图替代奖牌
+    const cover = a.image_path
+      ? `<div class="av" style="background:#FFF7DA;border:2px solid #F0CC8A;overflow:hidden;padding:0">
+           <img src="${a.image_path}" style="width:100%;height:100%;object-fit:cover" loading="lazy">
+         </div>`
+      : `<div class="av ${cls}">${rankIcon(cls)}</div>`;
+    return `
+      <div class="award-card" onclick="showAwardDetail(${i})">
+        ${cover}
+        <div class="info">
+          <div class="nm">${a.competition}</div>
+          <div class="who">${a.name}${a.class_name?' · '+a.class_name:''}${a.teacher?' · 指导:'+a.teacher:''}</div>
+          <span class="prize">${a.prize}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* 奖项详情弹窗 */
+function showAwardDetail(i){
+  const list = currentSubj==='all' ? AWARDS : AWARDS.filter(a=>a.subject===currentSubj);
+  const a = list[i];
+  const cls = rankClass(a.prize);
+  const ICONS = {gold:'🥇',silver:'🥈',bronze:'🥉',normal:'🏅'};
+  const STORIES = {
+    '体育':'比赛当天，他/她从清晨 6 点就开始热身。第三轮决赛时和对手只差 0.3 秒，最后凭借惊人的爆发力反超夺冠！',
+    '学科':'这个奖项是经过 3 个月的题海训练得来的。指导老师说："这个孩子最大的特点是不怕错，错了能立刻总结。"',
+    '艺术':'从准备到上场只用了两周时间。台下排练时一个动作要重复几十遍，最后获得评委一致好评。',
+    '科技':'作品由 200+ 行代码 + 7 个零件搭建而成。比赛现场，机器人在第二轮卡顿，他/她临场调试 30 秒后顺利完成任务。'
+  };
+  const story = STORIES[a.subject] || '一段精彩的获奖经历正在补充中…';
+  let veil = document.getElementById('detailVeil');
+  if(!veil){
+    veil = document.createElement('div');
+    veil.id = 'detailVeil';
+    veil.style.cssText = 'position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+    veil.onclick = (e)=>{ if(e.target===veil) veil.remove(); };
+    document.body.appendChild(veil);
+  } else { veil.innerHTML=''; }
+  const m = document.createElement('div');
+  m.style.cssText = 'background:#fff;border-radius:24px;width:640px;max-width:100%;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 24px 60px rgba(0,30,60,.3);animation:popIn .35s cubic-bezier(.34,1.56,.64,1)';
+  const COLOR_MAP = {gold:'linear-gradient(135deg,#FFE672,#A06B12)',silver:'linear-gradient(135deg,#F0F0F0,#8C8C8C)',bronze:'linear-gradient(135deg,#E0945C,#7A4F1B)',normal:'linear-gradient(135deg,#C9EBFB,#7BC8E8)'};
+  // 扫描证书：顶部直接放大图，且可点击新窗口打开原图
+  const heroImg = a.image_path
+    ? `<div style="text-align:center;margin:6px 0 14px">
+         <img src="${a.image_path}" alt="${a.name} 证书" style="max-width:100%;max-height:60vh;border-radius:14px;box-shadow:0 12px 32px rgba(0,30,60,.25);cursor:zoom-in" onclick="window.open('${a.image_path}','_blank')">
+       </div>
+       <div style="text-align:center;font-size:11px;color:#7BB8DA;margin-bottom:10px">点击图片可在新窗口看原图</div>`
+    : `<div style="text-align:center;padding:14px 0">
+         <div style="display:inline-flex;width:84px;height:84px;background:${COLOR_MAP[cls]};border-radius:24px;align-items:center;justify-content:center;font-size:42px;color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.2)">${ICONS[cls]}</div>
+       </div>`;
+  m.innerHTML = `
+    ${heroImg}
+    <div style="text-align:center">
+      <div style="font-size:22px;font-weight:900;color:#1F3A4D;letter-spacing:1px">${a.competition}</div>
+      <div style="margin-top:6px;display:inline-block;background:#FFF3E0;color:#C2410C;font-size:13px;font-weight:800;padding:4px 12px;border-radius:12px">${a.prize}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">获奖学生</div><div style="font-size:14px;font-weight:900;color:#1F3A4D;margin-top:3px">${a.name}</div></div>
+      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">班级</div><div style="font-size:14px;font-weight:900;color:#1F3A4D;margin-top:3px">${a.class_name||'—'}</div></div>
+      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">指导老师</div><div style="font-size:14px;font-weight:900;color:#1F3A4D;margin-top:3px">${a.teacher||'—'}</div></div>
+    </div>
+    ${a.image_path ? '' : `<div style="background:linear-gradient(135deg,#FFF6E5,#FFE3B0);border:2px solid #F0CC8A;border-radius:14px;padding:14px;margin-top:14px;font-size:13.5px;line-height:1.7;color:#5C3D17">
+      <strong style="color:#C2410C">📖 获奖故事</strong><br>${story}
+    </div>`}
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="showToast('已分享到家长群~ 🎉');document.getElementById('detailVeil').remove()" style="background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:13px;padding:9px 18px;border:none;border-radius:14px;cursor:pointer">📤 分享给家长</button>
+      <button onclick="document.getElementById('detailVeil').remove()" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;padding:9px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button>
+    </div>
+  `;
+  veil.appendChild(m);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function goHome(){ location.href='island-homepage.html' }
+
+/* 家长：拉自己孩子的社团列表 */
+async function loadMyClubs(){
+  if(!window.UserAuth || !UserAuth.isParent || !UserAuth.isParent()) return;
+  const idc = UserAuth.getBoundIdCard && UserAuth.getBoundIdCard();
+  if(!idc) return;
+  try {
+    const r = await fetch('/api/students/' + encodeURIComponent(idc) + '?nomask=1');
+    if(!r.ok) return;
+    const stu = await r.json();
+    const clubs = stu.clubs || [];
+    const card = document.getElementById('myClubsCard');
+    const list = document.getElementById('myClubsList');
+    if(!clubs.length){ card.style.display=''; list.innerHTML='<div style="color:#7BB8DA;font-weight:700;padding:14px;text-align:center">还没有社团记录</div>'; return; }
+    card.style.display='';
+    document.getElementById('myClubsSub').textContent = `共 ${clubs.length} 个`;
+    const COLOR = ['#FF8C42','#22A05B','#5BC8E8','#E94B6A','#A893E8','#FFC65A','#7C5BCC','#3DB7E2'];
+    list.innerHTML = clubs.map((c,i) => {
+      const col = COLOR[i % COLOR.length];
+      return `
+      <div style="background:#F7FBFE;border-radius:14px;padding:14px;border-left:3px solid ${col}">
+        <div style="font-weight:900;color:#1F3A4D;font-size:14px;letter-spacing:.5px">${c.club_name||'拓展课'}</div>
+        <div style="margin-top:4px;font-size:11.5px;color:#7BB8DA;font-weight:700">${c.school_year||''} ${c.grade?'· '+c.grade:''} ${c.class_name?'· '+c.class_name:''}</div>
+        ${c.teacher?`<div style="margin-top:6px;font-size:12px;color:#5C7A8C">👩‍🏫 ${c.teacher}</div>`:''}
+        ${c.location?`<div style="margin-top:2px;font-size:12px;color:#5C7A8C">📍 ${c.location}</div>`:''}
+      </div>
+    `; }).join('');
+  } catch(e){ console.warn('[my-clubs] fetch failed:', e.message); }
+}
+
+/* ── 教师端：上传奖状（图片或 ZIP）── */
+async function handleAwardUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const MAX = 50*1024*1024;
+  if(file.size > MAX){ showToast('文件不能超过 50MB'); return; }
+  const msg = document.getElementById('awardUploadMsg');
+  msg.style.display = 'inline';
+  const isZip = file.name.toLowerCase().endsWith('.zip');
+  msg.textContent = isZip ? '解压识别中…' : 'AI识别中…';
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const r = await fetch('/api/award-certs/upload-ai', { method:'POST', body:fd });
+    const d = await r.json();
+    msg.style.display = 'none';
+    event.target.value = '';
+    if(d.success){
+      const text = d.source==='zip'
+        ? `ZIP完成：${d.saved}条 (${d.zip_processed}/${d.zip_files_total}张)`
+        : `识别完成：${d.saved}条奖状已保存`;
+      showToast(text);
+      // 重新加载数据
+      await loadData();
+      renderTabs(); renderAwards();
+    } else {
+      showToast(d.error || '识别失败');
+    }
+  } catch(e){
+    msg.style.display = 'none';
+    event.target.value = '';
+    showToast('上传失败: '+e.message);
+  }
+}
+
+loadData();
+if(window.UserAuth) UserAuth.ready(loadMyClubs);
+// UserAuth 异步就位后重新过滤 + 渲染
+if(window.UserAuth){
+  UserAuth.ready(()=>{
+    if(!AWARDS.length) return;
+    applyParentFilter();
+    renderTabs();
+    renderAwards();
+  });
+}
+</script>
+
+<script>
+/* 全局学生切换 */
+(function(){
+  const ALT_STUDENTS_QUICK=[
+    {name:"林**",meta:"小学 · 五年级 1 班",avatar:"林"},
+    {name:"王**",meta:"小学 · 四年级 2 班",avatar:"王"},
+    {name:"陈**",meta:"小学 · 五年级 3 班",avatar:"陈"},
+    {name:"张**",meta:"小学 · 六年级 1 班",avatar:"张"},
+  ];
+  let i=0;
+  const pill=document.querySelector(".student-pill");
+  if(!pill)return;
+  pill.style.cursor="pointer";
+  pill.title="点击切换学生";
+  pill.addEventListener("click",()=>{
+    i=(i+1)%ALT_STUDENTS_QUICK.length;
+    const s=ALT_STUDENTS_QUICK[i];
+    pill.querySelector(".stu-avatar").textContent=s.avatar;
+    pill.querySelector(".name").textContent=s.name;
+    pill.querySelector(".meta").textContent=s.meta;
+    if(typeof showToast==="function")showToast("已切换到 "+s.name);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阅读岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background: linear-gradient(180deg,#FFE6CC 0%, #FFD4B0 12%, #BFE6FF 35%, #6FC8F0 100%);
+    overflow-x:hidden;min-height:100vh;
+  }
+
+  /* ───── 顶栏 ───── */
+  .topbar{
+    position:sticky;top:0;left:0;right:0;height:60px;
+    display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;
+    background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 2px 12px rgba(0,80,120,0.1);
+  }
+  .back-btn{
+    display:flex;align-items:center;gap:6px;
+    background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;
+    padding:8px 16px;border-radius:22px;border:none;cursor:pointer;
+    box-shadow:0 4px 10px rgba(255,140,66,0.35);
+    transition:transform .15s;
+  }
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  /* ───── 横幅 ───── */
+  .banner{position:relative;height:360px;overflow:hidden;background: linear-gradient(180deg,#FFE6CC 0%, #FFD4B0 100%)}
+  .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#0E5E80;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#3DB7E2;box-shadow:0 0 0 3px rgba(61,183,226,.25)}
+
+  /* ───── 主结构 ───── */
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+  .grid{display:grid;grid-template-columns: 1.5fr 1fr;gap:20px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(0,80,120,0.08);border:1px solid rgba(180,220,240,.6);position:relative;overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .card-h .icon.orange{background:linear-gradient(135deg,#FFE7B0,#FFB37A)}
+  .card-h .icon.purple{background:linear-gradient(135deg,#E0D6FF,#A893E8)}
+  .card-h .icon.blue{background:linear-gradient(135deg,#C9EBFB,#7BC8E8)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* ───── 书架 ───── */
+  .bookshelf-wrap{
+    background: linear-gradient(180deg, #FFF6E5 0%, #FAE3BC 100%);
+    border-radius:18px;padding:26px 18px 12px;
+    border:3px solid #C8915A;
+    box-shadow: inset 0 -10px 0 #B07A2E, 0 10px 0 #8C5028;
+    position:relative;
+  }
+  .bookshelf{display:grid;grid-template-columns:repeat(8, 1fr);gap:6px;align-items:end;min-height:200px}
+  .book{
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    transition:transform .2s;position:relative;
+  }
+  .book:hover{transform:translateY(-8px)}
+  .book .spine{
+    width:100%;border-radius:4px 4px 0 0;
+    box-shadow: inset -3px 0 0 rgba(0,0,0,.2), inset 3px 0 0 rgba(255,255,255,.25), 0 3px 6px rgba(0,0,0,.18);
+    color:#fff;font-weight:800;letter-spacing:1px;font-size:12px;text-align:center;
+    display:flex;align-items:center;justify-content:center;
+    writing-mode: vertical-rl;text-orientation: mixed;
+    padding:10px 0;
+    position:relative;
+  }
+  .book .spine::before{
+    content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    width:60%;height:2px;background:rgba(255,255,255,.5);border-radius:2px;
+  }
+  .book .spine::after{
+    content:'';position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    width:60%;height:2px;background:rgba(255,255,255,.5);border-radius:2px;
+  }
+  .book.borrowed .spine::after{
+    content:'借';color:#fff;background:#FF6B6B;border-radius:50%;width:18px;height:18px;
+    font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;
+    bottom:-6px;left:50%;transform:translateX(-50%);
+    box-shadow:0 2px 4px rgba(0,0,0,.3);
+    writing-mode:horizontal-tb;
+  }
+  .book .label{
+    margin-top:4px;font-size:10px;color:#7A4F1B;font-weight:700;text-align:center;
+    max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* 借阅记录 timeline */
+  .borrow-list{display:flex;flex-direction:column;gap:10px}
+  .borrow-item{
+    display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:14px;
+    background:#F4FAFD;border:1.5px solid #DCEBF3;
+  }
+  .borrow-item.due{background:#FFF6F2;border-color:#FFCFAB}
+  .borrow-cover{
+    width:40px;height:54px;border-radius:4px 4px 0 0;
+    box-shadow: inset -2px 0 0 rgba(0,0,0,.18), 0 3px 6px rgba(0,0,0,.18);
+    flex-shrink:0;
+  }
+  .borrow-meta .t{font-size:14px;font-weight:800;color:#1F3A4D}
+  .borrow-meta .s{font-size:11px;color:#7BB8DA;margin-top:2px;font-weight:700;letter-spacing:.5px}
+  .borrow-status{margin-left:auto;font-weight:800;font-size:11px;letter-spacing:1px;padding:4px 10px;border-radius:10px}
+  .borrow-status.ok{background:#E0F8E4;color:#15803D}
+  .borrow-status.due{background:#FFE0CC;color:#C2410C}
+
+  /* ───── AI 书精灵推荐 ───── */
+  .fairy-card{
+    background:linear-gradient(135deg,#F2EBFF 0%, #E0D6FF 100%);
+    border:3px solid #A893E8;
+  }
+  .fairy-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .fairy-avatar{
+    width:80px;height:80px;flex-shrink:0;
+    background:linear-gradient(135deg,#FFD8FF,#A893E8);
+    border-radius:24px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(168,147,232,0.4);position:relative;
+  }
+  .fairy-avatar::after{
+    content:'✨';position:absolute;top:-6px;right:-6px;font-size:20px;
+    animation:sparkle 1.6s ease-in-out infinite;
+  }
+  @keyframes sparkle{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.3) rotate(20deg)}}
+  .fairy-name{font-size:18px;font-weight:900;color:#5C42A0;letter-spacing:2px}
+  .fairy-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(168,147,232,.25);color:#5C42A0;font-weight:800;font-size:11px;letter-spacing:1px;padding:3px 10px;border-radius:12px;margin-top:3px}
+  .pulse{width:7px;height:7px;border-radius:50%;background:#A893E8;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(168,147,232,.6)}50%{box-shadow:0 0 0 8px rgba(168,147,232,0)}}
+  .fairy-bubble{
+    background:#fff;border-radius:18px;padding:14px 16px;font-size:13.5px;line-height:1.7;color:#1F3A4D;
+    box-shadow:0 4px 12px rgba(120,90,200,0.18);
+    position:relative;margin-top:12px;
+  }
+  .fairy-bubble::before{
+    content:'';position:absolute;left:30px;top:-8px;width:14px;height:14px;
+    background:#fff;transform:rotate(45deg);border-radius:3px 0 0 0;
+  }
+  .fairy-bubble strong{color:#5C42A0}
+  .r-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#A893E8;animation:rDot 1.2s ease-in-out infinite}
+  @keyframes rDot{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
+  @keyframes aiFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* AI 推荐书卡片 */
+  .reco-list{margin-top:12px;display:flex;flex-direction:column;gap:14px}
+  .reco-item{
+    display:flex;align-items:flex-start;gap:14px;padding:14px;border-radius:16px;
+    background:#fff;border:2px solid #E0D6FF;cursor:pointer;transition:transform .15s, border-color .2s, box-shadow .2s;
+  }
+  .reco-item:hover{transform:translateY(-2px);border-color:#A893E8;box-shadow:0 8px 18px rgba(168,147,232,.2)}
+  .reco-cover{width:54px;height:76px;border-radius:4px 4px 0 0;flex-shrink:0;box-shadow:0 3px 6px rgba(0,0,0,.2), inset -2px 0 0 rgba(0,0,0,.15)}
+  .reco-meta{flex:1;min-width:0}
+  .reco-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .reco-meta .t{font-size:15px;font-weight:900;color:#1F3A4D;letter-spacing:.5px}
+  .reco-meta .a{font-size:11.5px;color:#7BB8DA;font-weight:700}
+  .reco-stars{color:#FFC23F;font-size:13px;letter-spacing:1px}
+  .reco-tag{background:#F2EBFF;color:#5C42A0;font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px}
+  .reco-desc{font-size:12.5px;color:#5C7A8C;line-height:1.6;margin-top:6px;background:#F4FAFD;padding:8px 10px;border-radius:8px}
+  .reco-why{font-size:12.5px;color:#5C42A0;line-height:1.6;margin-top:6px;font-weight:600}
+  .reco-why strong{color:#5C42A0}
+
+  /* 阅读统计 */
+  .read-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .read-stat{
+    background:#F4FAFD;border-radius:16px;padding:14px 8px;text-align:center;border:2px solid #DCEBF3;
+  }
+  .read-stat .v{font-size:26px;font-weight:900;color:#1F3A4D}
+  .read-stat .v .u{font-size:13px;color:#7BB8DA;margin-left:2px}
+  .read-stat .l{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px;letter-spacing:1px}
+  .read-stat.h{background:linear-gradient(180deg,#FFF6D8,#FFE3B0);border-color:#F0CC8A}
+  .read-stat.h .v{color:#C2410C}
+
+  /* 详情 modal */
+  .veil{position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .veil.show{display:flex}
+  .modal{
+    background:#fff;border-radius:24px;width:480px;max-width:100%;padding:24px;
+    box-shadow:0 24px 60px rgba(0,30,60,.3);
+    animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-h{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .modal-cover{width:80px;height:108px;border-radius:6px 6px 0 0;flex-shrink:0;box-shadow:0 6px 12px rgba(0,0,0,.25), inset -3px 0 0 rgba(0,0,0,.15)}
+  .modal-title{font-size:20px;font-weight:900;color:#1F3A4D;letter-spacing:1px}
+  .modal-author{font-size:12px;color:#7BB8DA;margin-top:4px;font-weight:700}
+  .modal-tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+  .modal-tag{background:#E0D6FF;color:#5C42A0;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.5px}
+  .modal-desc{font-size:13px;line-height:1.7;color:#3D4F5A;background:#F4FAFD;padding:12px 14px;border-radius:14px;margin-top:6px}
+  .modal-actions{margin-top:16px;display:flex;gap:10px;justify-content:flex-end}
+  .btn{font-weight:800;font-size:14px;letter-spacing:1px;border:none;border-radius:18px;padding:10px 18px;cursor:pointer;transition:transform .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.primary{background:linear-gradient(135deg,#7C5BCC,#5C42A0);color:#fff;box-shadow:0 6px 14px rgba(92,66,160,.4)}
+  .btn.ghost{background:#F4FAFD;color:#5C7A8C}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#5C42A0;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(92,66,160,.35);opacity:0;transition:transform .35s, opacity .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script src="assets/ai-helper.js"></script>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+</head>
+<body>
+
+<!-- ───── 顶栏 ───── -->
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>📖 阅读岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar">林</div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+      <div class="stu-info">
+        <div class="name">林**</div>
+        <div class="meta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── 横幅（满载灯塔岛） ───── -->
+<div class="banner">
+  <img class="banner-img" src="assets/阅读岛.png" alt="阅读岛">
+  <div class="banner-text">
+    <h1>📖 阅读岛</h1>
+    <p data-text-teacher="书架上有你借过的书 · 书精灵给你挑了几本"
+       data-text-parent="孩子最近在读什么 · 推荐继续看哪几本"
+    >书架上有你借过的书 · 书精灵给你挑了几本</p>
+    <span class="tag"><span class="dot"></span>共 248 本可借 · 你借过 23 本</span>
+  </div>
+</div>
+
+<!-- ───── 主内容 ───── -->
+<div class="wrap">
+  <div class="grid">
+    <!-- ═══ 左：书架 + 借阅记录 ═══ -->
+    <div>
+      <div class="card">
+        <div class="card-h">
+          <div class="icon orange">📚</div>
+          <h2>我的图书馆</h2>
+          <div class="sub">点书脊看详情 · 红圈是借过的</div>
+        </div>
+        <div class="bookshelf-wrap">
+          <div class="bookshelf" id="bookshelf"></div>
+        </div>
+
+        <!-- 阅读统计 -->
+        <div class="read-stats">
+          <div class="read-stat h">
+            <div class="v">23<span class="u">本</span></div>
+            <div class="l">今年已读</div>
+          </div>
+          <div class="read-stat">
+            <div class="v">14<span class="u">天</span></div>
+            <div class="l">连续打卡</div>
+          </div>
+          <div class="read-stat">
+            <div class="v">★★★★☆</div>
+            <div class="l">阅读小达人</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <div class="icon blue">⏰</div>
+          <h2>最近借的书</h2>
+          <div class="sub">还书时间提醒</div>
+        </div>
+        <div class="borrow-list" id="borrowList"></div>
+      </div>
+    </div>
+
+    <!-- ═══ 右：AI 书精灵 + 推荐 ═══ -->
+    <div>
+      <div class="card fairy-card">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:#fff;border:2px solid #A893E8">🧚</div>
+          <h2>AI 书精灵</h2>
+          <div class="sub" style="color:#5C42A0"><span class="pulse" style="display:inline-block;margin-right:4px"></span>挑书中</div>
+        </div>
+        <div class="fairy-row">
+          <div class="fairy-avatar" style="font-size:40px;line-height:1">📖</div>
+          <div style="flex:1">
+            <div class="fairy-name">书精灵</div>
+            <span class="fairy-tag"><span class="pulse"></span><span id="fairyStatus">读懂你的兴趣</span></span>
+          </div>
+          <button id="fairyBtn" onclick="generateReco()" style="background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;padding:8px 14px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 10px rgba(168,147,232,.4);transition:transform .15s">✨ 换一批</button>
+        </div>
+        <div class="fairy-bubble" id="fairyBubble">
+          你最近爱看 <strong>科幻冒险</strong> 类的书，已借了 <strong>《海底两万里》</strong> 和 <strong>《时间简史·少年版》</strong>。
+          根据你 <strong>四年级</strong> 的阅读速度和兴趣，我给你挑了 3 本 ↓
+        </div>
+
+        <div class="reco-list" id="recoList"></div>
+      </div>
+
+      <!-- 阅读时长图表 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h" style="margin-bottom:12px">
+          <div class="icon blue">📊</div>
+          <h2>本周阅读时长</h2>
+          <div class="sub" id="readTotal">总 217 分钟</div>
+        </div>
+        <svg id="readChart" viewBox="0 0 320 180" style="width:100%;height:auto;display:block">
+          <!-- 横轴线 -->
+          <line x1="20" y1="150" x2="310" y2="150" stroke="#DCEBF3" stroke-width="1.5"/>
+          <line x1="20" y1="100" x2="310" y2="100" stroke="#DCEBF3" stroke-width="1" stroke-dasharray="3 4"/>
+          <line x1="20" y1="50" x2="310" y2="50" stroke="#DCEBF3" stroke-width="1" stroke-dasharray="3 4"/>
+          <!-- 纵轴标签 -->
+          <text x="14" y="153" text-anchor="end" font-size="9" fill="#7BB8DA" font-weight="700">0</text>
+          <text x="14" y="103" text-anchor="end" font-size="9" fill="#7BB8DA" font-weight="700">30</text>
+          <text x="14" y="53" text-anchor="end" font-size="9" fill="#7BB8DA" font-weight="700">60</text>
+          <!-- 柱子 + 数值 + 星星 -->
+          <g id="readBars"></g>
+        </svg>
+        <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:10px;color:#5C7A8C;font-weight:700">
+          <span>📈 比上周 <strong style="color:#22A05B">+ 32 分钟</strong></span>
+          <span>🎯 目标 <strong style="color:#0E5E80">每天 30 分</strong></span>
+          <span>⭐ 达标 <strong style="color:#FFC23F">5 / 7 天</strong></span>
+        </div>
+      </div>
+
+      <!-- 阅读打卡卡片 -->
+      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,#FFF6E5,#FFE3B0);border:3px solid #F0CC8A">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:#fff;border:2px solid #FF9F4A">🌟</div>
+          <h2>今日打卡</h2>
+          <div class="sub" style="color:#C2410C">已坚持 14 天</div>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:space-between;margin:10px 0">
+          <div title="周一" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">一✓</div>
+          <div title="周二" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">二✓</div>
+          <div title="周三" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">三✓</div>
+          <div title="周四" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">四✓</div>
+          <div title="周五" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">五✓</div>
+          <div title="周六" style="flex:1;height:34px;background:#22C55E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px">六✓</div>
+          <div title="今天" style="flex:1;height:34px;background:#fff;border:2px dashed #FF9F4A;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#FF9F4A;font-weight:900;font-size:11px">今</div>
+        </div>
+        <button class="btn primary" style="background:linear-gradient(135deg,#FF9F4A,#FF6B6B);box-shadow:0 6px 14px rgba(255,107,107,.4);width:100%;margin-top:6px" onclick="checkIn()">📖 我今天读了 30 分钟</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 详情 -->
+<div class="veil" id="veil" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ───── 真实图书馆数据（来自宝山区实验小学流通系统） ───── */
+const COLORS = ['#E94B6A','#3DB7E2','#FFD86A','#7C5BCC','#22C55E','#FF8C42','#0E5E80','#A893E8','#FF6B6B','#3FA34D'];
+
+let BOOKS = [];         // 热门图书
+let BORROWED = [];      // 当前学生的借阅记录
+let RECO = [];          // AI 推荐
+
+const RECO_FALLBACK = [
+  {t:'银河帝国·少年版', a:'阿西莫夫', desc:'人类把心智托付给一台超级计算机，宇宙未来藏在一份秘密档案里。', why:'科幻入门圣经，能把你的星辰大海再扩大一万倍~', stars:5, color:'#5C42A0', tag:'科幻'},
+  {t:'流浪地球·儿童版', a:'刘慈欣', desc:'太阳要变成红巨星把地球吞掉。人类决定给地球装上巨型推进器。', why:'同样写硬核科幻的刘慈欣作品，适合你这个年纪~', stars:5, color:'#0E5E80', tag:'科幻'},
+  {t:'毛毛', a:'米切尔·恩德', desc:'小女孩毛毛能听别人说话听到他们最深的心事。', why:'喜欢思考的孩子会爱上它，特别治愈。', stars:4, color:'#FFD86A', tag:'幻想'},
+];
+
+async function loadRealLibraryData(){
+  // 先展示 fallback 书架（避免白屏等 API）
+  if(BOOKS.length === 0){
+    BOOKS = RECO_FALLBACK.map((r,i) => ({ t: r.t, a: r.a, tags:[r.tag], desc: r.desc, borrowed: false, color: r.color, h: 150 + (i%5)*10 }));
+    renderShelf();
+  }
+
+  // 获取当前学生姓名
+  let kidName = '';
+  if(window.UserAuth && UserAuth.getKidName) kidName = UserAuth.getKidName() || '';
+  if(!kidName && window.UserAuth && UserAuth.getBoundStudent){
+    const b = UserAuth.getBoundStudent();
+    if(b) kidName = b.displayName || '';
+  }
+  if(!kidName) kidName = new URLSearchParams(location.search).get('kidName') || '';
+
+  // 1. 拉学生借阅记录
+  if(kidName){
+    try {
+      const r = await fetch('/api/library/student/' + encodeURIComponent(kidName));
+      if(r.ok){
+        const data = await r.json();
+        // 当前借阅
+        BORROWED = (data.currently_borrowed || []).map(b => ({
+          t: b.title,
+          d: (b.operation_time || '').slice(0,10) + ' 借',
+          back: b.due_date ? (b.due_date.slice(0,10) + ' 归还') : '待归还',
+          status: b.due_date && new Date(b.due_date) < new Date() ? 'due' : 'ok',
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        }));
+      }
+    } catch(e){ console.warn('library fetch:', e); }
+  }
+
+  // 2. 拉热门图书作为书架展示
+  try {
+    const r = await fetch('/api/library/popular');
+    if(r.ok){
+      const data = await r.json();
+      BOOKS = (data.books || []).slice(0, 16).map((b,i) => ({
+        t: b.title,
+        a: '',
+        tags: ['热门'],
+        desc: `全校借阅 ${b.cnt} 次`,
+        borrowed: false,
+        color: COLORS[i % COLORS.length],
+        h: 150 + Math.floor(Math.random() * 40),
+      }));
+    }
+  } catch(e){ console.warn('popular fetch:', e); }
+
+  // 3. 如果热门不足，补齐占位
+  if(BOOKS.length < 6){
+    BOOKS = BOOKS.concat(RECO_FALLBACK.map(r => ({ t: r.t, a: r.a, tags:[r.tag], desc: r.desc, borrowed: false, color: r.color, h: 150 })));
+  }
+
+  // 4. AI 推荐（从学生阅读史推理）
+  if(kidName && BORROWED.length > 0){
+    RECO = RECO_FALLBACK.slice(0, 3);
+  }
+
+  renderShelf();
+  renderBorrow();
+  if(RECO.length > 0) renderReco();
+}
+
+/* ───── 渲染 ───── */
+function renderShelf(){
+  const html = BOOKS.map((b,i)=>`
+    <div class="book ${b.borrowed?'borrowed':''}" onclick="openBook(${i})">
+      <div class="spine" style="background:${b.color};height:${b.h}px">${b.t}</div>
+      <div class="label">${b.t.split('·')[0]}</div>
+    </div>
+  `).join('');
+  document.getElementById('bookshelf').innerHTML = html;
+}
+function renderBorrow(){
+  const html = BORROWED.map(b=>`
+    <div class="borrow-item ${b.status==='due'?'due':''}">
+      <div class="borrow-cover" style="background:${b.color}"></div>
+      <div class="borrow-meta">
+        <div class="t">${b.t}</div>
+        <div class="s">${b.d} · ${b.back}</div>
+      </div>
+      <div class="borrow-status ${b.status}">${b.status==='due'?'快到期':'借阅中'}</div>
+    </div>
+  `).join('');
+  document.getElementById('borrowList').innerHTML = html;
+}
+function renderReco(){
+  const esc = (s)=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html = RECO.map((r,i)=>`
+    <div class="reco-item" onclick="showToast('${esc(r.t)} 已加入想读列表 ✨')">
+      <div class="reco-cover" style="background:${r.color}"></div>
+      <div class="reco-meta">
+        <div class="reco-head">
+          <span class="t">${esc(r.t)}</span>
+          <span class="a">${esc(r.a)}</span>
+          <span class="reco-tag">${esc(r.tag||'推荐')}</span>
+          <span class="reco-stars">${'★'.repeat(r.stars)}</span>
+        </div>
+        ${r.desc ? `<div class="reco-desc">📖 ${esc(r.desc)}</div>` : ''}
+        <div class="reco-why"><strong>💡 推荐你看：</strong>${esc(r.why)}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('recoList').innerHTML = html;
+}
+
+function openBook(i){
+  const b = BOOKS[i];
+  const tags = b.tags.map(t=>`<span class="modal-tag">${t}</span>`).join('');
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-h">
+      <div class="modal-cover" style="background:${b.color}"></div>
+      <div>
+        <div class="modal-title">${b.t}</div>
+        <div class="modal-author">作者：${b.a}</div>
+        <div class="modal-tags">${tags} ${b.borrowed?'<span class="modal-tag" style="background:#FF6B6B;color:#fff">已借过</span>':''}</div>
+      </div>
+    </div>
+    <div class="modal-desc">📝 ${b.desc}</div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">关闭</button>
+      <button class="btn primary" onclick="closeModal();showToast('${b.t} 已加入想借列表 📚')">${b.borrowed?'再借一次':'我想借'}</button>
+    </div>
+  `;
+  document.getElementById('veil').classList.add('show');
+}
+function closeModal(){ document.getElementById('veil').classList.remove('show'); }
+
+function checkIn(){ showToast('🎉 今日打卡成功！连续 15 天了！'); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function goHome(){ location.href='island-homepage.html' }
+
+/* ───── 书精灵：换一批推荐（带 AI loading 效果） ───── */
+const FAIRY_INTROS = [
+  '看你最近爱看 <strong>科幻冒险</strong>，重新挑了 3 本宝藏书 ↓',
+  '🤔 我又翻了翻你的借阅记录，这 3 本你一定喜欢 ↓',
+  '✨ 根据你的<strong>阅读速度</strong>和<strong>四年级</strong>程度，挑了几本进阶的 ↓',
+  '🎯 找到了！这 3 本符合你"想看完一整套"的习惯 ↓',
+  '📚 同班同学也在看这几本，分享给你 ↓',
+];
+const READING_SYSTEM = `${AIHelper.SAFETY}
+
+【你的任务】
+根据学生的借阅历史、兴趣偏好和年级，为这位小学生推荐 3 本适合的图书。每本都要：先简介书讲了什么内容，再说明为什么推荐给这个学生。
+
+【输出格式】
+严格用如下 JSON 返回，不要包代码块、不要任何额外说明：
+{
+  "开场白": "<40-60 字，温馨开场，说明你为什么挑这 3 本，可用 <strong> 标签突出重点>",
+  "推荐图书": [
+    {
+      "书名": "<完整书名>",
+      "作者": "<作者名>",
+      "内容简介": "<60-90 字，告诉孩子这本书讲什么故事/讲什么内容，要有画面感、有趣，不剧透结局>",
+      "推荐理由": "<50-80 字，结合这个学生的兴趣 / 借阅历史 / 年级，说明为什么 TA 会喜欢、能学到什么>",
+      "分类": "<一个词，如：科幻/冒险/历史/文学/科普>",
+      "星级": 4 或 5,
+      "封面色": "<#hex 颜色，与书的氛围匹配>"
+    }
+  ]
+}`;
+
+let curStudentIdx = (window.StudentRoster && StudentRoster.getCurrentIdx) ? StudentRoster.getCurrentIdx() : 0;
+function getCurStudent(){ return StudentRoster.get(curStudentIdx); }
+
+function buildReadingPrompt(){
+  const s = getCurStudent();
+  if(!s) return '请先选择一个学生';
+  const borrowedTitles = BORROWED.map(b=>`《${b.t}》`).join('、') || '暂无';
+  return `学生信息：
+${StudentRoster.studentInfoBlock(s)}
+
+兴趣偏好：${s.interests.join('、')}
+最近借阅：${borrowedTitles}
+
+请按 system 中 JSON 格式推荐 3 本适合的图书。`;
+}
+
+let recoSpinning = false;
+async function generateReco(){
+  if(recoSpinning) return;
+  const s = getCurStudent();
+  if(!s){
+    // 无学生时直接用 fallback
+    RECO = RECO_FALLBACK.slice(0,3);
+    renderReco();
+    return;
+  }
+  recoSpinning = true;
+  const status = document.getElementById('fairyStatus');
+  const btn = document.getElementById('fairyBtn');
+  const bubble = document.getElementById('fairyBubble');
+  const list = document.getElementById('recoList');
+  status.textContent = '挑书中…';
+  btn.disabled = true; btn.style.opacity = '.6';
+  bubble.innerHTML = '<span style="display:inline-flex;gap:4px"><span class="r-dot"></span><span class="r-dot" style="animation-delay:.2s"></span><span class="r-dot" style="animation-delay:.4s"></span></span> <span style="color:#7BB8DA;font-weight:700">AI 正在书海里翻找…</span>';
+  list.style.opacity = '.3';
+
+  const finishOk = (introHtml) => {
+    bubble.innerHTML = introHtml;
+    bubble.style.animation = 'none'; bubble.offsetHeight; bubble.style.animation = 'aiFadeIn .4s ease';
+    renderReco();
+    list.style.opacity = '1';
+    status.textContent = '已为你挑好';
+    btn.disabled = false; btn.style.opacity = '1';
+    recoSpinning = false;
+  };
+
+  try {
+    const text = await AIHelper.call(READING_SYSTEM, buildReadingPrompt());
+    console.log('[READING AI raw]', text);
+    const json = AIHelper.parseJson(text);
+    const books = json && (json['推荐图书'] || json['books']);
+    if(!json || !Array.isArray(books) || !books.length){
+      const esc = AIHelper.escapeHtml;
+      bubble.innerHTML = `<span style="color:#C2410C">⚠️ AI 返回格式无法解析，用演示数据兜底。<br><br>原文（前 600 字）：<br><pre style="white-space:pre-wrap;background:#FFF6E0;padding:8px;border-radius:8px;font-size:11px;margin-top:6px;color:#5C42A0">${esc(text||'').slice(0,600)}</pre></span>`;
+      const shuffled = [...RECO_FALLBACK].sort(()=>Math.random()-0.5);
+      RECO = shuffled.slice(0,3);
+      renderReco();
+      list.style.opacity = '1';
+      status.textContent = '解析失败';
+      btn.disabled = false; btn.style.opacity = '1';
+      recoSpinning = false;
+      return;
+    }
+    RECO = books.slice(0,3).map(b => ({
+      t: b['书名'] || b.t || '未命名',
+      a: b['作者'] || b.a || '佚名',
+      desc: b['内容简介'] || b.desc || '',
+      why: b['推荐理由'] || b.why || '',
+      stars: Number(b['星级'] || b.stars) || 4,
+      color: b['封面色'] || b.color || '#5C42A0',
+      tag: b['分类'] || b.tag || '推荐'
+    }));
+    const intro = json['开场白'] || json.introHtml || '为你挑了 3 本 ↓';
+    finishOk(AIHelper.escapeHtml(intro));
+  } catch(err){
+    console.error(err);
+    let msg = 'AI 调用失败：' + err.message;
+    bubble.innerHTML = `<span style="color:#C2410C">${AIHelper.escapeHtml(msg)}</span>`;
+    list.style.opacity = '1';
+    status.textContent = '失败';
+    btn.disabled = false; btn.style.opacity = '1';
+    recoSpinning = false;
+  }
+}
+
+/* ───── 借阅列表（"我想借" 按钮真的加进去） ───── */
+function borrowBook(title, color){
+  // 加到借阅列表
+  BORROWED.unshift({
+    t: title, d:'今天 借', back:'2 周后归还', status:'ok', color: color
+  });
+  renderBorrow();
+  closeModal();
+  showToast(`📚 ${title} 已加入你的借阅！`);
+}
+
+/* 重写 openBook 让"我想借"真的工作 */
+function openBook(i){
+  const b = BOOKS[i];
+  const tags = b.tags.map(t=>`<span class="modal-tag">${t}</span>`).join('');
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-h">
+      <div class="modal-cover" style="background:${b.color}"></div>
+      <div>
+        <div class="modal-title">${b.t}</div>
+        <div class="modal-author">作者：${b.a}</div>
+        <div class="modal-tags">${tags} ${b.borrowed?'<span class="modal-tag" style="background:#FF6B6B;color:#fff">已借过</span>':''}</div>
+      </div>
+    </div>
+    <div class="modal-desc">📝 ${b.desc}</div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">关闭</button>
+      <button class="btn primary" onclick="borrowBook('${b.t}','${b.color}')">${b.borrowed?'再借一次':'我想借'}</button>
+    </div>
+  `;
+  document.getElementById('veil').classList.add('show');
+}
+
+/* 阅读时长柱状图 */
+const READ_DAYS = [
+  {d:'一',m:25},{d:'二',m:42},{d:'三',m:18},{d:'四',m:35},
+  {d:'五',m:50},{d:'六',m:28},{d:'日',m:19}
+];
+function renderChart(){
+  const max = 60; // 满刻度 60 分钟
+  const W = 320, baseY=150, barW=22, gap=18;
+  const startX = 30;
+  let html = '';
+  let total = 0;
+  READ_DAYS.forEach((d,i)=>{
+    const x = startX + i*(barW+gap);
+    const h = Math.min(d.m,max)/max * 100;
+    const y = baseY - h;
+    const star = d.m>=30;
+    const color = d.m>=30 ? '#22C55E' : d.m>=15 ? '#FFC23F' : '#FF8C42';
+    total += d.m;
+    html += `
+      <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}" opacity=".88">
+        <animate attributeName="height" from="0" to="${h}" dur=".7s" begin="${i*0.08}s" fill="freeze"/>
+        <animate attributeName="y" from="${baseY}" to="${y}" dur=".7s" begin="${i*0.08}s" fill="freeze"/>
+      </rect>
+      <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="900" fill="#1F3A4D" opacity="0">${d.m}<animate attributeName="opacity" from="0" to="1" dur=".3s" begin="${i*0.08+.5}s" fill="freeze"/></text>
+      <text x="${x+barW/2}" y="${baseY+15}" text-anchor="middle" font-size="11" font-weight="700" fill="#5C7A8C">周${d.d}</text>
+      ${star ? `<text x="${x+barW/2}" y="${baseY+30}" text-anchor="middle" font-size="12" fill="#FFC23F" opacity="0">★<animate attributeName="opacity" from="0" to="1" dur=".3s" begin="${i*0.08+.7}s" fill="freeze"/></text>` : ''}
+    `;
+  });
+  document.getElementById('readBars').innerHTML = html;
+  document.getElementById('readTotal').textContent = `总 ${total} 分钟`;
+}
+
+// 启动：加载真实图书馆数据
+loadRealLibraryData();
+renderChart();
+</script>
+
+<script>
+/* 全局学生切换：下拉选人 · 联动 AI 上下文 */
+(function(){
+  const pill=document.querySelector(".student-pill");
+  if(!pill)return;
+  function applyStudent(idx, silent){
+    if(window.UserAuth && UserAuth.isTeacher && UserAuth.isTeacher()){ UserAuth.refreshPill(); return; }
+    curStudentIdx = idx;
+    const s = getCurStudent();
+    if(!s){ if(window.UserAuth) UserAuth.refreshPill(); return; }
+    pill.querySelector(".stu-avatar").textContent = s.avatar;
+    pill.querySelector(".stu-avatar").style.background = `linear-gradient(135deg,${s.color},#3DB7E2)`;
+    pill.querySelector(".name").textContent = s.displayName;
+    pill.querySelector(".meta").textContent = `${s.grade} · ${s.class}`;
+    if(!silent && typeof showToast==="function") showToast("已切换到 "+s.displayName);
+    if(!silent && typeof generateReco==="function") generateReco();
+  }
+  StudentRoster.attachPicker(pill, { initialIdx: curStudentIdx, onChange: applyStudent });
+  // 进入页面后用持久化的当前学生立即同步顶栏 pill（不弹提示、不触发 AI）
+  applyStudent(curStudentIdx, true);
+})();
+</script>
+</body>
+</html>

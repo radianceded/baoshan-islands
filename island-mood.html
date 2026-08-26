@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心情小岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background: linear-gradient(180deg,#FFF9C4 0%, #FFE0B2 18%, #FFAB91 55%, #FF8A80 100%);
+    overflow-x:hidden;min-height:100vh;
+  }
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FF8A80,#FF5252);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,82,82,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#FF8A80,#E57373);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  .banner{position:relative;height:220px;overflow:hidden;background: linear-gradient(135deg,#FFCC80,#FF8A80);border-bottom:4px solid #FF5252}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#D84315;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#FF5252;box-shadow:0 0 0 3px rgba(255,82,82,.25)}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 80px}
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px rgba(255,138,128,0.12);border:1px solid rgba(255,171,145,0.4);position:relative}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .card-h .icon.coral{background:linear-gradient(135deg,#FFCC80,#FF8A80)}
+  .card-h .icon.yellow{background:linear-gradient(135deg,#FFF9C4,#FFE082)}
+  .card-h .icon.pink{background:linear-gradient(135deg,#F8BBD0,#F06292)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* 心情日历热力图 */
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .cal-nav{background:#FFF9C4;border:1.5px solid #FFCC80;border-radius:10px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;color:#D84315;transition:all .15s}
+  .cal-nav:hover{background:#FFE082;border-color:#FF8A80}
+  .cal-month{font-size:17px;font-weight:900;color:#1F3A4D;letter-spacing:1px}
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:4px}
+  .cal-weekdays span{font-size:11px;font-weight:800;color:#7BB8DA;padding:4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-cell{
+    aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;color:#5C7A8C;background:#F4FAFD;transition:transform .15s;
+  }
+  .cal-cell:hover{transform:scale(1.15);z-index:2}
+  .cal-cell.empty{background:transparent}
+  .cal-cell.m1{background:#FFF9C4;color:#3D2812}
+  .cal-cell.m2{background:#FFE082;color:#3D2812}
+  .cal-cell.m3{background:#FFCC80;color:#4E342E}
+  .cal-cell.m4{background:#FFAB91;color:#fff}
+  .cal-cell.m5{background:#FF5252;color:#fff}
+  .cal-cell.today{border:2px solid #D84315;box-shadow:0 0 0 2px rgba(216,67,21,.25)}
+  .cal-cell .emo{font-size:14px;line-height:1}
+  .cal-legend{display:flex;align-items:center;gap:8px;margin-top:10px;justify-content:flex-end;font-size:10px;color:#7BB8DA;font-weight:700}
+  .cal-legend .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+  /* 知心姐姐入口 */
+  .sister-card{background:linear-gradient(135deg,#FFF0F6,#FCE4EC);border:3px solid #F48FB1}
+  .sister-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .sister-avatar{
+    width:80px;height:80px;flex-shrink:0;
+    background:linear-gradient(135deg,#F48FB1,#EC407A);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:44px;box-shadow:0 6px 16px rgba(236,64,122,0.35);
+    animation:sisterPulse 3s ease-in-out infinite;
+  }
+  @keyframes sisterPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .sister-text{font-size:14px;color:#4E342E;line-height:1.6}
+  .sister-text strong{color:#D84315}
+  .sister-btn{
+    display:block;width:100%;margin-top:12px;padding:12px;
+    background:linear-gradient(135deg,#EC407A,#C2185B);color:#fff;font-weight:900;font-size:15px;
+    border:none;border-radius:16px;cursor:pointer;box-shadow:0 6px 16px rgba(236,64,122,.4);
+    transition:transform .15s;letter-spacing:2px;
+  }
+  .sister-btn:hover{transform:translateY(-2px)}
+
+  /* 导师观察 */
+  .mentor-list{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto}
+  .mentor-item{
+    display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:14px;
+    background:#FFF8E1;border:1.5px solid #FFECB3;
+  }
+  .mentor-item .severity{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff;
+  }
+  .mentor-item .sev1{background:#FFCC80}
+  .mentor-item .sev2{background:#FF9800}
+  .mentor-item .sev3{background:#F44336}
+  .mentor-item .sev4{background:#C62828}
+  .mentor-item .sev5{background:#880E4F}
+  .mentor-item .meta{flex:1;min-width:0}
+  .mentor-item .note{font-size:13px;color:#1F3A4D;line-height:1.5;font-weight:700}
+  .mentor-item .by{font-size:10px;color:#7BB8DA;font-weight:600;margin-top:3px}
+
+  /* AI 周报 */
+  .report-card{background:linear-gradient(135deg,#FFF8E1,#FFECB3);border:3px solid #FFD54F}
+  .report-content{font-size:13.5px;line-height:1.8;color:#3D2812}
+  .report-content strong{color:#D84315}
+  .report-chart{display:flex;align-items:flex-end;gap:12px;justify-content:center;margin:14px 0;height:80px}
+  .report-bar{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .report-bar .fill{width:28px;border-radius:8px 8px 0 0;min-height:4px;transition:height .5s}
+  .report-bar .lbl{font-size:9px;color:#7A4F1B;font-weight:700;text-align:center}
+  .report-empty{text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px}
+
+  /* 授权管理 */
+  .auth-panel{margin-top:16px}
+  .auth-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#F4FAFD;border-radius:12px;margin-bottom:8px;border:1.5px solid #DCEBF3}
+  .auth-label{font-weight:800;font-size:13px;color:#1F3A4D}
+  .auth-toggle{
+    width:48px;height:26px;border-radius:13px;background:#CFD8DD;cursor:pointer;
+    position:relative;transition:background .25s;border:none;
+  }
+  .auth-toggle.on{background:#4CAF50}
+  .auth-toggle::after{
+    content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#fff;transition:left .25s;box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .auth-toggle.on::after{left:25px}
+
+  /* 危机升级 */
+  .escalate-btn{
+    display:none;width:100%;margin-top:16px;padding:14px;
+    background:linear-gradient(135deg,#FF1744,#D50000);color:#fff;font-weight:900;font-size:15px;
+    border:none;border-radius:16px;cursor:pointer;box-shadow:0 6px 16px rgba(255,23,68,.45);
+    transition:transform .15s;letter-spacing:2px;animation:escalatePulse 2s ease-in-out infinite;
+  }
+  .escalate-btn.show{display:block}
+  @keyframes escalatePulse{0%,100%{box-shadow:0 6px 16px rgba(255,23,68,.45)}50%{box-shadow:0 6px 24px rgba(255,23,68,.7)}}
+  .escalate-btn:hover{transform:translateY(-2px)}
+
+  /* 弹窗 */
+  .veil{position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .veil.show{display:flex}
+  .modal{
+    background:#fff;border-radius:24px;width:520px;max-width:100%;padding:24px;
+    box-shadow:0 24px 60px rgba(0,30,60,.3);max-height:85vh;overflow-y:auto;
+    animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal h3{font-size:20px;font-weight:900;color:#1F3A4D;letter-spacing:2px;margin-bottom:14px}
+  .modal .close-btn{float:right;background:none;border:none;font-size:24px;cursor:pointer;color:#7BB8DA}
+
+  /* 记录心情 - 快捷按钮 */
+  .quick-mood{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+  .quick-mood .mb{
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:12px 8px;border-radius:16px;cursor:pointer;transition:all .2s;
+    border:2px solid transparent;background:#F4FAFD;font-weight:800;font-size:13px;
+  }
+  .quick-mood .mb:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(0,0,0,.08)}
+  .quick-mood .mb.selected{border-color:#FF8A80;box-shadow:0 6px 14px rgba(255,138,128,.25)}
+  .quick-mood .mb .e{font-size:28px}
+  .quick-mood .mb:nth-child(1){color:#4CAF50}
+  .quick-mood .mb:nth-child(2){color:#8BC34A}
+  .quick-mood .mb:nth-child(3){color:#FF9800}
+  .quick-mood .mb:nth-child(4){color:#F44336}
+  .quick-mood .mb:nth-child(5){color:#880E4F}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#D84315;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(216,67,21,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>💚 健康岛 · 心情小岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill" id="studentPill">
+      <div class="stu-avatar" id="stuAvatar">林</div>
+      <div class="stu-info">
+        <div class="name" id="stuName">林**</div>
+        <div class="meta" id="stuMeta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth&&UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+  </div>
+</div>
+
+<div class="banner">
+  <div class="banner-text">
+    <h1>💚 心情小岛</h1>
+    <p>记录每一天的情绪 · 知心姐姐陪你长大</p>
+    <span class="tag"><span class="dot"></span>记录心情 · AI周报 · 导师关怀</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- 左栏 -->
+    <div>
+      <!-- 心情日历 -->
+      <div class="card">
+        <div class="card-h">
+          <div class="icon coral">🗓️</div>
+          <h2>心情日历</h2>
+          <div class="sub" id="calMonthLabel">7月</div>
+        </div>
+        <div class="cal-header">
+          <button class="cal-nav" onclick="prevMonth()">◀ 上月</button>
+          <span class="cal-month" id="calTitle">2026年7月</span>
+          <button class="cal-nav" onclick="nextMonth()">下月 ▶</button>
+        </div>
+        <div class="cal-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          无记录 <span class="dot" style="background:#F4FAFD"></span>
+          😊 <span class="dot" style="background:#FFF9C4"></span>
+          😀 <span class="dot" style="background:#FFE082"></span>
+          😐 <span class="dot" style="background:#FFCC80"></span>
+          😔 <span class="dot" style="background:#FFAB91"></span>
+          😢 <span class="dot" style="background:#FF5252"></span>
+        </div>
+      </div>
+
+      <!-- 快速记录心情 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <div class="icon yellow">✏️</div>
+          <h2>今天的心情</h2>
+        </div>
+        <div class="quick-mood" id="quickMood">
+          <div class="mb" onclick="selectMood(1)" data-sev="1"><span class="e">😊</span>很好</div>
+          <div class="mb" onclick="selectMood(2)" data-sev="2"><span class="e">😀</span>不错</div>
+          <div class="mb" onclick="selectMood(3)" data-sev="3"><span class="e">😐</span>一般</div>
+          <div class="mb" onclick="selectMood(4)" data-sev="4"><span class="e">😔</span>不好</div>
+          <div class="mb" onclick="selectMood(5)" data-sev="5"><span class="e">😢</span>很差</div>
+        </div>
+        <textarea id="moodNote" placeholder="写下你的心情小记…（可选）" style="width:100%;margin-top:12px;padding:12px;border:1.5px solid #FFCC80;border-radius:14px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;color:#1F3A4D;outline:none"></textarea>
+        <button class="sister-btn" style="background:linear-gradient(135deg,#FF8A80,#FF5252);margin-top:10px;font-size:14px" onclick="submitMood()">💾 记录心情</button>
+      </div>
+    </div>
+
+    <!-- 右栏 -->
+    <div>
+      <!-- 知心姐姐 -->
+      <div class="card sister-card">
+        <div class="sister-row">
+          <div class="sister-avatar">💖</div>
+          <div>
+            <div class="sister-text">
+              <strong>知心姐姐</strong> 在这里倾听你的每一句悄悄话。
+              有开心的事想分享，或者遇到了不开心的事，都可以找姐姐聊一聊 🌸
+            </div>
+          </div>
+        </div>
+        <button class="sister-btn" onclick="openSisterChat()">🤗 和知心姐姐聊一聊</button>
+      </div>
+
+      <!-- AI 周报 -->
+      <div class="card report-card" style="margin-top:16px">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:linear-gradient(135deg,#FFD54F,#FF9800);color:#fff">🤖</div>
+          <h2>AI 心情周报</h2>
+        </div>
+        <div class="report-content" id="reportContent">
+          <div class="report-empty" id="reportEmpty">点击下方按钮生成本周心情报告 ✨</div>
+        </div>
+        <button class="sister-btn" style="background:linear-gradient(135deg,#FFC107,#FF9800);font-size:14px;margin-top:10px" onclick="loadReport()">✨ 生成本周报告</button>
+      </div>
+
+      <!-- 导师观察记录 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <div class="icon" style="background:linear-gradient(135deg,#F8BBD0,#EC407A);color:#fff">👩‍🏫</div>
+          <h2>导师观察记录</h2>
+          <div class="sub" id="mentorCount">0 条</div>
+        </div>
+        <div class="mentor-list" id="mentorList">
+          <div class="report-empty">暂无导师观察记录</div>
+        </div>
+      </div>
+
+      <!-- 授权管理 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:linear-gradient(135deg,#FFF9C4,#FFE082)">🔒</div>
+          <h2>授权管理</h2>
+          <div class="sub">谁可以看到我的心情</div>
+        </div>
+        <div class="auth-panel" id="authPanel">
+          <div class="auth-item">
+            <span class="auth-label">👩‍🏫 班主任可见</span>
+            <button class="auth-toggle on" id="authTeacher" onclick="toggleAuth('teacher')"></button>
+          </div>
+          <div class="auth-item">
+            <span class="auth-label">👩‍⚕️ 心理老师可见</span>
+            <button class="auth-toggle on" id="authCounselor" onclick="toggleAuth('counselor')"></button>
+          </div>
+          <div class="auth-item">
+            <span class="auth-label">👨‍👩‍👧 家长可见</span>
+            <button class="auth-toggle on" id="authParent" onclick="toggleAuth('parent')"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 危机升级按钮 -->
+      <button class="escalate-btn" id="escalateBtn" onclick="doEscalate()">
+        🆘 需要紧急帮助 · 通知心理老师
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 全局状态 ============
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth() + 1;
+let moodData = {};
+let selectedSeverity = 0;
+let authState = { teacher: true, counselor: true, parent: true };
+
+function getToken(){
+  if(window.UserAuth && UserAuth.getToken) return UserAuth.getToken();
+  return sessionStorage.getItem('bs_session_token') || '';
+}
+
+function getIdCard(){
+  if(window.UserAuth && UserAuth.getIdCard) return UserAuth.getIdCard();
+  if(window.UserAuth && UserAuth.getCurrentIdCard) return UserAuth.getCurrentIdCard();
+  return 'demo_001';
+}
+
+async function api(path, opts={}){
+  const token = getToken();
+  const headers = opts.headers || {};
+  if(token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(location.origin + path, { ...opts, headers });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function goHome(){ location.href = 'island-homepage.html'; }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ============ 心情日历 ============
+function prevMonth(){ calMonth--; if(calMonth===0){ calMonth=12; calYear--; } renderCal(); }
+function nextMonth(){ calMonth++; if(calMonth===13){ calMonth=1; calYear++; } renderCal(); }
+
+function renderCal(){
+  document.getElementById('calTitle').textContent = calYear + '年' + calMonth + '月';
+  document.getElementById('calMonthLabel').textContent = calMonth + '月';
+  const grid = document.getElementById('calGrid');
+  const firstDay = new Date(calYear, calMonth-1, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cal-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const ds = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evt = moodData[ds];
+    let cls = '';
+    let emo = d;
+    if(evt){
+      cls = ' m'+evt.severity;
+      const emojis = ['','😊','😀','😐','😔','😢'];
+      emo = emojis[evt.severity] || emo;
+    }
+    if(today.getFullYear()===calYear && today.getMonth()+1===calMonth && today.getDate()===d){
+      cls += ' today';
+    }
+    html += `<div class="cal-cell${cls}" title="${ds}${evt?' · '+evt.note:''}"><span class="emo">${emo}</span></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// ============ 心情记录 ============
+function selectMood(sev){
+  selectedSeverity = sev;
+  document.querySelectorAll('#quickMood .mb').forEach(el=>el.classList.remove('selected'));
+  const el = document.querySelector(`#quickMood .mb[data-sev="${sev}"]`);
+  if(el) el.classList.add('selected');
+  // severity >= 4 显示危机升级按钮
+  const esc = document.getElementById('escalateBtn');
+  if(sev>=4) esc.classList.add('show');
+  else esc.classList.remove('show');
+}
+
+async function submitMood(){
+  if(!selectedSeverity){ showToast('请先选择一个心情 😊'); return; }
+  const note = document.getElementById('moodNote').value.trim();
+  try{
+    await api('/api/mood/event', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id_card: getIdCard(), severity: selectedSeverity, note, source: 'student' })
+    });
+    showToast('心情已记录 🌸');
+    document.getElementById('moodNote').value = '';
+    selectedSeverity = 0;
+    document.querySelectorAll('#quickMood .mb').forEach(el=>el.classList.remove('selected'));
+    document.getElementById('escalateBtn').classList.remove('show');
+    await loadMoodData();
+  }catch(e){ showToast('记录失败：'+e.message); }
+}
+
+async function loadMoodData(){
+  try{
+    const data = await api('/api/mood/student/'+encodeURIComponent(getIdCard()));
+    const events = data.events || data || [];
+    if(Array.isArray(events)){
+      moodData = {};
+      events.forEach(e=>{
+        const ds = (e.date||e.created_at||'').slice(0,10);
+        if(ds) moodData[ds] = { severity: e.severity||1, note: e.note||'' };
+      });
+    }
+    renderCal();
+    renderMentors(events);
+  }catch(e){ console.log('加载心情数据失败:',e); }
+}
+
+function renderMentors(events){
+  const mentors = (Array.isArray(events)?events:[]).filter(e=>e.source==='mentor');
+  const list = document.getElementById('mentorList');
+  document.getElementById('mentorCount').textContent = mentors.length + ' 条';
+  if(!mentors.length){ list.innerHTML = '<div class="report-empty">暂无导师观察记录</div>'; return; }
+  list.innerHTML = mentors.map(m=>`
+    <div class="mentor-item">
+      <div class="severity sev${m.severity||1}">${m.severity||1}</div>
+      <div class="meta">
+        <div class="note">${m.note||'(无备注)'}</div>
+        <div class="by">👩‍🏫 ${m.mentor_name||'导师'} · ${(m.created_at||'').slice(0,10)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ AI 周报 ============
+async function loadReport(){
+  const el = document.getElementById('reportContent');
+  el.innerHTML = '<div class="report-empty">⏳ AI 正在分析你的本周情绪…</div>';
+  try{
+    const data = await api('/api/mood/weekly-report');
+    const r = data.report || data;
+    if(typeof r === 'string'){
+      el.innerHTML = `<div class="report-content">${r.replace(/\n/g,'<br>')}</div>`;
+    } else if(r.summary){
+      el.innerHTML = `
+        <div class="report-content">
+          <strong>📊 情绪趋势：</strong>${r.summary||''}<br><br>
+          <strong>💡 本周建议：</strong>${r.advice||r.suggestion||'保持好心情，每天都是新的一天 🌈'}<br><br>
+          ${r.positive_count!==undefined?`<strong>😊 积极天数：</strong>${r.positive_count||0} 天<br>`:''}
+          ${r.negative_count!==undefined?`<strong>😔 低落天数：</strong>${r.negative_count||0} 天<br>`:''}
+          ${r.avg_severity!==undefined?`<strong>📈 平均指数：</strong>${Number(r.avg_severity).toFixed(1)} / 5`:''}
+        </div>`;
+    }
+  }catch(e){ el.innerHTML = `<div class="report-empty" style="color:#D84315">加载失败：${e.message}</div>`; }
+}
+
+// ============ 知心姐姐聊天 ============
+function openSisterChat(){
+  try{
+    const idCard = getIdCard();
+    const msg = encodeURIComponent('你好！我是知心姐姐，今天你有什么想和我分享的吗？😊');
+    location.href = `/api/ai/chat?id_card=${encodeURIComponent(idCard)}&greeting=${msg}`;
+  }catch(e){
+    showToast('聊天服务暂不可用');
+  }
+}
+
+// ============ 授权管理 ============
+async function loadAuth(){
+  try{
+    const data = await api('/api/mood/authorization');
+    if(data.scope || data.teacher!==undefined){
+      authState.teacher = data.teacher!==false;
+      authState.counselor = data.counselor!==false;
+      authState.parent = data.parent!==false;
+    }
+  }catch(e){ /* 使用默认值 */ }
+  updateAuthUI();
+}
+
+function updateAuthUI(){
+  ['teacher','counselor','parent'].forEach(k=>{
+    const el = document.getElementById('auth'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(el){
+      if(authState[k]) el.classList.add('on');
+      else el.classList.remove('on');
+    }
+  });
+}
+
+async function toggleAuth(scope){
+  authState[scope] = !authState[scope];
+  updateAuthUI();
+  try{
+    await api('/api/mood/authorization', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ scope, visible: authState[scope] })
+    });
+    showToast(authState[scope]?'已开启':'已关闭');
+  }catch(e){ showToast('授权更新失败'); }
+}
+
+// ============ 危机升级 ============
+async function doEscalate(){
+  if(!confirm('⚠️ 确定需要紧急帮助吗？\n\n心理老师将立即收到通知并联系你。\n\n确定要继续吗？')) return;
+  try{
+    await api('/api/mood/escalate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id_card: getIdCard() })
+    });
+    showToast('🆘 已通知心理老师，请保持联系');
+  }catch(e){ showToast('升级失败：'+e.message); }
+}
+
+// ============ 初始化 ============
+(function init(){
+  renderCal();
+  loadMoodData();
+  loadAuth();
+  // 同步顶栏学生信息
+  if(window.UserAuth){
+    UserAuth.ready(()=>{
+      const info = UserAuth.getCurrentStudentInfo && UserAuth.getCurrentStudentInfo();
+      if(!info) return;
+      document.getElementById('stuAvatar').textContent = (info.displayName||'生').charAt(0);
+      document.getElementById('stuName').textContent = info.displayName||'***';
+      document.getElementById('stuMeta').textContent = (info.grade||'')+' · '+(info.class||'');
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

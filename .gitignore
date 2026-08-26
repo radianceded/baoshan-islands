@@ -1,0 +1,111 @@
+# ════════════════════════════════════════════
+# 🔒 真实学生数据 / 敏感信息（永远不进仓库）
+# ════════════════════════════════════════════
+student_data.db
+students_export.json
+data.json
+data.js
+学生数字画像/
+2025学年第一学期学生菜单/
+
+# 服务端密钥
+server/.env
+server/.env.*
+server/campus_config.json
+.env
+.env.*
+.env.local
+!.env.example
+!server/.env.example
+
+# 所有运行时数据库、证书和私钥
+*.db
+*.db.*
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.xls
+*.xlsx
+credentials*.json
+campus_data/
+private_data/
+
+# macOS / FUSE 临时文件
+.fuse_hidden*
+
+# 运行时日志与上传缓存
+logs/
+.local-run/
+outputs/
+assets/art-tmp/
+assets/art-works/
+assets/guide-screenshots/
+
+# 学生真实数据 / 截图 / 跨校公示材料(隐私)
+assets/健康岛输入/
+assets/微信图片_*.png
+assets/更新 *.doc
+assets/*获奖名单*.doc
+
+# 总务老师运行时上传的菜单图
+assets/menu-uploads/
+
+# 学生证书扫描件（800MB，本地展示 / 服务器上单独同步，不进仓库）
+assets/award-certs/
+三年级.zip
+四年级.zip
+五年级.zip
+六年级.zip
+一年级.zip
+二年级.zip
+
+# ════════════════════════════════════════════
+# 旧代码 / 大文件 / 临时
+# ════════════════════════════════════════════
+baoshan_v4.7.html
+data.json.bak
+_trash/
+_tmp/
+**/_tmp/
+**/__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.log
+*.bak
+*.bak.*
+*.tar.gz
+
+# 设计稿临时
+docs/screenshots/
+screenshots/
+example/
+
+# ════════════════════════════════════════════
+# 工具 / 系统垃圾
+# ════════════════════════════════════════════
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.workbuddy/
+.claude/
+
+# Python 虚拟环境
+venv/
+venv
+.venv/
+env/
+
+# 数据库锁
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+
+# 已经在 _trash 里的旧脚本
+mascots.js

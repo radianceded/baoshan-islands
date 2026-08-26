@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活动岛 · 宝山实验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{
+    background:
+      radial-gradient(circle at 50% -140px,rgba(255,255,255,.88) 0,rgba(255,255,255,0) 520px),
+      linear-gradient(180deg,#DFF1F8 0%,#EDF7F8 52%,#F4FAF7 100%);
+    background-attachment:fixed;
+    overflow-x:hidden;
+    min-height:100vh;
+    min-height:100dvh;
+  }
+
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,0.1)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(255,140,66,0.35);transition:transform .15s}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#0E5E80;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#7BB8DA}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:#fff;box-shadow:0 3px 10px rgba(0,80,120,0.12)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3A4D}
+  .stu-info .meta{font-size:11px;color:#7BB8DA;letter-spacing:.5px}
+
+  .banner{position:relative;height:360px;overflow:hidden;background:#DCEFF6;border-bottom:0;box-shadow:inset 0 -1px rgba(92,139,160,.12)}
+  .banner-img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+  .banner::after{content:"";position:absolute;left:0;right:0;bottom:-1px;z-index:3;height:68px;background:linear-gradient(180deg,rgba(223,241,248,0),#E7F4F8);pointer-events:none}
+  .banner-text{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:5}
+  .banner-text h1{font-size:36px;font-weight:900;color:#3D2812;letter-spacing:6px;text-shadow:0 3px 0 #fff}
+  .banner-text p{margin-top:6px;color:#7A4F1B;font-weight:700;font-size:14px;letter-spacing:2px}
+  .banner-text .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.85);color:#5C42A0;font-weight:800;font-size:12px;padding:4px 12px;border-radius:14px;margin-top:10px}
+  .banner-text .tag .dot{width:8px;height:8px;border-radius:50%;background:#A893E8;box-shadow:0 0 0 3px rgba(168,147,232,.25)}
+
+  .wrap{position:relative;z-index:4;max-width:1280px;margin:0 auto;padding:28px 24px 80px}
+  .grid{display:grid;grid-template-columns: 1.4fr 1fr;gap:20px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+  .card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 12px 30px rgba(54,102,124,.08);border:1px solid rgba(180,211,224,.75)}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .card-h .icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:linear-gradient(135deg,#FFD3D8,#E89090)}
+  .card-h h2{font-size:20px;font-weight:900;letter-spacing:2px;color:#1F3A4D}
+  .card-h .sub{margin-left:auto;font-size:12px;color:#7BB8DA;font-weight:700;letter-spacing:1px}
+
+  /* 分类切换 */
+  .cat-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .cat-tab{padding:10px 16px;border-radius:14px;background:#F4FAFD;border:2px solid #E0EBF0;color:#5C7A8C;font-weight:800;font-size:13px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+  .cat-tab:hover{transform:translateY(-2px);border-color:#A893E8}
+  .cat-tab.active{background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;border-color:#5C42A0}
+  .cat-tab .ic{font-size:16px}
+
+  /* 社团卡片 */
+  .club-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .club-card{background:#fff;border:2px solid #E0EBF0;border-radius:18px;padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+  .club-card:hover{transform:translateY(-4px);border-color:#A893E8;box-shadow:0 8px 18px rgba(168,147,232,0.25)}
+  .club-card .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .club-card .icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .club-card .icon.art{background:linear-gradient(135deg,#FFD3D8,#FF8E9C)}
+  .club-card .icon.sport{background:linear-gradient(135deg,#C7F0C0,#85D279)}
+  .club-card .icon.tech{background:linear-gradient(135deg,#C9EBFB,#7BC8E8)}
+  .club-card .icon.subject{background:linear-gradient(135deg,#FFE7B0,#FFB37A)}
+  .club-card .nm{font-size:15px;font-weight:900;color:#1F3A4D;letter-spacing:.5px}
+  .club-card .meta{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px}
+  .club-card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .club-card .tag{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;background:#F0F8FC;color:#5C7A8C}
+  .club-card .tag.hot{background:#FFE0E0;color:#C2410C}
+  .club-card .tag.new{background:#E0F8E4;color:#15803D}
+  .club-card .signup{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1.5px dashed #E0EBF0}
+  .club-card .count{font-size:11px;color:#5C7A8C;font-weight:700}
+  .club-card .signup-btn{background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border:none;border-radius:12px;cursor:pointer;transition:transform .15s;letter-spacing:.5px}
+  .club-card .signup-btn:hover{transform:translateY(-1px)}
+  .club-card .signup-btn.signed{background:linear-gradient(135deg,#22C55E,#15803D)}
+  .club-admin-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .club-admin-form[hidden]{display:none}
+  .club-admin-form input,.club-admin-form select{width:100%;padding:10px 12px;border:2px solid #E0EBF0;border-radius:12px;background:#F8FCFE;color:#1F3A4D;font:700 12px inherit;outline:none}
+  .club-admin-form input:focus,.club-admin-form select:focus{border-color:#A893E8}
+  .club-admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .club-admin-btn{border:none;border-radius:10px;padding:6px 10px;color:#fff;background:#5C42A0;font:800 11px inherit;cursor:pointer}
+  .club-admin-btn.danger{background:#C2410C}
+  .club-capacity-input{width:62px;border:1.5px solid #CDBFF2;border-radius:9px;padding:5px 6px;color:#1F3A4D;font-size:11px;font-weight:800}
+  .club-admin-toggle{margin-left:auto;min-height:40px;padding:9px 15px;border:1.5px solid #684FA8;border-radius:12px;background:#684FA8;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+  .club-admin-toggle:hover{background:#563F93}
+  .club-admin-toggle:active{transform:translateY(1px)}
+  .general-club-card{display:grid;grid-template-rows:auto auto 1fr;min-height:286px;padding:20px;border:1px solid #D9E6EC;border-radius:16px;cursor:pointer}
+  .general-club-card:hover{transform:translateY(-2px);border-color:#9B89D4;box-shadow:0 10px 24px rgba(72,88,120,.12)}
+  .general-club-card .top{align-items:flex-start;margin-bottom:12px}
+  .general-club-card .icon{width:52px;height:52px;border-radius:14px}
+  .general-club-card .nm{font-size:17px;line-height:1.35;letter-spacing:0}
+  .general-club-card .meta{margin-top:4px;color:#66879A;font-size:12px;line-height:1.45}
+  .general-club-card .tags{margin-top:0}
+  .general-club-card .tag{padding:4px 9px;border-radius:7px;font-size:11px}
+  .general-club-management{display:grid;align-self:end;gap:13px;margin-top:16px;padding-top:15px;border-top:1px solid #DDE9EE}
+  .general-club-status{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .general-club-count{color:#506B7B;font-size:13px;font-weight:700}
+  .general-club-count strong{color:#263F50;font-size:20px;font-variant-numeric:tabular-nums}
+  .general-club-remaining{padding:5px 9px;border-radius:8px;background:#EEF5F8;color:#587486;font-size:11px;font-weight:800}
+  .general-club-remaining.is-full{background:#FFF0E9;color:#A84217}
+  .general-club-capacity{display:grid;grid-template-columns:auto minmax(72px,92px) auto;gap:8px;align-items:center}
+  .general-club-capacity label{color:#536F7F;font-size:12px;font-weight:800;white-space:nowrap}
+  .general-club-capacity .club-capacity-input{width:100%;min-height:38px;padding:7px 9px;border-color:#C9D9E1;border-radius:9px;background:#F8FBFC;font-size:14px}
+  .general-club-capacity .club-capacity-input:focus{outline:3px solid rgba(104,79,168,.14);border-color:#684FA8}
+  .general-club-capacity .club-admin-btn{min-height:38px;padding:8px 13px;border:1px solid #684FA8;border-radius:9px;background:#fff;color:#563F93;font-size:12px}
+  .general-club-capacity .club-admin-btn:hover{background:#F1EDFB}
+  .general-club-footer{display:grid;grid-template-columns:1fr auto;gap:9px}
+  .general-club-footer .club-admin-btn{min-height:42px;border-radius:10px;font-size:13px}
+  .general-club-footer .club-admin-btn.secondary{background:#684FA8}
+  .general-club-footer .club-admin-btn.secondary:hover{background:#563F93}
+  .general-club-footer .club-admin-btn.danger{border:1px solid #E5B4A1;background:#FFF7F3;color:#A84217}
+  .general-club-footer .club-admin-btn.danger:hover{background:#FFEDE5}
+  .general-club-search{display:none}
+  .general-club-search label{color:#405D6E;font-size:13px;font-weight:800;white-space:nowrap}
+  .general-club-search input{width:100%;min-height:44px;padding:10px 13px;border:1px solid #CADAE2;border-radius:10px;background:#F8FBFC;color:#263F50;font:600 14px inherit;outline:none}
+  .general-club-search input::placeholder{color:#8CA1AD}
+  .general-club-search input:focus{border-color:#684FA8;box-shadow:0 0 0 3px rgba(104,79,168,.13);background:#fff}
+  .general-club-search button{min-height:44px;padding:9px 15px;border:1px solid #CADAE2;border-radius:10px;background:#fff;color:#536F7F;font-size:12px;font-weight:800;cursor:pointer}
+  .general-club-search button:hover:not(:disabled){border-color:#9B89D4;background:#F4F1FB;color:#563F93}
+  .general-club-search button:disabled{opacity:.45;cursor:not-allowed}
+  .club-search-empty{grid-column:1/-1;display:grid;place-items:center;min-height:220px;padding:32px;border:1px dashed #C9D9E1;border-radius:16px;background:#F8FBFC;text-align:center}
+  .club-search-empty strong{display:block;color:#263F50;font-size:17px}
+  .club-search-empty span{display:block;margin-top:7px;color:#718895;font-size:13px}
+  .class-club-list{display:flex;flex-direction:column;gap:8px}
+  .class-club-row{display:grid;grid-template-columns:42px minmax(120px,.7fr) minmax(0,2fr);gap:12px;align-items:center;padding:12px;border:1.5px solid #E0EBF0;border-radius:14px;background:#F8FCFE}
+  .class-club-index{width:32px;height:32px;border-radius:10px;background:#E8DCFF;color:#5C42A0;display:grid;place-items:center;font-size:12px;font-weight:900}
+  .class-club-name{font-size:14px;font-weight:900;color:#1F3A4D}
+  .class-club-count{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:3px}
+  .class-club-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .class-club-tag{padding:6px 9px;border-radius:9px;background:#E5F5FC;color:#0E5E80;font-size:11px;font-weight:800}
+  .class-club-empty{color:#94A9B5;font-size:12px;font-weight:700}
+  body.general-club-mode .grid{display:block}
+  body.general-club-mode #aiRecoCard,
+  body.general-club-mode #activitySideColumn{display:none}
+  body.general-club-mode .banner{height:210px;border-bottom-width:2px}
+  body.general-club-mode .banner-text h1{font-size:32px;letter-spacing:3px}
+  body.general-club-mode .wrap{padding-top:28px}
+  body.general-club-mode #clubAdminPanel{margin-bottom:22px!important;border-radius:18px}
+  body.general-club-mode #clubAdminPanel .card-h{margin-bottom:0}
+  body.general-club-mode #clubAdminPanel.is-open .card-h{margin-bottom:18px}
+  body.general-club-mode #clubAdminPanel .card-h .sub{margin-left:0}
+  body.general-club-mode #clubCatalogCard{padding:26px;border-radius:18px}
+  body.general-club-mode #clubCatalogCard .card-h{margin-bottom:20px}
+  body.general-club-mode #clubCatalogCard .card-h h2{font-size:24px;letter-spacing:1px}
+  body.general-club-mode #clubCatalogCard .card-h .sub{font-size:14px}
+  body.general-club-mode .general-club-search{display:grid;grid-template-columns:110px minmax(280px,520px) 72px;justify-content:start;gap:10px;align-items:center;margin-bottom:18px}
+  body.general-club-mode #campusTabs,
+  body.general-club-mode #catTabs{align-items:center;gap:8px;margin-bottom:10px}
+  body.general-club-mode #campusTabs::before,
+  body.general-club-mode #catTabs::before{flex:0 0 42px;color:#536F7F;font-size:12px;font-weight:800}
+  body.general-club-mode #campusTabs::before{content:'校区'}
+  body.general-club-mode #catTabs::before{content:'类型'}
+  body.general-club-mode .cat-tab{min-height:40px;padding:8px 13px;border-width:1px;border-radius:10px;background:#F7FAFC;font-size:12px}
+  body.general-club-mode .cat-tab:hover{transform:none;background:#F0F4F7}
+  body.general-club-mode .cat-tab.active{background:#684FA8;border-color:#684FA8}
+  body.general-club-mode .club-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:24px}
+  body.class-club-mode .grid{display:block}
+  body.class-club-mode #aiRecoCard,
+  body.class-club-mode #activitySideColumn{display:none}
+  @media (max-width:1080px){
+    body.general-club-mode .club-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:760px){
+    .club-admin-form{grid-template-columns:1fr}
+    .class-club-row{grid-template-columns:36px 1fr}
+    .class-club-tags{grid-column:2}
+    body.general-club-mode .banner{height:170px}
+    body.general-club-mode #clubCatalogCard{padding:18px}
+    body.general-club-mode #clubCatalogCard .card-h{align-items:flex-start}
+    body.general-club-mode #clubCatalogCard .card-h .sub{margin-top:4px}
+    body.general-club-mode #campusTabs::before,
+    body.general-club-mode #catTabs::before{flex-basis:100%;margin-bottom:2px}
+    body.general-club-mode .general-club-search{grid-template-columns:1fr auto}
+    body.general-club-mode .general-club-search label{grid-column:1/-1}
+    body.general-club-mode .club-grid{grid-template-columns:1fr;gap:14px;margin-top:18px}
+    .general-club-card{min-height:0}
+    .general-club-capacity{grid-template-columns:1fr 84px}
+    .general-club-capacity .club-admin-btn{grid-column:1/-1}
+  }
+
+  /* 活动日历 */
+  .cal-card{background:linear-gradient(135deg,#FFF6E5,#FFE3B0);border:3px solid #F0CC8A}
+  .cal-row{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+  .cal-row .date{flex-shrink:0;width:54px;text-align:center;background:linear-gradient(135deg,#FF9F4A,#FF6B6B);color:#fff;border-radius:12px;padding:8px 4px}
+  .cal-row .date .d{font-size:18px;font-weight:900;line-height:1}
+  .cal-row .date .m{font-size:9px;letter-spacing:1px;margin-top:2px}
+  .cal-row .info{flex:1}
+  .cal-row .nm{font-size:14px;font-weight:800;color:#1F3A4D}
+  .cal-row .loc{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px}
+
+  /* 我的报名 */
+  .my-card{background:linear-gradient(135deg,#F2EBFF,#E0D6FF);border:3px solid #A893E8}
+  .my-list{display:flex;flex-direction:column;gap:10px}
+  .my-row{background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;border:1.5px solid #E0D6FF}
+  .my-row .ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .my-row .nm{font-size:13px;font-weight:800;color:#1F3A4D}
+  .my-row .tm{font-size:11px;color:#7BB8DA;margin-top:2px;font-weight:700}
+  .my-row .badge{margin-left:auto;font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;background:#E0F8E4;color:#15803D}
+  .my-row .cancel-btn{flex-shrink:0;border:1px solid #F2B8B5;border-radius:10px;background:#FFF0EF;color:#B33A32;padding:5px 10px;font:800 11px/1 inherit;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .my-row .cancel-btn:hover{border-color:#D77B75;background:#FFE2DF;color:#8F2D27}
+  .my-row .cancel-btn:active{transform:scale(.97)}
+
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#5C42A0;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(92,66,160,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+<script src="assets/ai-helper.js"></script>
+<!-- 钉钉 H5 微应用:corpId 由部署脚本/Nginx 注入 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
+  <div class="crumbs">
+    <span>快乐学习群岛</span><span class="arrow">›</span><span>🎨 活动岛</span>
+  </div>
+  <div class="topbar-right">
+    <div class="student-pill">
+      <div class="stu-avatar">林</div>
+    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+      <div class="stu-info">
+        <div class="name">林**</div>
+        <div class="meta">小学 · 五年级 1 班</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 满载横幅 -->
+<div class="banner">
+  <img class="banner-img" src="assets/活动岛.png" alt="活动岛">
+  <div class="banner-text">
+    <h1>🎨 社团抢课</h1>
+    <p id="activityBannerSubtitle"
+       data-text-teacher="看课程 · 查名额 · 管报名"
+       data-text-parent="为孩子选择本学期社团课程"
+    >选课程 · 抢名额 · 开启新兴趣</p>
+    <span class="tag"><span class="dot"></span>2025 学年第二学期 · <strong id="bannerClubCount">34</strong> 门课程</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- 左：社团 -->
+    <div>
+      <!-- AI 活动推荐 -->
+      <div class="card" id="aiRecoCard" style="margin-bottom:16px;background:linear-gradient(135deg,#FFF0F8 0%,#FFE0EC 100%);border:2px solid #FFB8D0">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:linear-gradient(135deg,#A893E8,#7C5BCC);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px">🎯</div>
+          <h2>AI 活动推荐</h2>
+          <div class="sub" id="aiRecoStatus" style="color:#7BB8DA">待生成</div>
+        </div>
+        <div id="aiRecoBubble" style="background:#fff;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#1F3A4D;box-shadow:0 3px 10px rgba(124,91,204,0.1);margin-bottom:12px">
+          点下面的按钮，我会根据你的<strong style="color:#5C42A0">兴趣</strong>和<strong style="color:#5C42A0">体能特点</strong>，为你挑 3 个最合适的社团/活动 ✨
+        </div>
+        <div id="aiRecoList"></div>
+        <button id="aiRecoBtn" onclick="generateActivityReco()" style="width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;border:none;border-radius:14px;font-weight:800;font-size:14px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 12px rgba(124,91,204,.3)">
+          ✨ 生成 AI 推荐
+        </button>
+      </div>
+
+      <div class="card" id="clubAdminPanel" style="display:none;margin-bottom:16px">
+        <div class="card-h">
+          <div class="icon" style="background:#E8DCFF">⚙️</div>
+          <h2>社团管理</h2>
+          <div class="sub">新增社团后立即开放报名</div>
+          <button class="club-admin-toggle" id="clubAdminToggle" type="button" aria-expanded="false" aria-controls="clubAdminForm">新增社团</button>
+        </div>
+        <form class="club-admin-form" id="clubAdminForm" hidden>
+          <select id="newClubCampus" aria-label="校区" required>
+            <option value="">选择校区</option>
+            <option value="西校区">西校区</option>
+            <option value="东校区">东校区</option>
+          </select>
+          <input id="newClubName" placeholder="社团名称" maxlength="60" required>
+          <input id="newClubTeacher" placeholder="负责老师" maxlength="60" required>
+          <select id="newClubWeekday" aria-label="上课日" required>
+            <option value="">选择上课日</option>
+            <option>周一</option><option>周二</option><option>周三</option>
+            <option>周四</option><option>周五</option>
+          </select>
+          <input id="newClubLocation" placeholder="上课地点" maxlength="80" required>
+          <input id="newClubCapacity" type="number" min="1" max="500" placeholder="人数上限" required>
+          <input id="newClubNote" placeholder="备注（选填）" maxlength="120" style="grid-column:span 2">
+          <button class="club-admin-btn" type="submit" style="min-height:40px">＋ 新增社团</button>
+        </form>
+      </div>
+
+      <div class="card" id="classClubPanel" style="display:none;margin-bottom:16px">
+        <div class="card-h">
+          <div class="icon" style="background:#DDF4E3">👩‍🏫</div>
+          <h2 id="classClubTitle">本班社团报名</h2>
+          <div class="sub" id="classClubSummary">正在加载...</div>
+        </div>
+        <div class="class-club-list" id="classClubList"></div>
+      </div>
+
+      <div class="card" id="clubCatalogCard">
+        <div class="card-h">
+          <div class="icon">🎪</div>
+          <h2 id="clubCatalogTitle">社团抢课</h2>
+          <div class="sub" id="club-count">共 34 门</div>
+        </div>
+
+        <div class="general-club-search" id="clubSearchPanel">
+          <label for="clubSearchInput">搜索社团</label>
+          <input id="clubSearchInput" type="search" placeholder="输入社团名称、负责老师或上课地点" autocomplete="off">
+          <button id="clubSearchClear" type="button" disabled>清空</button>
+        </div>
+        <div class="cat-tabs" id="campusTabs"></div>
+        <div class="cat-tabs" id="catTabs"></div>
+        <div class="club-grid" id="clubGrid"></div>
+      </div>
+    </div>
+
+    <!-- 右：活动日历 + 我的 -->
+    <div id="activitySideColumn">
+      <div class="card my-card">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:#fff;border:2px solid #A893E8">⭐</div>
+          <h2>我已报名</h2>
+          <div class="sub" style="color:#5C42A0" id="myCount">0 门</div>
+        </div>
+        <div class="my-list" id="myList"></div>
+      </div>
+
+      <div class="card cal-card" style="margin-top:16px">
+        <div class="card-h" style="margin-bottom:10px">
+          <div class="icon" style="background:#fff;border:2px solid #FF9F4A">📅</div>
+          <h2>近期活动</h2>
+          <div class="sub" style="color:#C2410C" id="weekLabel">本周</div>
+        </div>
+        <div id="calEvents"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = [
+  {key:'all', name:'全部', ic:'🌟'},
+  {key:'art', name:'艺术', ic:'🎨'},
+  {key:'sport', name:'体育', ic:'⚽'},
+  {key:'tech', name:'科技', ic:'🤖'},
+  {key:'subject', name:'学科', ic:'📚'},
+];
+
+/* 课程目录来自学校最终汇总表，报名人数与当前学生报名结果来自 API。 */
+let CLUBS = [];
+let currentCat = 'all';
+let currentCampus = 'all';
+let clubSearchQuery = '';
+let signed = new Set();
+let signedCourses = [];
+let maxSignups = 1;
+
+function isGeneralClubManager(){
+  return Boolean(window.UserAuth && UserAuth.isGeneralTeacher && UserAuth.isGeneralTeacher());
+}
+
+function isParentClubUser(){
+  return Boolean(window.UserAuth && UserAuth.isParent && UserAuth.isParent());
+}
+
+function authHeaders(json=false){
+  const headers = {};
+  const token = sessionStorage.getItem('bs_session_token');
+  if(token) headers.Authorization = 'Bearer ' + token;
+  // 本地账号 / URL demo 模式没有 Bearer；生产环境 DISABLE_DEMO 会忽略这些头。
+  if(!token && sessionStorage.getItem('bs_role')){
+    headers['X-Demo-Role'] = sessionStorage.getItem('bs_role');
+    const kid = sessionStorage.getItem('bs_bound_id_card');
+    if(kid) headers['X-Demo-Kid'] = kid;
+  }
+  if(json) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
+async function loadClubsFromDB(){
+  try {
+    const r = await fetch('/api/clubs', {headers: authHeaders()});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    CLUBS = (d.clubs || []).map(c => ({...c, loc: c.location}));
+    return true;
+  } catch(e){
+    console.warn('[clubs] DB 拉不到，留空：', e.message);
+    CLUBS = [];
+    return false;
+  }
+}
+
+async function loadMySignups(){
+  try {
+    const r = await fetch('/api/clubs/signups', {headers: authHeaders()});
+    if(r.status === 401){
+      signed = new Set();
+      signedCourses = [];
+      return false;
+    }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    signedCourses = d.signups || [];
+    signed = new Set(signedCourses.map(s => s.id));
+    maxSignups = Number(d.maxSignups) || 1;
+    return true;
+  } catch(e){
+    console.warn('[clubs] 报名记录拉取失败：', e.message);
+    signed = new Set();
+    signedCourses = [];
+    return false;
+  }
+}
+
+function matchesClubSearch(course){
+  if(!clubSearchQuery) return true;
+  const searchable = [
+    course.name,
+    course.teacher,
+    course.loc,
+    course.campus,
+    course.time,
+  ].filter(Boolean).join(' ').toLocaleLowerCase('zh-CN');
+  return searchable.includes(clubSearchQuery);
+}
+
+function signupBlockReason(course){
+  if(!isParentClubUser() || signed.has(course.id)) return null;
+  const conflict = signedCourses.find(item => item.weekday === course.weekday);
+  if(conflict){
+    return {
+      label:'时间冲突',
+      message:`${course.weekday}已报名“${conflict.name}”`,
+    };
+  }
+  if(signed.size >= maxSignups){
+    return {label:'已达上限', message:`每名学生最多报名 ${maxSignups} 门社团`};
+  }
+  return null;
+}
+
+function renderCampuses(){
+  const searchableClubs = CLUBS.filter(matchesClubSearch);
+  const campuses = [
+    {key:'all', name:'全部校区'},
+    {key:'西校区', name:'西校区'},
+    {key:'东校区', name:'东校区'},
+  ];
+  document.getElementById('campusTabs').innerHTML = campuses.map(c => {
+    const count = c.key === 'all' ? searchableClubs.length : searchableClubs.filter(x => x.campus === c.key).length;
+    return `<button class="cat-tab ${c.key===currentCampus?'active':''}" onclick="setCampus('${c.key}')">
+      <span>📍 ${c.name}</span><span style="opacity:.7">(${count})</span>
+    </button>`;
+  }).join('');
+}
+
+function renderCats(){
+  document.getElementById('catTabs').innerHTML = CATS.map(c=>{
+    const campusList = (currentCampus === 'all' ? CLUBS : CLUBS.filter(x=>x.campus===currentCampus))
+      .filter(matchesClubSearch);
+    const cnt = c.key==='all' ? campusList.length : campusList.filter(x=>x.cat===c.key).length;
+    return `<button class="cat-tab ${c.key===currentCat?'active':''}" onclick="setCat('${c.key}')">
+      <span class="ic">${c.ic}</span><span>${c.name}</span><span style="opacity:.7">(${cnt})</span>
+    </button>`;
+  }).join('');
+}
+
+function setCat(k){ currentCat=k; renderCats(); renderClubs(); }
+function setCampus(k){ currentCampus=k; renderCampuses(); renderCats(); renderClubs(); }
+
+function setClubSearch(value){
+  clubSearchQuery = String(value || '').trim().toLocaleLowerCase('zh-CN');
+  const clearButton = document.getElementById('clubSearchClear');
+  if(clearButton) clearButton.disabled = !clubSearchQuery;
+  renderCampuses();
+  renderCats();
+  renderClubs();
+}
+
+function renderClubs(){
+  const list = CLUBS.filter(c =>
+    (currentCampus === 'all' || c.campus === currentCampus) &&
+    (currentCat === 'all' || c.cat === currentCat) &&
+    matchesClubSearch(c)
+  );
+  document.getElementById('club-count').textContent = clubSearchQuery ? `找到 ${list.length} 门` : `${list.length} 门`;
+  document.getElementById('clubGrid').innerHTML = list.map((c,i)=>{
+    const realIdx = CLUBS.indexOf(c);
+    const tags = [];
+    tags.push(`<span class="tag">${escapeClubText(c.campus)}</span>`);
+    tags.push(`<span class="tag">${escapeClubText(c.time)}</span>`);
+    const isSigned = signed.has(c.id);
+    const full = Boolean(c.full);
+    const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
+    const isGeneral = isGeneralClubManager();
+    const canSignup = isParentClubUser();
+    const blockReason = signupBlockReason(c);
+    const remaining = canSeeCounts ? Math.max(0, c.max - c.count) : 0;
+    return `
+      <div class="club-card ${isGeneral ? 'general-club-card' : ''}" data-course-id="${escapeClubText(c.id)}" onclick="showClubDetail(${realIdx})">
+        <div class="top">
+          <div class="icon ${c.cat}">${c.ic}</div>
+          <div>
+            <div class="nm">${escapeClubText(c.name)}</div>
+            <div class="meta">${escapeClubText(c.teacher)} · ${escapeClubText(c.loc)}</div>
+          </div>
+        </div>
+        <div class="tags">${tags.join('')}</div>
+        ${isGeneral
+          ? `<div class="general-club-management">
+               <div class="general-club-status">
+                 <span class="general-club-count">已报名 <strong>${c.count}</strong> / ${c.max} 人</span>
+                 <span class="general-club-remaining ${remaining === 0 ? 'is-full' : ''}">${remaining === 0 ? '名额已满' : `剩余 ${remaining} 人`}</span>
+               </div>
+               <div class="general-club-capacity" onclick="event.stopPropagation()">
+                 <label for="capacity-${escapeClubText(c.id)}">人数上限</label>
+                 <input id="capacity-${escapeClubText(c.id)}" class="club-capacity-input" data-capacity-for="${escapeClubText(c.id)}" type="number" min="${c.count}" max="500" value="${c.max}" aria-label="${escapeClubText(c.name)}人数上限">
+                 <button class="club-admin-btn" type="button" onclick="saveClubCapacity('${c.id}')">保存上限</button>
+               </div>
+               <div class="general-club-footer">
+                 <button class="club-admin-btn secondary" type="button" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看报名名单</button>
+                 <button class="club-admin-btn danger" type="button" onclick="event.stopPropagation();archiveClub('${c.id}')">下架社团</button>
+               </div>
+             </div>`
+          : `<div class="signup">
+             <span class="count">${canSeeCounts ? `${c.count} / ${c.max} 人` : (isSigned ? '已报名' : (full ? '名额已满' : (blockReason ? blockReason.message : '可报名')))}</span>
+             ${canSignup
+            ? (isSigned
+              ? `<button class="signup-btn signed" onclick="event.stopPropagation();cancelSignup('${c.id}')">✓ 已报名</button>`
+              : full ? `<button class="signup-btn" disabled style="background:#CFD8DD;cursor:not-allowed" onclick="event.stopPropagation()">已满</button>`
+              : blockReason ? `<button class="signup-btn" disabled style="background:#CFD8DD;cursor:not-allowed" onclick="event.stopPropagation()">${blockReason.label}</button>`
+              : `<button class="signup-btn" onclick="event.stopPropagation();signup('${c.id}')">立即报名</button>`)
+            : `<button class="signup-btn" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看详情</button>`}
+           </div>`}
+      </div>
+    `;
+  }).join('') || `
+    <div class="club-search-empty">
+      <div>
+        <strong>${clubSearchQuery ? '没有找到匹配的社团' : '当前筛选下暂无社团'}</strong>
+        <span>${clubSearchQuery ? '试试搜索其他名称、老师或地点。' : '可以切换校区或课程类型继续查看。'}</span>
+      </div>
+    </div>`;
+}
+
+/* 社团详情弹窗 */
+const CLUB_INTROS = {
+  art:'用色彩和创意点亮你的小宇宙！',
+  sport:'运动 = 健康 + 友谊 + 自信，欢迎热爱运动的你！',
+  tech:'拆机器人、写代码、做实验——未来的小科学家在这里！',
+  subject:'课内拓展 + 兴趣深挖，让学习变得更好玩。',
+};
+function showClubDetail(i){
+  const c = CLUBS[i];
+  if(!c) return;
+  const isSigned = signed.has(c.id);
+  const full = Boolean(c.full);
+  const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
+  const canSignup = isParentClubUser();
+  const blockReason = signupBlockReason(c);
+  const pct = canSeeCounts ? Math.round(c.count/c.max*100) : 0;
+  const TIPS = [c.note, '报名成功后请按学校通知准时到课', '如需取消，请在本页面操作'].filter(Boolean);
+  const ACT = ['月初汇报演出','期中联谊活动','参加校外比赛','作品参展','期末展示日'];
+  let veil = document.getElementById('clubVeil');
+  if(!veil){
+    veil = document.createElement('div');
+    veil.id = 'clubVeil';
+    veil.style.cssText = 'position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+    veil.onclick = (e)=>{ if(e.target===veil) veil.remove(); };
+    document.body.appendChild(veil);
+  } else veil.innerHTML='';
+  const m = document.createElement('div');
+  m.style.cssText = 'background:#fff;border-radius:24px;width:560px;max-width:100%;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 24px 60px rgba(0,30,60,.3);animation:popIn .35s cubic-bezier(.34,1.56,.64,1)';
+  m.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div class="icon ${c.cat}" style="width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0">${c.ic}</div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#1F3A4D;letter-spacing:1px">${escapeClubText(c.name)}</div>
+        <div style="font-size:12px;color:#7BB8DA;margin-top:4px;font-weight:700">${escapeClubText(c.teacher)} 老师 · ${escapeClubText(c.campus)} · ${escapeClubText(c.loc)}</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#F2EBFF,#E0D6FF);border-radius:14px;padding:14px;font-size:13.5px;line-height:1.7;color:#5C42A0;font-weight:600">
+      ${CLUB_INTROS[c.cat]||'欢迎报名~'}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
+      <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">活动时间</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.time}</div></div>
+      ${canSeeCounts
+        ? `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">已报名</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.count} / ${c.max}</div></div>
+           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">还剩</div><div style="font-size:13px;font-weight:900;color:${c.max-c.count<5?'#E94B6A':'#22A05B'};margin-top:3px">${c.max-c.count} 个名额</div></div>`
+        : `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">校区</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.campus}</div></div>
+           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">报名状态</div><div style="font-size:13px;font-weight:900;color:${(full&&!isSigned)||blockReason?'#C2410C':'#22A05B'};margin-top:3px">${isSigned?'已报名':(full?'已满':(blockReason ? blockReason.label : '可报名'))}</div></div>`}
+    </div>
+    ${canSeeCounts ? `<div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#7BB8DA;font-weight:700;margin-bottom:6px"><span>报名进度</span><span>${pct}%</span></div>
+      <div style="background:#F4FAFD;border-radius:8px;height:10px;overflow:hidden"><div style="background:linear-gradient(90deg,#A893E8,#5C42A0);height:100%;width:${pct}%;border-radius:8px"></div></div>
+    </div>` : ''}
+    ${canSeeCounts ? `<div style="margin-top:16px">
+      <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">报名学生</div>
+      <div id="clubRoster-${c.id}" style="max-height:190px;overflow:auto;background:#F4FAFD;border-radius:12px;padding:10px">
+        <div style="padding:12px;text-align:center;color:#7BB8DA;font-size:12px;font-weight:700">正在加载报名名单...</div>
+      </div>
+    </div>` : ''}
+    <div style="margin-top:16px">
+      <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📌 报名须知</div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+        ${TIPS.slice(0,3).map(t=>`<li style="background:#FFF6E5;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#7A4F1B;font-weight:600">· ${escapeClubText(t)}</li>`).join('')}
+      </ul>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📅 本学期重要活动</div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+        ${ACT.slice(0,3).map((a,k)=>`<li style="background:#F2EBFF;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#5C42A0;font-weight:600">${k+1}. ${a}</li>`).join('')}
+      </ul>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="document.getElementById('clubVeil').remove()" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button>
+      ${!canSignup || canSeeCounts ? '' : isSigned
+        ? `<button onclick="cancelSignup('${c.id}');document.getElementById('clubVeil').remove()" style="background:#FFE0E0;color:#C2410C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">取消报名</button>`
+        : full
+        ? `<button disabled style="background:#CFD8DD;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:not-allowed">已满员</button>`
+        : blockReason
+        ? `<button disabled title="${escapeClubText(blockReason.message)}" style="background:#CFD8DD;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:not-allowed">${blockReason.label}</button>`
+        : `<button onclick="signup('${c.id}');document.getElementById('clubVeil').remove()" style="background:linear-gradient(135deg,#A893E8,#5C42A0);color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 10px rgba(92,66,160,.4)">立即报名</button>`}
+    </div>
+  `;
+  veil.appendChild(m);
+  if(canSeeCounts) loadClubSignupStudents(c.id);
+}
+
+function escapeClubText(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[ch]);
+}
+
+async function loadClubSignupStudents(courseId){
+  const box = document.getElementById(`clubRoster-${courseId}`);
+  if(!box) return;
+  try {
+    const r = await fetch(`/api/clubs/${encodeURIComponent(courseId)}/signups`, {
+      headers: authHeaders(),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '报名名单加载失败');
+    const students = data.students || [];
+    if(!students.length){
+      box.innerHTML = '<div style="padding:12px;text-align:center;color:#7BB8DA;font-size:12px;font-weight:700">暂无学生报名</div>';
+      return;
+    }
+    box.innerHTML = students.map((student, index) => {
+      const meta = [student.grade, student['class'], student.studentId]
+        .filter(Boolean).map(escapeClubText).join(' · ');
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 8px;${index ? 'border-top:1px solid #DCEBF3' : ''}">
+        <span style="width:24px;height:24px;border-radius:8px;background:#E8DCFF;color:#5C42A0;display:grid;place-items:center;font-size:11px;font-weight:900;flex-shrink:0">${index + 1}</span>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:800;color:#1F3A4D">${escapeClubText(student.name)}</div>
+          <div style="font-size:11px;color:#7BB8DA;margin-top:2px">${meta}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    box.innerHTML = `<div style="padding:12px;text-align:center;color:#C2410C;font-size:12px;font-weight:700">${escapeClubText(e.message)}</div>`;
+  }
+}
+
+async function loadClassClubSignups(){
+  const list = document.getElementById('classClubList');
+  const summary = document.getElementById('classClubSummary');
+  const title = document.getElementById('classClubTitle');
+  if(!list || !summary || !title) return;
+  list.innerHTML = '<div class="class-club-empty" style="padding:16px;text-align:center">正在加载本班报名信息...</div>';
+  try {
+    const r = await fetch('/api/clubs/class-signups', {headers:authHeaders()});
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '本班报名信息加载失败');
+    const students = data.students || [];
+    title.textContent = `${data.grade || ''}${data.class || ''}社团报名`;
+    summary.textContent = `${data.signedStudents || 0} / ${data.totalStudents || 0} 人已报名`;
+    if(!students.length){
+      list.innerHTML = '<div class="class-club-empty" style="padding:20px;text-align:center">本班暂无学生数据</div>';
+      return;
+    }
+    list.innerHTML = students.map((student, index) => {
+      const clubs = student.clubs || [];
+      const tags = clubs.length
+        ? clubs.map(club => `<span class="class-club-tag" title="${escapeClubText(`${club.teacher || ''} · ${club.weekday || ''} · ${club.location || ''}`)}">${escapeClubText(club.name)}</span>`).join('')
+        : '<span class="class-club-empty">尚未报名社团</span>';
+      return `<div class="class-club-row">
+        <span class="class-club-index">${index + 1}</span>
+        <div>
+          <div class="class-club-name">${escapeClubText(student.name)}</div>
+          <div class="class-club-count">${clubs.length} 门社团</div>
+        </div>
+        <div class="class-club-tags">${tags}</div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    summary.textContent = '加载失败';
+    list.innerHTML = `<div class="class-club-empty" style="padding:20px;text-align:center;color:#C2410C">${escapeClubText(e.message)}</div>`;
+  }
+}
+
+async function saveClubCapacity(courseId){
+  const input = document.querySelector(`[data-capacity-for="${courseId}"]`);
+  const capacity = Number(input && input.value);
+  if(!Number.isInteger(capacity) || capacity < 1 || capacity > 500){
+    showToast('人数上限须为 1 到 500 的整数');
+    return;
+  }
+  try {
+    const r = await fetch(`/api/clubs/${encodeURIComponent(courseId)}`, {
+      method:'PATCH',
+      headers:authHeaders(true),
+      body:JSON.stringify({capacity}),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '人数上限更新失败');
+    await refreshClubCatalog();
+    showToast('人数上限已更新');
+  } catch(e){
+    showToast(e.message);
+  }
+}
+
+async function archiveClub(courseId){
+  const course = CLUBS.find(c => c.id === courseId);
+  if(!confirm(`确定下架“${course ? course.name : '该社团'}”吗？已有报名记录会保留。`)) return;
+  try {
+    const r = await fetch(`/api/clubs/${encodeURIComponent(courseId)}`, {
+      method:'DELETE',
+      headers:authHeaders(),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '社团下架失败');
+    await refreshClubCatalog();
+    showToast('社团已下架');
+  } catch(e){
+    showToast(e.message);
+  }
+}
+
+async function refreshClubCatalog(){
+  await loadClubsFromDB();
+  renderCampuses();
+  renderCats();
+  renderClubs();
+  const bc = document.getElementById('bannerClubCount');
+  if(bc) bc.textContent = CLUBS.length;
+}
+
+function setClubAdminFormOpen(open){
+  const panel = document.getElementById('clubAdminPanel');
+  const form = document.getElementById('clubAdminForm');
+  const toggle = document.getElementById('clubAdminToggle');
+  if(!panel || !form || !toggle) return;
+  form.hidden = !open;
+  panel.classList.toggle('is-open', open);
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.textContent = open ? '收起表单' : '新增社团';
+}
+
+async function createClubFromForm(event){
+  event.preventDefault();
+  const form = event.currentTarget;
+  const payload = {
+    campus: document.getElementById('newClubCampus').value,
+    name: document.getElementById('newClubName').value,
+    teacher: document.getElementById('newClubTeacher').value,
+    weekday: document.getElementById('newClubWeekday').value,
+    location: document.getElementById('newClubLocation').value,
+    capacity: Number(document.getElementById('newClubCapacity').value),
+    note: document.getElementById('newClubNote').value,
+  };
+  try {
+    const r = await fetch('/api/clubs', {
+      method:'POST',
+      headers:authHeaders(true),
+      body:JSON.stringify(payload),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '社团新增失败');
+    form.reset();
+    setClubAdminFormOpen(false);
+    await refreshClubCatalog();
+    showToast('社团已新增');
+  } catch(e){
+    showToast(e.message);
+  }
+}
+
+async function signup(courseId){
+  const course = CLUBS.find(c => c.id === courseId);
+  try {
+    const r = await fetch('/api/clubs/signups', {
+      method:'POST',
+      headers:authHeaders(true),
+      body:JSON.stringify({course_id:courseId}),
+    });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error || '报名失败');
+    await Promise.all([loadClubsFromDB(), loadMySignups()]);
+    showToast(`🎉 ${course ? course.name : '课程'} 报名成功！`);
+    renderCampuses();
+    renderCats();
+    renderClubs();
+    renderMyList();
+  } catch(e){
+    showToast(e.message);
+  }
+}
+async function cancelSignup(courseId){
+  const course = CLUBS.find(c => c.id === courseId);
+  if(confirm('确定取消 '+(course ? course.name : '这门课程')+' 的报名吗？')){
+    try {
+      const r = await fetch('/api/clubs/signups/'+encodeURIComponent(courseId), {
+        method:'DELETE',
+        headers:authHeaders(),
+      });
+      const d = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(d.error || '取消失败');
+      await Promise.all([loadClubsFromDB(), loadMySignups()]);
+      showToast(`已取消 ${course ? course.name : '课程'} 的报名`);
+    } catch(e){
+      showToast(e.message);
+    }
+    renderCampuses();
+    renderCats();
+    renderClubs();
+    renderMyList();
+  }
+}
+
+const CAT_BG = {
+  art:    'linear-gradient(135deg,#FFD3D8,#FF8E9C)',
+  sport:  'linear-gradient(135deg,#C7F0C0,#85D279)',
+  tech:   'linear-gradient(135deg,#C9EBFB,#7BC8E8)',
+  subject:'linear-gradient(135deg,#FFE7B0,#FFB37A)',
+};
+function renderMyList(){
+  const list = document.getElementById('myList');
+  const cnt = document.getElementById('myCount');
+  if(!list) return;
+  const courseIds = Array.from(signed);
+  cnt.textContent = `${courseIds.length} / ${maxSignups} 门`;
+  if(!courseIds.length){
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px">还没报名课程 · 请先登录并绑定学生，再从左侧抢课 🎯</div>';
+    return;
+  }
+  const weekdayCounts = signedCourses.reduce((counts, course) => {
+    if(course.weekday) counts[course.weekday] = (counts[course.weekday] || 0) + 1;
+    return counts;
+  }, {});
+  list.innerHTML = courseIds.map(courseId => {
+    const activeCourse = CLUBS.find(x => x.id === courseId);
+    const c = activeCourse || signedCourses.find(x => x.id === courseId);
+    const weekday = c && (c.weekday || c.time);
+    const hasConflict = weekday && weekdayCounts[weekday] > 1;
+    const ic = activeCourse ? activeCourse.ic : '🎯';
+    const bg = activeCourse ? (CAT_BG[activeCourse.cat] || 'linear-gradient(135deg,#E0D6FF,#A893E8)') : 'linear-gradient(135deg,#E0D6FF,#A893E8)';
+    const meta = c ? `${c.teacher}老师 · ${weekday} · ${c.campus}${activeCourse ? '' : ' · 已下架'}` : '课程已下架';
+    return `
+      <div class="my-row">
+        <div class="ic" style="background:${bg}">${ic}</div>
+        <div>
+          <div class="nm">${escapeClubText(c ? c.name : courseId)}</div>
+          <div class="tm">${escapeClubText(meta)}</div>
+        </div>
+        <span class="badge" style="${hasConflict ? 'background:#FFE0E0;color:#C2410C' : ''}">${hasConflict ? '时间冲突' : '已报名'}</span>
+        <button type="button" class="cancel-btn" onclick="cancelSignup('${courseId}')" aria-label="取消报名${escapeClubText(c ? c.name : courseId)}">取消报名</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function goHome(){ location.href='island-homepage.html' }
+
+</script>
+
+<script>
+/* 全局学生切换：下拉选人 · 联动 AI 上下文 */
+let curStudentIdx = (window.StudentRoster && StudentRoster.getCurrentIdx) ? StudentRoster.getCurrentIdx() : 0;
+function getCurStudent(){ return StudentRoster.get(curStudentIdx); }
+(function(){
+  const pill=document.querySelector(".student-pill");
+  if(!pill)return;
+  function applyStudent(idx, silent){
+    if(window.UserAuth && UserAuth.isTeacher && UserAuth.isTeacher()){ UserAuth.refreshPill(); return; }
+    curStudentIdx = idx;
+    const s = getCurStudent();
+    if(!s){ if(window.UserAuth) UserAuth.refreshPill(); return; }
+    pill.querySelector(".stu-avatar").textContent = s.avatar;
+    pill.querySelector(".stu-avatar").style.background = `linear-gradient(135deg,${s.color},#3DB7E2)`;
+    pill.querySelector(".name").textContent = s.displayName;
+    pill.querySelector(".meta").textContent = `${s.grade} · ${s.class}`;
+    if(!silent && typeof showToast==="function") showToast("已切换到 " + s.displayName);
+    if(!silent && typeof generateActivityReco==="function") generateActivityReco();
+  }
+  StudentRoster.attachPicker(pill, { initialIdx: curStudentIdx, onChange: applyStudent });
+  // 进入页面后用持久化的当前学生立即同步顶栏 pill（不弹提示、不触发 AI）
+  applyStudent(curStudentIdx, true);
+})();
+
+/* ═══════════════════════ AI 活动推荐 ═══════════════════════ */
+const ACTIVITY_SYSTEM = `${AIHelper.SAFETY}
+
+【你的任务】
+根据学生的兴趣、体能特点和年级，从"可选社团"列表里挑 3 个最适合的推荐给这位学生。社团名必须从给定列表里选，不要编造。
+
+【输出格式】
+严格用如下 JSON 返回，不要包代码块、不要任何额外说明：
+{"开场白":"<30 字内文本>","推荐活动":[{"社团名":"<必须从列表中选>","图标":"🎨","推荐理由":"<30-50 字>"}]}`;
+
+function buildActivityPrompt(){
+  const s = getCurStudent();
+  if(!s) return '请先选择一个学生';
+  const clubsList = CLUBS.slice(0,20).map(c=>`${c.name}(${c.cat}/${c.time})`).join('；');
+  const joined = (s.joined || []).join('、') || '暂无';
+  return `学生信息：
+${StudentRoster.studentInfoBlock(s)}
+
+体测情况：
+${StudentRoster.fitnessBlock(s)}
+
+兴趣偏好：${s.interests.join('、')}
+已报名社团：${joined}
+
+可选社团（共 ${Math.min(CLUBS.length,20)} 个，请只从这里挑）：
+${clubsList}
+
+请按 system 中 JSON 格式从"可选社团"里选 3 个最适合的。`;
+}
+
+async function generateActivityReco(){
+  const s = getCurStudent();
+  if(!s){ showToast && showToast('请先选择学生'); return; }
+  const btn = document.getElementById('aiRecoBtn');
+  const status = document.getElementById('aiRecoStatus');
+  const bubble = document.getElementById('aiRecoBubble');
+  const list = document.getElementById('aiRecoList');
+  if(!btn) return;
+
+  btn.disabled = true;
+  btn.style.opacity = '.6';
+  btn.innerHTML = '⏳ 思考中...';
+  status.textContent = '生成中';
+  status.style.color = '#FFA050';
+
+  try {
+    const text = await AIHelper.call(ACTIVITY_SYSTEM, buildActivityPrompt());
+    console.log('[ACTIVITY AI raw]', text);
+    const json = AIHelper.parseJson(text);
+    const esc = AIHelper.escapeHtml;
+    const picks = json && (json['推荐活动'] || json.picks);
+    if(!json || !Array.isArray(picks) || !picks.length){
+      bubble.innerHTML = `<span style="color:#C2410C">⚠️ AI 返回格式无法解析。<br><br>原文（前 600 字）：<br><pre style="white-space:pre-wrap;background:#FFF6E0;padding:8px;border-radius:8px;font-size:11px;margin-top:6px;color:#5C42A0">${esc(text||'').slice(0,600)}</pre></span>`;
+      list.innerHTML = '';
+    } else {
+      bubble.innerHTML = esc(json['开场白'] || json.intro || '为你挑了 3 个 ↓');
+      list.innerHTML = picks.slice(0,3).map(p => {
+        const name = p['社团名'] || p.name;
+        const emoji = p['图标'] || p.emoji || '🎯';
+        const why = p['推荐理由'] || p.why || '';
+        const club = CLUBS.find(c => c.name === name);
+        const meta = club ? `${club.teacher}老师 · ${club.time}` : '';
+        const joined = club && signed.has(club.id);
+        const blocked = club && signupBlockReason(club);
+        const action = !club ? '' : joined
+          ? '<button disabled style="background:#22A05B;color:#fff;border:none;border-radius:12px;padding:5px 10px;font-size:11px;font-weight:800;flex-shrink:0">已报名</button>'
+          : blocked
+          ? `<button disabled title="${esc(blocked.message)}" style="background:#CFD8DD;color:#fff;border:none;border-radius:12px;padding:5px 10px;font-size:11px;font-weight:800;flex-shrink:0">${esc(blocked.label)}</button>`
+          : `<button onclick="signup('${club.id}')" style="background:#5C42A0;color:#fff;border:none;border-radius:12px;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">报名</button>`;
+        return `
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:10px 12px;margin-top:8px;border:1.5px solid #E8DCFF">
+            <div style="font-size:22px;flex-shrink:0">${esc(emoji)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;font-size:14px;color:#1F3A4D">${esc(name)}</div>
+              ${meta ? `<div style="font-size:11px;color:#7BB8DA;margin-top:2px">${esc(meta)}</div>` : ''}
+              <div style="font-size:12px;color:#5C42A0;margin-top:5px;line-height:1.5">${esc(why)}</div>
+            </div>
+            ${action}
+          </div>
+        `;
+      }).join('');
+    }
+    status.textContent = '已完成';
+    status.style.color = '#15803D';
+  } catch(err){
+    console.error(err);
+    let msg = 'AI 调用失败：' + err.message;
+    bubble.innerHTML = `<span style="color:#C2410C">${AIHelper.escapeHtml(msg)}</span>`;
+    status.textContent = '失败';
+    status.style.color = '#C2410C';
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = '✨ 重新生成';
+  }
+}
+
+/* ═══════════════════════ 动态活动日历 ═══════════════════════ */
+function renderCalendar(){
+  const cal = document.getElementById('calEvents');
+  if(!cal) return;
+
+  const now = new Date();
+  const today = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - (today === 0 ? 6 : today - 1));
+  weekStart.setHours(0,0,0,0);
+
+  const holidays = [
+    { m:6, d:1, nm:'六一儿童节 · 全天活动', loc:'📍 各校区', color:'#FF6B6B' },
+    { m:6, d:3, nm:'校园开放日', loc:'📍 本部多功能厅', color:'#5BC8E8' },
+    { m:6, d:5, nm:'社团汇报展演', loc:'📍 大礼堂', color:'#A893E8' },
+  ];
+
+  const colors = [
+    'linear-gradient(135deg,#FF9F4A,#FF6B6B)',
+    'linear-gradient(135deg,#5BC8E8,#0E5E80)',
+    'linear-gradient(135deg,#76C342,#15803D)',
+    'linear-gradient(135deg,#A893E8,#5C42A0)',
+  ];
+
+  let events = [];
+
+  for(const h of holidays){
+    const eventDate = new Date(now.getFullYear(), h.m-1, h.d);
+    if(eventDate >= weekStart && eventDate < new Date(weekStart.getTime() + 7*86400000)){
+      events.push({...h, date: eventDate, color: h.color});
+    }
+  }
+
+  const wedDate = new Date(weekStart);
+  wedDate.setDate(weekStart.getDate() + 2);
+  const wedLabel = '周三 (' + (wedDate.getMonth()+1) + '/' + wedDate.getDate() + ')';
+  events.push({
+    m: wedDate.getMonth()+1, d: wedDate.getDate(),
+    nm: '拓展课 · 社团活动日',
+    loc: '📍 各上课地点 · ' + wedLabel + ' 下午 15:30-16:30',
+    color: 'linear-gradient(135deg,#FF8E9C,#E94B6A)',
+    date: wedDate
+  });
+
+  events.sort((a,b) => a.date - b.date);
+
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('weekLabel').textContent =
+    (weekStart.getMonth()+1) + '/' + weekStart.getDate() + ' - ' +
+    (new Date(weekStart.getTime()+6*86400000).getMonth()+1) + '/' +
+    new Date(weekStart.getTime()+6*86400000).getDate();
+
+  cal.innerHTML = events.map((e,i) => {
+    return `<div class="cal-row">
+      <div class="date" style="background:${e.color||colors[i%4]}">
+        <div class="d">${e.d}</div>
+        <div class="m">${monthNames[e.m-1]||(e.m+'月')}</div>
+      </div>
+      <div class="info">
+        <div class="nm">${e.nm}</div>
+        <div class="loc">${e.loc}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700">本周暂无活动安排</div>';
+}
+
+// 启动：等待身份就绪，再加载课程与当前学生报名记录。
+(async()=>{
+  if(window.UserAuth) await new Promise(resolve => UserAuth.ready(resolve));
+  const generalMode = isGeneralClubManager();
+  const classMode = Boolean(window.UserAuth && UserAuth.isClassTeacher && UserAuth.isClassTeacher());
+  document.body.classList.toggle('general-club-mode', generalMode);
+  document.body.classList.toggle('class-club-mode', classMode);
+  const bannerSubtitle = document.getElementById('activityBannerSubtitle');
+  if(generalMode && bannerSubtitle) bannerSubtitle.textContent = '查看报名名单，管理社团与人数上限';
+  if(classMode && bannerSubtitle) bannerSubtitle.textContent = '查看本班学生社团选择';
+  const adminPanel = document.getElementById('clubAdminPanel');
+  if(adminPanel) adminPanel.style.display = generalMode ? 'block' : 'none';
+  const classPanel = document.getElementById('classClubPanel');
+  if(classPanel) classPanel.style.display = classMode ? 'block' : 'none';
+  const adminForm = document.getElementById('clubAdminForm');
+  if(adminForm) adminForm.addEventListener('submit', createClubFromForm);
+  const adminToggle = document.getElementById('clubAdminToggle');
+  if(adminToggle) adminToggle.addEventListener('click', () => {
+    setClubAdminFormOpen(adminToggle.getAttribute('aria-expanded') !== 'true');
+  });
+  const catalogTitle = document.getElementById('clubCatalogTitle');
+  if(generalMode && catalogTitle) catalogTitle.textContent = '社团课程管理';
+  const clubSearchInput = document.getElementById('clubSearchInput');
+  const clubSearchClear = document.getElementById('clubSearchClear');
+  if(generalMode && clubSearchInput){
+    clubSearchInput.addEventListener('input', event => setClubSearch(event.target.value));
+  }
+  if(generalMode && clubSearchClear){
+    clubSearchClear.addEventListener('click', () => {
+      clubSearchInput.value = '';
+      setClubSearch('');
+      clubSearchInput.focus();
+    });
+  }
+  if(generalMode){
+    await loadClubsFromDB();
+  } else if(classMode){
+    await Promise.all([loadClubsFromDB(), loadClassClubSignups()]);
+  } else {
+    await Promise.all([loadClubsFromDB(), isParentClubUser() ? loadMySignups() : Promise.resolve()]);
+  }
+  renderCampuses();
+  renderCats();
+  renderClubs();
+  renderMyList();
+  renderCalendar();
+  const bc = document.getElementById('bannerClubCount');
+  if(bc) bc.textContent = CLUBS.length;
+})();
+</script>
+</body>
+</html>

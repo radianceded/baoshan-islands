@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>宝林校区 · 钉钉微应用部署指南</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#F2F5F0;color:#1F3325;line-height:1.8}
+.wrap{max-width:800px;margin:0 auto;padding:40px 20px}
+.header{background:linear-gradient(135deg,#2D6A4F,#40916C);color:#FFF;border-radius:16px;padding:40px 36px;margin-bottom:28px;text-align:center}
+.header h1{font-size:24px;font-weight:900;margin-bottom:8px}
+.header .sub{font-size:13px;opacity:.8}
+.card{background:#FFF;border-radius:14px;padding:28px 30px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #E8E3D5}
+.card h2{font-size:17px;color:#1C2A5E;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #F0ECE0}
+.card h3{font-size:15px;color:#273371;margin:18px 0 10px}
+
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{padding:10px 14px;border:1px solid #E8E3D5;font-size:13.5px;text-align:left}
+th{background:#F7F5EE;font-weight:700;color:#1C2A5E}
+
+.url-box{background:#F0F4EE;border:1.5px solid #C8D6C0;border-radius:10px;padding:14px 16px;font-family:'SF Mono',Consolas,monospace;font-size:13px;color:#2F5A33;word-break:break-all;margin:8px 0}
+
+.step{display:flex;gap:14px;margin-bottom:20px}
+.step-num{min-width:32px;height:32px;border-radius:50%;background:#2D6A4F;color:#FFF;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;margin-top:2px}
+.step-body{flex:1}
+.step-body .t{font-weight:700;font-size:14px;color:#1F3325;margin-bottom:2px}
+.step-body .d{font-size:13px;color:#5A6E55}
+.step-body .dd{font-size:12px;color:#8B9AAA;margin-top:2px}
+
+.note{background:#FFFBE6;border-left:4px solid #E8C84A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#6B5A20;margin:12px 0}
+.warn{background:#FFE8E8;border-left:4px solid #E84A4A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#7A2A2A;margin:12px 0}
+.tip{background:#E8F4FD;border-left:4px solid #4A9CE8;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#2A5A8A;margin:12px 0}
+
+img{display:block;width:100%;max-width:600px;border-radius:12px;border:1px solid #E8E3D5;margin:12px 0}
+.footer{text-align:center;font-size:12px;color:#9AAA95;margin-top:32px;padding:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <h1>🏫 宝林校区 · 钉钉微应用部署指南</h1>
+  <div class="sub">宝山实验小学教育集团 · 奖状分发系统 · 2026年6月</div>
+</div>
+
+<!-- ======== 当前状态 ======== -->
+<div class="card">
+  <h2>📊 当前状态</h2>
+  <table>
+    <tr><th>校区</th><th>应用入口</th><th>学生</th><th>教师</th><th>状态</th></tr>
+    <tr><td>本部</td><td><code>?campus=benbu</code></td><td>✓</td><td>✓</td><td>✅ 已上线</td></tr>
+    <tr><td>罗泾</td><td><code>?campus=luojing</code></td><td>✓ 1652人</td><td>✓ 101人</td><td>✅ 已上线</td></tr>
+    <tr style="background:#FFF8E0"><td><strong>宝林</strong></td><td><code>?campus=baolin</code></td><td>✓ 480人</td><td>⏳ 待导入</td><td>⏳ 待部署</td></tr>
+  </table>
+  <div class="note">宝林校区学生数据（480人，一~五年级）已就绪。部署后只需配置钉钉应用 + 导入教师通讯录即可使用。</div>
+</div>
+
+<!-- ======== 操作步骤 ======== -->
+<div class="card">
+  <h2>🚀 部署步骤（共 7 步）</h2>
+  <p style="font-size:13px;color:#8B9AAA;margin-bottom:16px">操作人：宝林校区钉钉管理员 &nbsp;|&nbsp; 预计耗时：10~15 分钟</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="t">登录钉钉开放平台</div>
+      <div class="d">用浏览器打开 <strong>open-dev.dingtalk.com</strong>，使用<strong>宝林校区所属企业的钉钉管理员账号</strong>扫码登录。</div>
+      <div class="dd">⚠️ 必须是宝林校区企业的管理员，不能是本部或罗泾的企业。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="t">创建企业内部应用</div>
+      <div class="d">左侧菜单 → <strong>应用开发</strong> → <strong>企业内部应用</strong> → 点击「创建应用」。</div>
+      <div class="dd">
+        应用名称：<strong>学生数字画像（宝林）</strong><br>
+        应用描述：宝林校区奖状分发与查看系统<br>
+        应用图标：可暂时使用默认图标
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="t">获取三个关键凭证</div>
+      <div class="d">创建成功后，进入应用详情页，记录以下三个值：</div>
+      <div class="url-box">
+        CorpId：____________________<br>
+        AppKey：____________________<br>
+        AppSecret：____________________
+      </div>
+      <div class="dd">CorpId 在首页「基础信息」→「凭证与基础信息」处。AppKey/AppSecret 在「凭证与基础信息」→「应用凭证」处。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="t">配置应用首页地址</div>
+      <div class="d">在应用详情页 → <strong>开发管理</strong> → <strong>H5微应用</strong> → 填写：</div>
+      <div class="url-box">
+        应用首页地址：https://school.example.com/dingtalk-awards.html?campus=baolin<br>
+        管理后台地址：（留空）
+      </div>
+      <div class="dd">注意 <code>?campus=baolin</code> 参数必须带上，这是区分校区的关键。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="t">配置权限</div>
+      <div class="d">在「权限管理」中，搜索并开启以下权限：</div>
+      <ul style="margin:8px 0 8px 20px;font-size:13px;color:#5A6E55">
+        <li><strong>通讯录个人信息读取</strong>（必须）</li>
+        <li>手机号信息（建议）</li>
+      </ul>
+      <div class="dd">这两项权限用于获取教师的钉钉 UserId，系统据此识别教师/家长身份。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="t">发布应用 & 设置可见范围</div>
+      <div class="d">
+        ① 点击右上角 <strong>「发布」</strong> 按钮<br>
+        ② 在「版本管理」中确认已发布版本<br>
+        ③ 在「应用发布」→「可见范围」中选择 <strong>全部员工</strong>（或指定部门）
+      </div>
+      <div class="warn">必须发布并设置可见范围后，教师和家长才能在钉钉工作台中看到应用入口。建议先用少量测试人员验证再全量放开。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <div class="t">提交凭证给本部系统管理员</div>
+      <div class="d">将第 3 步获取的 <strong>CorpId、AppKey、AppSecret</strong> 发送给我（本部管理员），我将在服务器端完成配置。</div>
+      <div class="dd">同时请提供宝林校区的<strong>教师通讯录 Excel</strong>（包含姓名、手机号、钉钉UserId），以便导入系统。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 验证清单 ======== -->
+<div class="card">
+  <h2>✅ 完成后验证清单</h2>
+  <table>
+    <tr><th>检查项</th><th>预期结果</th></tr>
+    <tr><td>手机钉钉工作台能看到「学生数字画像（宝林）」</td><td>✅ 能看到</td></tr>
+    <tr><td>点击进入后，钉钉自动登录</td><td>✅ 显示奖状页面（可能为空）</td></tr>
+    <tr><td>教师点击后显示上传区</td><td>✅ 有「📤 上传奖状」卡片</td></tr>
+    <tr><td>家长点击后显示绑定面板</td><td>✅ 显示年级/班级/学生选择</td></tr>
+    <tr><td>教师上传一张奖状图片</td><td>✅ AI 识别成功，奖状入库</td></tr>
+    <tr><td>家长绑定后能看到自家孩子奖状</td><td>✅ 仅显示自己孩子的奖状</td></tr>
+  </table>
+</div>
+
+<!-- ======== 常见踩坑 ======== -->
+<div class="card">
+  <h2>⚠️ 常见踩坑提醒</h2>
+  <div class="warn">
+    <strong>坑 1：选错企业</strong><br>
+    创建应用前，确认钉钉开放平台右上角显示的是 <strong>宝林校区的企业名称</strong>（不是本部/罗泾）。如果在错误的企业下创建应用，CorpId 不匹配，师生将无法登录。
+  </div>
+  <div class="warn">
+    <strong>坑 2：忘记 ?campus=baolin 参数</strong><br>
+    应用首页地址末尾必须带 <code>?campus=baolin</code>。如果漏掉，系统会默认走本部校区数据，宝林师生将看到本部的奖状。
+  </div>
+  <div class="warn">
+    <strong>坑 3：发布后看不到应用</strong><br>
+    检查两个地方：① 是否已点击「发布」；② 「可见范围」是否包含该人员。如果刚发布，等待 1~2 分钟后刷新钉钉。
+  </div>
+  <div class="warn">
+    <strong>坑 4：登录后显示空白/错误</strong><br>
+    完全关闭钉钉（从多任务中划掉），重新打开再试。钉钉 H5 微应用有缓存，旧版本可能残留。
+  </div>
+</div>
+
+<!-- ======== 联系方式 ======== -->
+<div class="card">
+  <h2>📞 需要帮助？</h2>
+  <p style="font-size:14px">完成第 3 步后，将 CorpId / AppKey / AppSecret 三个值发给我即可，其余配置由我来完成。</p>
+  <p style="font-size:14px;margin-top:8px">同时请提供宝林校区的<strong>教师通讯录 Excel 表格</strong>，我会导入到系统中。</p>
+  <p style="font-size:13px;color:#8B9AAA;margin-top:8px">部署完成后，教师端入口：钉钉工作台 → 「学生数字画像（宝林）」，系统自动识别教师/家长身份。</p>
+</div>
+
+<div class="footer">宝山实验小学教育集团 · 数字画像项目 · 2026年6月</div>
+
+</div>
+</body>
+</html>

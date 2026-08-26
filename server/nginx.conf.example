@@ -1,0 +1,55 @@
+# /etc/nginx/sites-available/baoshan
+# 改完后：
+#   sudo ln -s /etc/nginx/sites-available/baoshan /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+
+server {
+    listen 80;
+    server_name your-domain.com;
+    # HTTP → HTTPS 跳转（拿到证书前先注释掉）
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    root /opt/baoshan;
+    index island-homepage.html;
+
+    # 静态资源
+    location /assets/ {
+        try_files $uri $uri/ =404;
+        expires 7d;
+    }
+
+    # 后端 API
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 20m;   # 菜单图片上传
+    }
+
+    # data.json 单独走 API（防止泄漏）
+    location = /data.json {
+        proxy_pass http://127.0.0.1:5000;
+    }
+
+    # HTML 入口
+    location / {
+        try_files $uri /island-homepage.html;
+    }
+
+    # 隐藏敏感目录
+    location ~ /(\.env|\.git|server/) {
+        deny all;
+        return 404;
+    }
+}

@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>成就岛 · 宝山区实验小学</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
+  body{background:linear-gradient(180deg,#FFF8E5 0%,#FFEBC0 30%,#E8F4FD 70%,#C9E8FB 100%);min-height:100vh;overflow-x:hidden}
+
+  /* ── 顶栏 ── */
+  .topbar{position:sticky;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,80,120,.08)}
+  .topbar .logo{font-weight:900;font-size:16px;color:#0E5E80;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+  .topbar .campus-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;letter-spacing:.5px;margin-left:4px}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .user-pill{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:30px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);font-size:13px;font-weight:700}
+  .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7C5BCC,#3DB7E2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .role-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px;letter-spacing:.5px}
+  .role-badge.parent{background:#FFF0F0;color:#E94B6A}
+  .role-badge.teacher{background:#E8F8F0;color:#22A05B}
+  .role-badge.admin{background:#F0E8FF;color:#7C5BCC}
+
+  /* ── 未绑定引导 ── */
+  .bind-card{max-width:520px;margin:40px auto;background:#fff;border-radius:24px;padding:32px 24px;box-shadow:0 10px 30px rgba(0,80,120,.1);text-align:center}
+  .bind-card .icon{font-size:64px;margin-bottom:12px}
+  .bind-card h2{font-size:20px;font-weight:900;color:#1F3A4D;letter-spacing:1px}
+  .bind-card .desc{font-size:13.5px;color:#7BB8DA;font-weight:700;margin:8px 0 20px;line-height:1.6}
+  .form-group{margin-bottom:14px;text-align:left}
+  .form-group label{display:block;font-size:12px;font-weight:800;color:#5C7A8C;margin-bottom:5px;letter-spacing:.5px}
+  .form-group select,.form-group input{width:100%;padding:10px 14px;border:2px solid #DFEBF2;border-radius:12px;font-size:14px;font-weight:700;color:#1F3A4D;background:#F9FCFE;font-family:inherit;appearance:none;-webkit-appearance:none;cursor:pointer}
+  .form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237BB8DA' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+  .form-group input{background-image:none;cursor:text}
+  .form-group select:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{display:inline-flex;align-items:center;gap:6px;padding:12px 28px;background:linear-gradient(135deg,#FFD86A,#FF9F4A);color:#fff;font-weight:800;font-size:14px;letter-spacing:1px;border:none;border-radius:14px;cursor:pointer;box-shadow:0 6px 16px rgba(255,159,74,.35);transition:transform .15s;margin-top:8px}
+  .btn-primary:hover{transform:translateY(-2px)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;border:2px solid #DFEBF2;border-radius:14px;cursor:pointer;font-family:inherit}
+  .bind-result{text-align:center;padding:20px 0}
+  .bind-result .icon{font-size:56px}
+
+  /* ── 主内容区 ── */
+  .wrap{max-width:900px;margin:0 auto;padding:16px 16px 80px}
+
+  /* 统计卡 */
+  .stats-row{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px}
+  .stat-card{background:#fff;border-radius:16px;padding:14px;text-align:center;border:2px solid #E8F0F5}
+  .stat-card .n{font-size:28px;font-weight:900;color:#1F3A4D;line-height:1.2}
+  .stat-card .l{font-size:11px;color:#7BB8DA;font-weight:700;margin-top:2px}
+  .stat-card.highlight{border-color:#FFC23F;background:linear-gradient(180deg,#FFFDF5,#FFF3D5)}
+
+  /* 教师上传区 */
+  .upload-card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 8px 24px rgba(0,80,120,.06);margin-bottom:16px;border:2px dashed #DFEBF2}
+  .upload-card h3{font-size:15px;font-weight:900;color:#1F3A4D;margin-bottom:4px}
+  .upload-card .hint{font-size:12px;color:#7BB8DA;font-weight:700;margin-bottom:12px}
+  .upload-dropzone{text-align:center;padding:24px;border-radius:14px;background:#F9FCFE;border:2px dashed #C9E0EE;cursor:pointer;transition:all .2s}
+  .upload-dropzone:hover{border-color:#FFC23F;background:#FFFDF5}
+  .upload-dropzone .ic{font-size:40px;margin-bottom:6px}
+  .upload-dropzone .txt{font-size:13px;font-weight:700;color:#5C7A8C}
+  .upload-dropzone .sub{font-size:11px;color:#9AB8CA;margin-top:2px}
+  .upload-dropzone input{display:none}
+  .upload-progress{display:none;text-align:center;padding:16px}
+  .upload-progress .spinner{display:inline-block;width:36px;height:36px;border:3px solid #DFEBF2;border-top-color:#FF9F4A;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .upload-progress .msg{font-size:13px;font-weight:700;color:#5C7A8C;margin-top:8px}
+
+  /* 奖状列表 */
+  .award-section{margin-top:12px}
+  .award-section h3{font-size:15px;font-weight:900;color:#1F3A4D;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .award-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+  .award-item{background:#fff;border-radius:14px;padding:14px;border:2px solid #E8F0F5;cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:10px}
+  .award-item:hover{transform:translateY(-2px);border-color:#FFC23F;box-shadow:0 6px 14px rgba(255,194,63,.2)}
+  .award-item .medal{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .award-item .medal.gold{background:linear-gradient(135deg,#FFE672,#A06B12);color:#fff}
+  .award-item .medal.silver{background:linear-gradient(135deg,#E8E8E8,#8C8C8C);color:#fff}
+  .award-item .medal.bronze{background:linear-gradient(135deg,#E0945C,#6A3F10);color:#fff}
+  .award-item .medal.normal{background:linear-gradient(135deg,#C9EBFB,#7BC8E8);color:#fff}
+  .award-item .info{flex:1;min-width:0}
+  .award-item .title{font-size:13px;font-weight:800;color:#1F3A4D;line-height:1.3}
+  .award-item .student{font-size:11px;color:#5C7A8C;font-weight:700;margin-top:2px}
+  .award-item .prize-tag{display:inline-block;font-size:10px;font-weight:800;padding:1px 6px;border-radius:6px;margin-top:4px}
+  .prize-tag.gold{background:#FFF3E0;color:#C2410C}
+  .prize-tag.silver{background:#F0F0F0;color:#5C5C5C}
+  .prize-tag.bronze{background:#F5EAE0;color:#7A4F1B}
+  .prize-tag.normal{background:#E8F4FD;color:#0E5E80}
+
+  /* 弹窗 */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,30,60,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .modal{background:#fff;border-radius:24px;width:580px;max-width:100%;max-height:85vh;overflow:auto;padding:24px;box-shadow:0 24px 60px rgba(0,30,60,.3);animation:popIn .3s ease-out}
+  @keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .cert-img{width:100%;border-radius:14px;margin-bottom:14px;box-shadow:0 8px 20px rgba(0,0,0,.15);cursor:zoom-in}
+  .modal h3{font-size:18px;font-weight:900;color:#1F3A4D;letter-spacing:.5px;text-align:center}
+  .modal .prize-badge{display:inline-block;padding:4px 14px;border-radius:12px;font-size:13px;font-weight:800;margin:6px auto 12px}
+  .modal .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .modal .info-cell{background:#F4FAFD;border-radius:10px;padding:10px}
+  .modal .info-cell .ll{font-size:10px;color:#7BB8DA;font-weight:700}
+  .modal .info-cell .vv{font-size:13px;font-weight:800;color:#1F3A4D;margin-top:2px}
+  .modal .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
+  /* AI 结果面板 */
+  .ai-result-panel{background:#fff;border-radius:20px;padding:20px;box-shadow:0 8px 24px rgba(0,80,120,.06);margin-bottom:16px}
+  .ai-result-panel h3{font-size:15px;font-weight:900;color:#1F3A4D;margin-bottom:8px}
+  .ai-result-panel .summary{font-size:13px;color:#5C7A8C;margin-bottom:10px}
+  .ai-result-panel .match-list{max-height:300px;overflow:auto}
+  .ai-result-panel .match-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;margin-bottom:4px;font-size:12px}
+  .ai-result-panel .match-item.matched{background:#E8F8F0}
+  .ai-result-panel .match-item.unmatched{background:#FFF0F0}
+  .ai-result-panel .match-item .status{font-size:16px}
+
+  /* toast */
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#C2410C;color:#fff;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(194,65,12,.35);opacity:0;transition:all .35s;z-index:300}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.success{background:#22A05B}
+
+  /* 空态 */
+  .empty-state{text-align:center;padding:40px 20px;color:#7BB8DA}
+  .empty-state .ic{font-size:56px;margin-bottom:10px}
+  .empty-state .txt{font-size:14px;font-weight:700}
+
+  /* 响应式 */
+  @media(max-width:600px){
+    .stats-row{grid-template-columns:1fr;gap:6px}
+    .stat-card{padding:10px}
+    .stat-card .n{font-size:22px}
+    .award-list{grid-template-columns:1fr}
+    .modal .info-grid{grid-template-columns:1fr}
+  }
+
+  /* 五育筛选按钮 */
+  .wuyu-btn{flex-shrink:0;padding:7px 12px;border-radius:16px;border:1.5px solid #D0E4F0;background:#fff;color:#5C8BAA;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .wuyu-btn.active{background:#0E5E80;color:#fff;border-color:#0E5E80}
+  .wuyu-btn:active{background:#E8F4FD}
+  .wuyu-bar::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══ 钉钉 JSAPI 占位：部署时由 Flask 替换 ═══ -->
+<script>window.BS_DINGTALK_CORP_ID = '__CORP_ID__';</script>
+<script>window.BS_CAMPUS_ID = '__CAMPUS_ID__';</script>
+<script>window.BS_CAMPUS_NAME = '__CAMPUS_NAME__';</script>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.1.0/dingtalk.open.js"></script>
+<script src="assets/dingtalk-bootstrap.js?v=1782707200"></script>
+
+<!-- ═══ 顶栏 ═══ -->
+<div class="topbar">
+  <div class="logo">🏆 成就岛<span class="campus-tag" id="campusTag">__CAMPUS_NAME__</span></div>
+  <div class="topbar-right">
+    <div class="user-pill" id="userPill" style="display:none">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span id="userName">加载中…</span>
+      <span class="role-badge" id="roleBadge"></span>
+    </div>
+    <button onclick="doSignOut()" class="btn-secondary" style="font-size:11px;padding:6px 12px">退出</button>
+  </div>
+</div>
+
+<!-- ═══ 未绑定引导（家长首次登录） ═══ -->
+<div class="bind-card" id="bindPanel" style="display:none">
+  <div class="icon">🔍</div>
+  <h2>绑定您的孩子</h2>
+  <div class="desc">首次使用需要确认您孩子的信息<br>以后登录就不用再选了</div>
+  <div class="form-group">
+    <label>校区</label>
+    <select id="bindCampus" disabled>
+      <option>__CAMPUS_NAME__</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>年级</label>
+    <select id="bindGrade" onchange="onBindGradeChange()">
+      <option value="">请选择年级</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>班级</label>
+    <select id="bindClass" disabled onchange="onBindClassChange()">
+      <option value="">请先选择年级</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>学生姓名</label>
+    <select id="bindStudent" disabled>
+      <option value="">请先选择班级</option>
+    </select>
+  </div>
+  <button class="btn-primary" id="bindBtn" disabled>✅ 确认绑定</button>
+  <div class="bind-result" id="bindResult" style="display:none"></div>
+</div>
+
+<!-- ═══ 家长端横幅 ═══ -->
+<div id="parentBanner" style="display:none;text-align:center;padding:24px 16px 16px">
+  <img src="assets/成就岛.png" alt="成就岛" style="max-width:100%;max-height:280px;border-radius:20px;box-shadow:0 8px 30px rgba(0,80,120,.15)">
+  <div style="margin-top:8px"><span style="font-size:22px;font-weight:900;color:#1F3A4D;letter-spacing:4px">🏆 成就岛</span></div>
+  <div style="font-size:12px;color:#7BB8DA;font-weight:700;margin-top:4px" id="parentKidInfo">我的孩子获奖记录</div>
+</div>
+
+<!-- 多娃切换器（家长） -->
+<div id="kidSwitcher" style="display:none;margin:0 16px 12px;padding:10px 14px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);font-size:13px">
+  <span style="color:#7BB8DA;font-weight:600">👧 查看：</span>
+  <select id="kidSwitcherSelect" onchange="onKidSwitch()" style="border:1px solid #D0E4F0;border-radius:8px;padding:6px 10px;font-size:13px;color:#1F3A4D;background:#F5FAFD;font-weight:700;margin:0 8px">
+  </select>
+  <button onclick="showBindPanelForMore()" style="background:none;border:1px solid #D0E4F0;border-radius:8px;padding:6px 12px;font-size:12px;color:#7BB8DA;cursor:pointer">➕ 绑定另一个</button>
+</div>
+<!-- 解绑入口（独立于多娃切换器，单娃也能看到） -->
+<div id="unbindBar" style="display:none;margin:0 16px 12px;padding:0 14px;font-size:11px;text-align:right">
+  <span id="unbindKidLink" onclick="unbindCurrentKid()" style="color:#94a3b8;cursor:pointer;line-height:20px">解除绑定</span>
+</div>
+
+<!-- ═══ 主内容区 ═══ -->
+<div class="wrap" id="mainContent" style="display:none">
+
+  <!-- 统计 -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- 上传区年级/班级筛选（仅教师） -->
+  <div class="upload-filter-bar" id="uploadFilterBar" style="display:none;margin:0 16px 12px;padding:10px 14px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+    <span style="font-size:12px;color:#7BB8DA;font-weight:600;margin-right:4px">🎯 限制到</span>
+    <select id="uploadGrade" onchange="onUploadGradeChange()" style="padding:8px 12px;border-radius:8px;border:1px solid #D0E4F0;font-size:13px;color:#1F3A4D;background:#F5FAFD;margin-right:8px">
+      <option value="">🏫 全校（不限年级）</option>
+    </select>
+    <select id="uploadClass" disabled style="padding:8px 12px;border-radius:8px;border:1px solid #D0E4F0;font-size:13px;color:#1F3A4D;background:#F5FAFD">
+      <option value="">全部班级</option>
+    </select>
+  </div>
+
+  <!-- 教师上传区 -->
+  <div class="upload-card" id="uploadCard" style="display:none">
+    <h3>📤 上传奖状</h3>
+    <div class="hint">上传奖状图片或 ZIP 压缩包，AI 将自动识别并分发到对应学生</div>
+    <div class="upload-dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="ic">📸</div>
+      <div class="txt">点击或拖拽上传奖状图片 / ZIP 压缩包（支持多选）</div>
+      <div class="sub">支持 JPG / PNG / WebP / ZIP，单文件不超过 50MB</div>
+      <input type="file" id="fileInput" accept="image/*,.zip" multiple onchange="handleFileSelect(event)">
+    </div>
+    <div class="upload-progress" id="uploadProgress">
+      <div class="spinner"></div>
+      <div class="msg">AI 正在识别奖状信息…</div>
+    </div>
+  </div>
+
+  <!-- AI 结果面板 -->
+  <div class="ai-result-panel" id="aiResultPanel" style="display:none"></div>
+
+  <!-- 五育筛选（仅教师） -->
+  <div class="wuyu-bar" id="wuyuBar" style="display:none;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin:0 16px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+    <button class="wuyu-btn active" data-wuyu="" onclick="filterWuyu(this,\"\")">📋 全部</button>
+    <button class="wuyu-btn" data-wuyu="德育" onclick="filterWuyu(this,\"德育\")">🧭 德育</button>
+    <button class="wuyu-btn" data-wuyu="智育" onclick="filterWuyu(this,\"智育\")">📚 智育</button>
+    <button class="wuyu-btn" data-wuyu="体育" onclick="filterWuyu(this,\"体育\")">⚽ 体育</button>
+    <button class="wuyu-btn" data-wuyu="美育" onclick="filterWuyu(this,\"美育\")">🎨 美育</button>
+    <button class="wuyu-btn" data-wuyu="劳育" onclick="filterWuyu(this,\"劳育\")">🧹 劳育</button>
+  </div>
+
+  <!-- 奖状列表 -->
+  <div class="award-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">📋 获奖记录 <span style="font-size:11px;color:#7BB8DA;font-weight:700" id="awardTotal"></span></h3>
+      <div class="search-box" id="searchBox" style="display:none">
+        <input id="awardSearch" type="text" placeholder="🔍 搜索学生姓名或比赛名称…" oninput="onSearchAward()" style="width:200px;padding:8px 12px;border-radius:10px;border:1px solid #D0E4F0;font-size:13px;color:#1F3A4D;background:#fff;outline:none">
+      </div>
+    </div>
+    <div class="award-list" id="awardList"></div>
+    <div id="loadMoreRow" style="text-align:center;padding:12px;display:none">
+      <button id="loadMoreBtn" onclick="loadMoreCerts()" style="border:1px solid #D0E4F0;background:#fff;color:#1F3A4D;padding:8px 32px;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer">📋 加载更多</button>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="ic">📭</div>
+      <div class="txt">暂无奖状记录</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   成就岛 · 前端逻辑
+   ═══════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  const CAMPUS = sessionStorage.getItem('bs_campus') || window.BS_CAMPUS_ID || (new URLSearchParams(location.search)).get('campus') || 'benbu';
+  const CAMPUS_NAME = window.BS_CAMPUS_NAME || '宝山区实验小学';
+  const IN_DINGTALK = /DingTalk/i.test(navigator.userAgent);
+
+  let USER_ROLE = null;
+  let IS_BOUND = false;
+  let BOUND_STUDENT = null;
+  let AWARDS = [];
+  let AWARDS_FILTER_WUYU = '';
+  // 分页状态
+  let AWARDS_CERTS_TOTAL = 0;
+  let AWARDS_CERTS_OFFSET = 0;
+  let AWARDS_CERTS_HAS_MORE = false;
+  const AWARDS_PAGE_SIZE = 200;
+  let ALL_KIDS = [];
+  let USER_PROFILE = {};
+  let gradesCache = [];
+  let classesCache = [];
+  let studentsCache = [];
+  let AVAILABLE_ROLES = [];  // 双角色标识
+
+  // ═══ 封装 fetch：自动带 sessionToken Authorization ═══
+  function apiFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    var tok = sessionStorage.getItem('bs_session_token');
+    if (tok) opts.headers['Authorization'] = 'Bearer ' + tok;
+    return fetch(url, opts);
+  }
+
+  /* ── 页面入口 ── */
+  async function init(){
+    document.getElementById('campusTag').textContent = CAMPUS_NAME;
+    document.getElementById('bindCampus').innerHTML = `<option>${CAMPUS_NAME}</option>`;
+
+    // 钉钉内：等鉴权完成
+    if(IN_DINGTALK){
+      await waitForAuth();
+      // waitForAuth 超时也继续走，由 loadAuthStatus 根据 binding-status 返回值分发
+    }
+
+    // 测试模式：?test=parent&kid=BS_00841 或 ?test=teacher
+    if(!IN_DINGTALK){
+      setupTestMode();
+    }
+
+    // 读取角色 + 绑定状态
+    await loadAuthStatus();
+
+    // 家长：加载所有绑定孩子
+    if(USER_ROLE === 'parent'){
+      await loadKids();
+    }
+
+    // 未认证 → 显示登录界面
+    if(!USER_ROLE){
+      document.getElementById('bindPanel').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'none';
+      if(IN_DINGTALK){
+        showManualLogin();
+      } else {
+        var loginMsg = document.createElement('div');
+        loginMsg.style.cssText = 'padding:60px 24px;text-align:center;font-family:inherit';
+        loginMsg.innerHTML = '<div style="font-size:48px;margin-bottom:16px">🔐</div>'
+          + '<div style="font-size:18px;font-weight:800;color:#1F3A4D;margin-bottom:8px">请先登录</div>'
+          + '<div style="font-size:13px;color:#7BB8DA;line-height:1.7;max-width:360px;margin:0 auto">请在钉钉工作台打开此应用，或使用测试链接 ?test=parent&kid=BS_00841</div>';
+        document.body.appendChild(loginMsg);
+      }
+      return;
+    }
+
+    if(USER_ROLE === 'parent' && !IS_BOUND){
+      // 家长未绑定 → 显示绑定面板
+      showBindPanel();
+      return;
+    }
+
+    // 显示主内容
+    showMainContent();
+    // 双角色切换按钮（仅教师且绑定了孩子的显示）
+    injectRoleSwitcher();
+    // 上传区年级列表
+    loadUploadGrades();
+    await loadAwards();
+    renderAll();
+  }
+
+  function waitForAuth(ms){
+    return new Promise(resolve => {
+      var token = sessionStorage.getItem('bs_session_token');
+      var pageVer = window.BS_PAGE_VER || '0';
+      var storedVer = sessionStorage.getItem('bs_page_ver') || '';
+      // 页面版本变了或没有版本记录，清旧 token 等全新鉴权
+      if(token && pageVer !== storedVer){
+        console.warn('[waitForAuth] 版本不匹配(',pageVer,'/',storedVer,')，清除旧token');
+        sessionStorage.removeItem('bs_session_token');
+        sessionStorage.removeItem('bs_dingtalk_unionid');
+        sessionStorage.removeItem('bs_user_nick');
+        sessionStorage.removeItem('bs_user_avatar');
+        token = null;
+      }
+      if(token) return resolve();
+      const onLogin = () => { cleanup(); resolve(); };
+      const timeoutMs = ms || 15000;
+      const timer = setTimeout(() => {
+        cleanup();
+        // 超时提示用户这不是正常现象
+        markpage('timeout');
+        resolve();
+      }, timeoutMs);
+      function cleanup(){
+        window.removeEventListener('bs:logged-in', onLogin);
+        clearTimeout(timer);
+      }
+      window.addEventListener('bs:logged-in', onLogin);
+    });
+  }
+
+  // 在页面顶部显示简短提示
+  function markpage(reason){
+    var el = document.getElementById('bs-status-tip');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'bs-status-tip';
+      el.style.cssText = 'margin:8px 16px;padding:8px 14px;border-radius:10px;font-size:12px;text-align:center';
+      var topbar = document.querySelector('.topbar');
+      if(topbar && topbar.parentNode) topbar.parentNode.insertBefore(el, topbar.nextSibling);
+      else document.body.prepend(el);
+    }
+    if(reason === 'timeout'){
+      el.style.background = '#FFF3CD';
+      el.style.color = '#856404';
+      el.textContent = '⏳ 身份验证超时，请尝试退出钉钉后重新进入';
+    } else if(reason === 'no-dd'){
+      el.style.background = '#FFE0E0';
+      el.style.color = '#B00020';
+      el.textContent = '⚠️ 钉钉环境异常，请确认在钉钉内打开此页面';
+    }
+  }
+
+  /* ── 测试模式 ── */
+  function setupTestMode(){
+    const qs = new URLSearchParams(location.search);
+    const mode = qs.get('test');
+    if(!mode) return;
+    sessionStorage.setItem('bs_session_token', 'test-' + Date.now());
+    sessionStorage.setItem('bs_user_nick', mode === 'teacher' ? '测试教师' : '测试家长');
+    sessionStorage.setItem('bs_test_mode', mode);
+    const kidId = qs.get('kid');
+    if(mode === 'parent' && kidId){
+      sessionStorage.setItem('bs_test_kid', kidId);
+    }
+    window.dispatchEvent(new CustomEvent('bs:logged-in', {detail:{}}));
+  }
+
+  /* ── 读取角色和绑定状态 ── */
+  async function loadAuthStatus(){
+    const testMode = sessionStorage.getItem('bs_test_mode');
+    if(testMode){
+      USER_ROLE = testMode;
+      const kidId = sessionStorage.getItem('bs_test_kid');
+      if(testMode === 'parent' && kidId){
+        IS_BOUND = true;
+        BOUND_STUDENT = { idCard: kidId };
+        // 优先从 sessionStorage 读预填的学生信息（测试页注入），其次调 API
+        var cachedInfo = sessionStorage.getItem('bs_test_student_info');
+        if(cachedInfo){
+          try {
+            var info = JSON.parse(cachedInfo);
+            BOUND_STUDENT.name = info.displayName || info.name;
+            BOUND_STUDENT.grade = info.grade_name || info.grade || '';
+            BOUND_STUDENT.class = info.class_name || info.class || '';
+          } catch(e){}
+        } else {
+          try {
+            const r = await apiFetch('/api/students/' + encodeURIComponent(kidId) + '?nomask=1&campus=' + CAMPUS);
+            if(r.ok){
+              const stu = await r.json();
+              BOUND_STUDENT.name = stu.displayName || stu.name;
+              BOUND_STUDENT.grade = stu.grade_name || stu.grade || '';
+              BOUND_STUDENT.class = stu.class_name || stu.class || '';
+            }
+          } catch(e){}
+        }
+      }
+      updateUserPill();
+      return;
+    }
+    try {
+      const r = await apiFetch('/api/auth/binding-status');
+      if(r.ok){
+        const data = await r.json();
+        USER_ROLE = data.role || '';
+        IS_BOUND = data.isBound || false;
+        AVAILABLE_ROLES = data.availableRoles || [];
+        if(IS_BOUND){
+          BOUND_STUDENT = {
+            idCard: data.boundIdCard,
+            grade: data.boundGrade,
+            class: data.boundClass,
+          };
+        }
+        if(data.kids) ALL_KIDS = data.kids;
+        updateUserPill();
+        return;
+      }
+      // 401: 未认证，不赋值 USER_ROLE（init 里会处理）
+      console.warn('[loadAuthStatus] 未认证，HTTP', r.status);
+    } catch(e){
+      // URL demo fallback
+      const qs = new URLSearchParams(location.search);
+      const urlRole = qs.get('role');
+      if(urlRole === 'teacher' || urlRole === 'parent' || urlRole === 'admin'){
+        USER_ROLE = urlRole;
+        IS_BOUND = urlRole === 'parent' && !!qs.get('kidName');
+        if(IS_BOUND){
+          BOUND_STUDENT = { grade: qs.get('grade'), class: qs.get('class') };
+        }
+        updateUserPill();
+      }
+    }
+  }
+
+  /* ── SSO 失败兜底：手动登录表单 ── */
+  function showManualLogin(){
+    var container = document.querySelector('.container');
+    if(!container) return;
+
+    // 移除旧元素
+    var old = document.getElementById('manual-login');
+    if(old) old.remove();
+
+    var panel = document.createElement('div');
+    panel.id = 'manual-login';
+    panel.style.cssText = 'padding:48px 20px;text-align:center;font-family:inherit;max-width:380px;margin:0 auto';
+    panel.innerHTML = ''
+      + '<div style="font-size:52px;margin-bottom:12px">🔐</div>'
+      + '<div style="font-size:20px;font-weight:800;color:#1F3A4D;margin-bottom:4px">手动登录</div>'
+      + '<div style="font-size:13px;color:#7BB8DA;margin-bottom:24px">钉钉自动登录失败，请手动确认身份</div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:20px;justify-content:center">'
+      +   '<button id="ml-role-teacher" onclick="ML_selectRole(&apos;teacher&apos;)" style="flex:1;max-width:140px;padding:12px;border-radius:12px;border:2px solid #D0E4F0;background:#fff;color:#5C8BAA;font-size:15px;font-weight:700;cursor:pointer">👨‍🏫 我是老师</button>'
+      +   '<button id="ml-role-parent" onclick="ML_selectRole(&apos;parent&apos;)" style="flex:1;max-width:140px;padding:12px;border-radius:12px;border:2px solid #D0E4F0;background:#fff;color:#5C8BAA;font-size:15px;font-weight:700;cursor:pointer">👨‍👧 我是家长</button>'
+      + '</div>'
+      + '<div id="ml-teacher-form" style="display:none">'
+      +   '<div style="margin-bottom:12px;text-align:left">'
+      +     '<label style="font-size:12px;color:#7BB8DA;display:block;margin-bottom:4px">校区</label>'
+      +     '<input id="ml-campus" value="' + CAMPUS_NAME + '" readonly style="width:100%;padding:10px;border-radius:10px;border:1px solid #D0E4F0;background:#F5FAFD;font-size:14px;color:#1F3A4D;box-sizing:border-box">'
+      +   '</div>'
+      +   '<div style="margin-bottom:16px;text-align:left">'
+      +     '<label style="font-size:12px;color:#7BB8DA;display:block;margin-bottom:4px">教师姓名</label>'
+      +     '<input id="ml-teacher-name" placeholder="请输入您的真实姓名" style="width:100%;padding:10px;border-radius:10px;border:1px solid #D0E4F0;background:#fff;font-size:14px;color:#1F3A4D;box-sizing:border-box">'
+      +   '</div>'
+      +   '<div id="ml-teacher-error" style="display:none;color:#E94B6A;font-size:12px;margin-bottom:12px"></div>'
+      +   '<button onclick="ML_doLogin()" style="width:100%;padding:12px;border-radius:24px;background:linear-gradient(135deg,#5BC8E8,#0E5E80);color:#fff;border:none;font-size:15px;font-weight:800;cursor:pointer">确认登录</button>'
+      + '</div>'
+      + '<div id="ml-parent-msg" style="display:none;margin-top:12px;padding:16px;background:#FFF8E8;border-radius:12px;text-align:center">'
+      +   '<div style="font-size:14px;color:#8B6914;margin-bottom:12px">请通过选择孩子来确认身份</div>'
+      +   '<button onclick="ML_doParentLogin()" style="padding:10px 28px;border-radius:24px;background:#FFD86A;color:#5C3D17;font-weight:800;border:none;font-size:14px;cursor:pointer">去绑定孩子 →</button>'
+      + '</div>';
+    container.appendChild(panel);
+
+    window.ML_SELECTED_ROLE = null;
+  }
+
+  window.ML_selectRole = function(role){
+    window.ML_SELECTED_ROLE = role;
+    var tBtn = document.getElementById('ml-role-teacher');
+    var pBtn = document.getElementById('ml-role-parent');
+    if(role === 'teacher'){
+      tBtn.style.borderColor = '#0E5E80'; tBtn.style.background = '#E6F4FA';
+      pBtn.style.borderColor = '#D0E4F0'; pBtn.style.background = '#fff';
+      document.getElementById('ml-teacher-form').style.display = 'block';
+      document.getElementById('ml-parent-msg').style.display = 'none';
+      setTimeout(function(){ var el=document.getElementById('ml-teacher-name'); if(el) el.focus(); }, 100);
+    } else {
+      pBtn.style.borderColor = '#E94B6A'; pBtn.style.background = '#FFF0F0';
+      tBtn.style.borderColor = '#D0E4F0'; tBtn.style.background = '#fff';
+      document.getElementById('ml-teacher-form').style.display = 'none';
+      document.getElementById('ml-parent-msg').style.display = 'block';
+    }
+  };
+
+  window.ML_doLogin = async function(){
+    var name = document.getElementById('ml-teacher-name').value.trim();
+    var errEl = document.getElementById('ml-teacher-error');
+    if(!name){ errEl.textContent = '请输入姓名'; errEl.style.display='block'; return; }
+    errEl.style.display = 'none';
+    try {
+      var r = await apiFetch('/api/auth/manual-login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({role:'teacher', name:name, campus:CAMPUS})
+      });
+      var data = await r.json();
+      if(r.ok && data.sessionToken){
+        sessionStorage.setItem('bs_session_token', data.sessionToken);
+        sessionStorage.setItem('bs_user_nick', data.user.nick || name);
+        sessionStorage.setItem('bs_manual_login', '1');
+        document.getElementById('manual-login').remove();
+        await loadAuthStatus();
+        window.dispatchEvent(new CustomEvent('bs:logged-in', {detail:data.user}));
+        if(USER_ROLE === 'parent' && !IS_BOUND){ showBindPanel(); return; }
+        if(USER_ROLE === 'teacher' || USER_ROLE === 'admin'){ showMainContent(); await loadAwards(); renderAll(); return; }
+        showMainContent(); await loadAwards(); renderAll();
+      } else {
+        errEl.textContent = data.error || '验证失败';
+        errEl.style.display = 'block';
+      }
+    } catch(e){
+      errEl.textContent = '网络错误: ' + (e.message || e);
+      errEl.style.display = 'block';
+    }
+  };
+
+  window.ML_doParentLogin = async function(){
+    var name = prompt('请输入您的姓名（用于身份记录）', '');
+    if(!name) return;
+    try {
+      var r = await apiFetch('/api/auth/manual-login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({role:'parent', name:name, campus:CAMPUS})
+      });
+      var data = await r.json();
+      if(r.ok && data.sessionToken){
+        sessionStorage.setItem('bs_session_token', data.sessionToken);
+        sessionStorage.setItem('bs_user_nick', name);
+        sessionStorage.setItem('bs_manual_login', '1');
+        document.getElementById('manual-login').remove();
+        await loadAuthStatus();
+        showBindPanel();
+      }
+    } catch(e){
+      alert('网络错误: ' + (e.message || e));
+    }
+  };
+
+  function updateUserPill(){
+    const pill = document.getElementById('userPill');
+    const avatar = document.getElementById('userAvatar');
+    const nameEl = document.getElementById('userName');
+    const badge = document.getElementById('roleBadge');
+    pill.style.display = 'flex';
+
+    const nick = sessionStorage.getItem('bs_user_nick') || (USER_ROLE === 'teacher' ? '老师' : '家长');
+
+    if(USER_ROLE === 'parent'){
+      avatar.textContent = IS_BOUND ? (BOUND_STUDENT?.name || '孩') : '新';
+      avatar.style.background = IS_BOUND ? 'linear-gradient(135deg,#FF8E9C,#E94B6A)' : 'linear-gradient(135deg,#FFC23F,#FF9F4A)';
+      nameEl.textContent = IS_BOUND ? (BOUND_STUDENT?.name || nick) : '新家长';
+      badge.textContent = '家长';
+      badge.className = 'role-badge parent';
+    } else if(USER_ROLE === 'admin'){
+      avatar.textContent = '管';
+      avatar.style.background = 'linear-gradient(135deg,#A893E8,#5C42A0)';
+      nameEl.textContent = nick;
+      badge.textContent = '管理员';
+      badge.className = 'role-badge admin';
+    } else {
+      avatar.textContent = '师';
+      avatar.style.background = 'linear-gradient(135deg,#5BC8E8,#0E5E80)';
+      nameEl.textContent = nick;
+      badge.textContent = '教师';
+      badge.className = 'role-badge teacher';
+    }
+  }
+
+  /* ── 绑定面板 ── */
+  function showBindPanel(){
+    document.getElementById('bindPanel').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+    // 兜底：手机端内联事件可能不触发，加 JS 事件监听
+    var bg = document.getElementById('bindGrade');
+    bg.removeEventListener('change', onBindGradeChange);
+    bg.addEventListener('change', onBindGradeChange);
+    var bc = document.getElementById('bindClass');
+    bc.removeEventListener('change', onBindClassChange);
+    bc.addEventListener('change', onBindClassChange);
+    var btn = document.getElementById('bindBtn');
+    btn.removeEventListener('click', doBindClick);
+    btn.addEventListener('click', doBindClick);
+    loadGrades();
+  }
+  function doBindClick(e){
+    e.preventDefault();
+    doBindChild();
+  }
+
+  async function loadGrades(){
+    try {
+      const r = await apiFetch('/api/campus-info?campus=' + CAMPUS);
+      if(r.ok){
+        const data = await r.json();
+        gradesCache = data.grades || [];
+        const sel = document.getElementById('bindGrade');
+        sel.innerHTML = '<option value="">请选择年级</option>' +
+          gradesCache.map(g => `<option value="${g}">${g}</option>`).join('');
+      }
+    } catch(e){ console.warn('[grades] fetch failed:', e.message); }
+  }
+
+  async function onBindGradeChange(){
+    const grade = document.getElementById('bindGrade').value;
+    const classSel = document.getElementById('bindClass');
+    const studentSel = document.getElementById('bindStudent');
+    studentSel.innerHTML = '<option value="">请先选择班级</option>';
+    studentSel.disabled = true;
+    document.getElementById('bindBtn').disabled = true;
+
+    if(!grade){
+      classSel.innerHTML = '<option value="">请先选择年级</option>';
+      classSel.disabled = true;
+      return;
+    }
+    classSel.disabled = false;
+    classSel.innerHTML = '<option value="">加载中…</option>';
+    try {
+      const r = await apiFetch(`/api/campus-classes?campus=${CAMPUS}&grade=${encodeURIComponent(grade)}`);
+      if(r.ok){
+        const data = await r.json();
+        classesCache = data.classes || [];
+        classSel.innerHTML = '<option value="">请选择班级</option>' +
+          classesCache.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+    } catch(e){
+      classSel.innerHTML = '<option value="">加载失败</option>';
+    }
+  }
+
+  async function onBindClassChange(){
+    const grade = document.getElementById('bindGrade').value;
+    const klass = document.getElementById('bindClass').value;
+    const studentSel = document.getElementById('bindStudent');
+    document.getElementById('bindBtn').disabled = true;
+
+    if(!grade || !klass){
+      studentSel.innerHTML = '<option value="">请先选择班级</option>';
+      studentSel.disabled = true;
+      return;
+    }
+    studentSel.disabled = false;
+    studentSel.innerHTML = '<option value="">加载中…</option>';
+    try {
+      const r = await apiFetch(`/api/campus-students?campus=${CAMPUS}&grade=${encodeURIComponent(grade)}&class=${encodeURIComponent(klass)}`);
+      if(r.ok){
+        const data = await r.json();
+        studentsCache = data.students || [];
+        studentSel.innerHTML = '<option value="">请选择学生</option>' +
+          studentsCache.map(s => `<option value="${s.id_card}">${s.name} (${s.grade_name}${s.class_name})</option>`).join('');
+      }
+    } catch(e){
+      studentSel.innerHTML = '<option value="">加载失败</option>';
+    }
+  }
+
+  /* ── 上传区年级/班级筛选 ── */
+  async function loadUploadGrades(){
+    const sel = document.getElementById('uploadGrade');
+    try {
+      const r = await apiFetch('/api/campus-grades?campus=' + CAMPUS);
+      if(r.ok){
+        const data = await r.json();
+        const grades = data.grades || [];
+        for(var i = 0; i < grades.length; i++){
+          var opt = document.createElement('option');
+          opt.value = grades[i];
+          opt.textContent = grades[i];
+          sel.appendChild(opt);
+        }
+      }
+    } catch(e){}
+  }
+
+  async function onUploadGradeChange(){
+    var grade = document.getElementById('uploadGrade').value;
+    var classSel = document.getElementById('uploadClass');
+    if(!grade){
+      classSel.innerHTML = '<option value="">全部班级</option>';
+      classSel.disabled = true;
+      return;
+    }
+    classSel.disabled = false;
+    classSel.innerHTML = '<option value="">全部班级（不限）</option>';
+    try {
+      var r = await apiFetch('/api/campus-classes?campus=' + CAMPUS + '&grade=' + encodeURIComponent(grade));
+      if(r.ok){
+        var data = await r.json();
+        var classes = data.classes || [];
+        for(var i = 0; i < classes.length; i++){
+          var opt = document.createElement('option');
+          opt.value = classes[i];
+          opt.textContent = classes[i];
+          classSel.appendChild(opt);
+        }
+      }
+    } catch(e){}
+  }
+  window.onUploadGradeChange = onUploadGradeChange;
+
+  // 选择学生后启用确认按钮
+  document.getElementById('bindStudent').addEventListener('change', function(){
+    document.getElementById('bindBtn').disabled = !this.value;
+  });
+
+  async function doBindChild(){
+    const idCard = document.getElementById('bindStudent').value;
+    const grade = document.getElementById('bindGrade').value;
+    const klass = document.getElementById('bindClass').value;
+    if(!idCard) return;
+
+    const btn = document.getElementById('bindBtn');
+    btn.disabled = true;
+    btn.textContent = '绑定中…';
+
+    try {
+      const r = await apiFetch('/api/auth/bind-child', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ campus:CAMPUS, idCard, grade, class:klass })
+      });
+      const data = await r.json();
+      const result = document.getElementById('bindResult');
+      result.style.display = 'block';
+      if(r.ok && data.success){
+        const stu = data.student;
+        result.innerHTML = `<div class="icon">✅</div><div style="font-weight:800;color:#1F3A4D;font-size:16px">绑定成功！</div><div style="color:#7BB8DA;font-size:13px;margin-top:4px">${stu.name} · ${stu.grade}${stu.class}</div>`;
+        // 缓存到 sessionStorage
+        sessionStorage.setItem('bs_bound_id_card', stu.idCard);
+        sessionStorage.setItem('bs_bound_grade', stu.grade);
+        sessionStorage.setItem('bs_bound_class', stu.class);
+        IS_BOUND = true;
+        BOUND_STUDENT = stu;
+        // 刷新孩子列表
+        if(data.kids) ALL_KIDS = data.kids;
+        setTimeout(() => {
+          document.getElementById('bindPanel').style.display = 'none';
+          showMainContent();
+          renderKidSwitcher();
+          loadAwards().then(renderAll);
+        }, 1200);
+      } else {
+        result.innerHTML = `<div class="icon">❌</div><div style="font-weight:800;color:#E94B6A;font-size:16px">绑定失败</div><div style="color:#7BB8DA;font-size:13px;margin-top:4px">${data.error || '未知错误'}</div>`;
+        btn.disabled = false;
+        btn.textContent = '🔄 重试';
+      }
+    } catch(e){
+      document.getElementById('bindResult').style.display = 'block';
+      document.getElementById('bindResult').innerHTML = `<div class="icon">❌</div><div style="font-weight:800;color:#E94B6A">网络错误</div><div style="color:#7BB8DA;font-size:13px">${e.message}</div>`;
+      btn.disabled = false;
+      btn.textContent = '🔄 重试';
+    }
+  }
+
+  /* ── 多娃切换 ── */
+  async function loadKids(){
+    // 从 auth/me 获取所有孩子列表
+    try {
+      const r = await apiFetch('/api/auth/me');
+      if(r.ok){
+        const data = await r.json();
+        USER_PROFILE = data;
+        if(data.kids && data.kids.length > 0){
+          ALL_KIDS = data.kids;
+          // 补充 BOUND_STUDENT.name（binding-status 不返回，需从此补）
+          var active = data.kids.find(function(k){ return k.active; }) || data.kids[0];
+          if(active && BOUND_STUDENT){
+            BOUND_STUDENT.name = active.name;
+            BOUND_STUDENT.grade = BOUND_STUDENT.grade || active.grade;
+            BOUND_STUDENT.class = BOUND_STUDENT.class || active.class;
+          }
+          renderKidSwitcher();
+        }
+      }
+    } catch(e){}
+  }
+
+  function renderKidSwitcher(){
+    // 解绑入口：只要已绑定的家长就显示
+    var unbindBar = document.getElementById('unbindBar');
+    if(unbindBar){
+      unbindBar.style.display = (USER_ROLE === 'parent' && IS_BOUND) ? 'block' : 'none';
+    }
+    // 多娃切换器：只有 ≥2 个孩子才显示
+    if(ALL_KIDS.length < 2){
+      document.getElementById('kidSwitcher').style.display = 'none';
+      return;
+    }
+    var sel = document.getElementById('kidSwitcherSelect');
+    sel.innerHTML = '';
+    for(var i = 0; i < ALL_KIDS.length; i++){
+      var k = ALL_KIDS[i];
+      var opt = document.createElement('option');
+      opt.value = k.idCard;
+      opt.text = k.grade + k.class + ' ' + k.name;
+      if(k.active) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    document.getElementById('kidSwitcher').style.display = 'block';
+  }
+
+  window.onKidSwitch = async function(){
+    var sel = document.getElementById('kidSwitcherSelect');
+    var idCard = sel.value;
+    if(!idCard) return;
+    try {
+      var r = await apiFetch('/api/auth/switch-kid', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({idCard: idCard})
+      });
+      if(r.ok){
+        var data = await r.json();
+        if(data.success && data.kid){
+          BOUND_STUDENT = { idCard: data.kid.idCard, name: data.kid.name, grade: data.kid.grade, class: data.kid.class };
+          sessionStorage.setItem('bs_bound_id_card', data.kid.idCard);
+          updateUserPill();
+          loadAwards().then(renderAll);
+        }
+      }
+    } catch(e){}
+  };
+
+  window.showBindPanelForMore = function(){
+    showBindPanel();
+  };
+
+  /* ── 解绑孩子 ── */
+  function unbindCurrentKid(){
+    if(!BOUND_STUDENT || !BOUND_STUDENT.idCard) return;
+    var kidName = BOUND_STUDENT.name || '';
+    if(!confirm('确定要解除与 ' + kidName + ' 的绑定吗？\n解绑后该学生的奖状将不再显示。')) return;
+    apiFetch('/api/auth/unbind-child', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({idCard: BOUND_STUDENT.idCard})
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(data.success){
+        if(data.kids && data.kids.length > 0){
+          ALL_KIDS = data.kids;
+          var first = data.kids[0];
+          BOUND_STUDENT = { idCard: first.idCard, name: first.name, grade: first.grade, class: first.class };
+          IS_BOUND = true;
+          sessionStorage.setItem('bs_test_kid', first.idCard);
+          sessionStorage.setItem('bs_test_student_info', JSON.stringify({idCard: first.idCard, name: first.name, displayName: first.name, grade_name: first.grade, class_name: first.class}));
+          location.reload();
+        } else {
+          ALL_KIDS = [];
+          IS_BOUND = false;
+          BOUND_STUDENT = null;
+          // 清除测试模式标记，避免 reload 后重新绑定
+          sessionStorage.removeItem('bs_test_mode');
+          sessionStorage.removeItem('bs_test_kid');
+          sessionStorage.removeItem('bs_test_student_info');
+          location.reload();
+        }
+      } else {
+        alert('解绑失败: ' + (data.error || '未知错误'));
+      }
+    }).catch(function(){
+      alert('网络错误，解绑失败');
+    });
+  }
+  window.unbindCurrentKid = unbindCurrentKid;
+
+  /* ── 双角色切换 ── */
+  function injectRoleSwitcher(){
+    if(AVAILABLE_ROLES.length < 2) return;
+    var existing = document.getElementById('dual-role-switcher');
+    if(existing) return;
+    var btn = document.createElement('button');
+    btn.id = 'dual-role-switcher';
+    var isTeacher = USER_ROLE === 'teacher';
+    btn.textContent = isTeacher ? '👨‍👩‍👧 家长模式' : '🏫 教师模式';
+    btn.style.cssText = 'position:fixed;top:10px;right:12px;z-index:9999;'
+      + 'padding:6px 14px;border-radius:20px;border:none;'
+      + 'background:#4f46e5;color:#fff;font-size:13px;font-weight:600;'
+      + 'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);'
+      + 'font-family:-apple-system,BlinkMacSystemFont,sans-serif';
+    btn.onclick = handleRoleSwitch;
+    document.body.appendChild(btn);
+  }
+  async function handleRoleSwitch(){
+    var target = USER_ROLE === 'teacher' ? 'parent' : 'teacher';
+    try {
+      var r = await apiFetch('/api/switch-role', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({role: target})
+      });
+      var data = await r.json();
+      if(data.success){ location.reload(); }
+      else { alert('切换失败: ' + (data.error || '未知错误')); }
+    } catch(e){ alert('切换失败，请重试'); }
+  }
+
+  /* ── 主内容 ── */
+  function showMainContent(){
+    document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('bindPanel').style.display = 'none';
+    updateUserPill();
+    // 家长且有绑定 → 显示解绑栏（外层 div + 内层 span 双重设置，确保单娃无多娃列表时仍可见）
+    var unbindBar = document.getElementById('unbindBar');
+    if(unbindBar){
+      unbindBar.style.display = (USER_ROLE === 'parent' && IS_BOUND) ? 'block' : 'none';
+    }
+    var unbindLink = document.getElementById('unbindKidLink');
+    if(unbindLink){
+      unbindLink.style.display = (USER_ROLE === 'parent' && IS_BOUND) ? 'inline' : 'none';
+      unbindLink.onclick = unbindCurrentKid;  // 绑定事件（IIFE 内 inline onclick 失效的兜底）
+    }
+  }
+
+  async function loadAwards(){
+    if(USER_ROLE === 'parent' && BOUND_STUDENT){
+      // 家长：只拉自己孩子的
+      try {
+        const r = await apiFetch(`/api/students/${encodeURIComponent(BOUND_STUDENT.idCard)}?nomask=1&campus=${CAMPUS}`);
+        if(r.ok){
+          const stu = await r.json();
+          const certs = (stu.award_certs || []).map(c => formatAward(c));
+          const dbAwards = (stu.awards || []).map(a => formatAward(a));
+          AWARDS = certs.concat(dbAwards);
+          // 去重
+          const seen = new Set();
+          AWARDS = AWARDS.filter(a => {
+            const k = `${a.student_name}|${a.competition}|${a.prize}`;
+            if(seen.has(k)) return false;
+            seen.add(k); return true;
+          });
+          BOUND_STUDENT.name = stu.displayName || stu.name;
+          updateUserPill();
+        }
+      } catch(e){ console.warn('[parent awards] fetch failed:', e.message); }
+    } else {
+      // 教师：分页拉取
+      AWARDS = [];
+      AWARDS_CERTS_OFFSET = 0;
+      AWARDS_CERTS_HAS_MORE = true;
+      try {
+        // 第一页 certs
+        const r1 = await apiFetch('/api/award-certs?limit='+AWARDS_PAGE_SIZE+'&offset=0&campus=' + CAMPUS);
+        if(r1.ok){
+          const d1 = await r1.json();
+          AWARDS = (d1.certs || []).map(c => formatAward(c));
+          AWARDS_CERTS_TOTAL = d1.total || 0;
+          AWARDS_CERTS_OFFSET = AWARDS.length;
+          AWARDS_CERTS_HAS_MORE = d1.has_more !== false;
+        }
+        // awards 表（数量少，一次性拉完）
+        const r2 = await apiFetch('/api/awards?limit=2000&campus=' + CAMPUS);
+        if(r2.ok){
+          const d2 = await r2.json();
+          const more = (d2.awards || []).map(a => formatAward(a));
+          const seen = new Set(AWARDS.map(a => `${a.student_name}|${a.competition}|${a.prize}`));
+          for(const a of more){
+            const k = `${a.student_name}|${a.competition}|${a.prize}`;
+            if(!seen.has(k)){ AWARDS.push(a); seen.add(k); }
+          }
+        }
+      } catch(e){ console.warn('[teacher awards] fetch failed:', e.message); }
+      _updateLoadMoreBtn();
+    }
+  }
+
+  /* ── 加载更多证书 ── */
+  async function loadMoreCerts(){
+    if(!AWARDS_CERTS_HAS_MORE) return;
+    const btn = document.getElementById('loadMoreBtn');
+    if(btn){ btn.textContent = '⏳ 加载中...'; btn.disabled = true; }
+    try {
+      const r1 = await apiFetch('/api/award-certs?limit='+AWARDS_PAGE_SIZE+'&offset='+AWARDS_CERTS_OFFSET+'&campus=' + CAMPUS);
+      if(r1.ok){
+        const d1 = await r1.json();
+        const more = (d1.certs || []).map(c => formatAward(c));
+        const seen = new Set(AWARDS.map(a => `${a.student_name}|${a.competition}|${a.prize}`));
+        for(const a of more){
+          const k = `${a.student_name}|${a.competition}|${a.prize}`;
+          if(!seen.has(k)){ AWARDS.push(a); seen.add(k); }
+        }
+        AWARDS_CERTS_OFFSET += more.length;
+        AWARDS_CERTS_HAS_MORE = d1.has_more !== false;
+      }
+    } catch(e){ console.warn('[loadMore] failed:', e.message); }
+    _updateLoadMoreBtn();
+    renderAll();
+  }
+
+  function _updateLoadMoreBtn(){
+    const row = document.getElementById('loadMoreRow');
+    const btn = document.getElementById('loadMoreBtn');
+    if(!row || !btn) return;
+    if(AWARDS_CERTS_HAS_MORE){
+      row.style.display = 'block';
+      btn.textContent = '📋 加载更多（已加载 '+AWARDS.length+' / '+AWARDS_CERTS_TOTAL+' 条奖状）';
+      btn.disabled = false;
+    } else if(AWARDS_CERTS_TOTAL > 0){
+      row.style.display = 'block';
+      btn.textContent = '✅ 已加载全部 '+AWARDS.length+' 条奖状';
+      btn.disabled = true;
+    } else {
+      row.style.display = 'none';
+    }
+  }
+
+  function formatAward(a){
+    return {
+      id: a.id,
+      student_name: a.student_name || a.name || '',
+      grade: a.grade || a.grade_name || '',
+      class_name: a.class_name || '',
+      competition: a.competition || '未知比赛',
+      prize: a.prize || '校级奖状',
+      subject: a.subject || '学科',
+      teacher: a.teacher || '',
+      image_path: a.image_path || null,
+      source: a.source || a.source_sheet || '',
+      wuyu: a.wuyu || '',
+    };
+  }
+
+  function rankClass(prize){
+    const p = (prize||'').toLowerCase();
+    if(p.includes('一等')||p.includes('第一')||p.includes('金奖')||p.includes('特等')) return 'gold';
+    if(p.includes('二等')||p.includes('第二')||p.includes('银奖')) return 'silver';
+    if(p.includes('三等')||p.includes('第三')||p.includes('铜奖')) return 'bronze';
+    return 'normal';
+  }
+  function rankIcon(cls){ return {gold:'🥇',silver:'🥈',bronze:'🥉',normal:'🏅'}[cls]||'🏅'; }
+
+  function renderAll(){
+    const isTeacher = USER_ROLE === 'teacher' || USER_ROLE === 'admin';
+    const total = AWARDS_CERTS_TOTAL || AWARDS.length;
+    const gold = AWARDS.filter(a => rankClass(a.prize) === 'gold').length;
+    const students = new Set(AWARDS.map(a => a.student_name)).size;
+
+    // 教师端才显示统计；家长只看一个孩子，统计无意义
+    document.getElementById('statsRow').style.display = isTeacher ? '' : 'none';
+    if(isTeacher){
+      document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card highlight"><div class="n">${total}</div><div class="l">奖状总数</div></div>
+      `;
+    }
+
+    // 家长端横幅
+    const bannerEl = document.getElementById('parentBanner');
+    if(bannerEl) bannerEl.style.display = isTeacher ? 'none' : 'block';
+    // 当前孩子名字
+    const kidInfoEl = document.getElementById('parentKidInfo');
+    if(kidInfoEl && BOUND_STUDENT){
+      kidInfoEl.textContent = BOUND_STUDENT.name + ' · ' + (BOUND_STUDENT.grade||'') + (BOUND_STUDENT.class||'');
+    }
+    // 多娃切换器
+    renderKidSwitcher();
+
+    // 上传区
+    document.getElementById('uploadCard').style.display = isTeacher ? 'block' : 'none';
+    document.getElementById('uploadFilterBar').style.display = isTeacher ? 'block' : 'none';
+    document.getElementById('searchBox').style.display = isTeacher ? 'block' : 'none';
+    document.getElementById('wuyuBar').style.display = isTeacher ? 'flex' : 'none';
+
+    // 奖状列表
+    renderAwardList('');
+  }
+
+  function renderAwardList(searchFilter){
+    var q = (searchFilter || '').toLowerCase().trim();
+    var wuyu = AWARDS_FILTER_WUYU || '';
+    var filtered = AWARDS;
+    if(q){
+      filtered = filtered.filter(function(a){
+        return (a.student_name||'').toLowerCase().includes(q) ||
+               (a.competition||'').toLowerCase().includes(q) ||
+               (a.prize||'').toLowerCase().includes(q) ||
+               (a.grade||'').toLowerCase().includes(q) ||
+               (a.class_name||'').toLowerCase().includes(q);
+      });
+    }
+    if(wuyu){
+      filtered = filtered.filter(function(a){ return a.wuyu === wuyu; });
+    }
+    var shown = filtered.length;
+    var total = AWARDS.length;
+
+    var container = document.getElementById('awardList');
+    document.getElementById('awardTotal').textContent = (q||wuyu)
+      ? ( (wuyu?wuyu+' · ':'') + (q?'搜索 "'+searchFilter+'" ':'') + '共 '+shown+' 份 / 总计 '+total+' 份奖状' )
+      : '共 '+total+' 份奖状';
+
+    if(shown === 0){
+      container.innerHTML = '';
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('emptyState').querySelector('.txt').textContent = q ? '未找到匹配的奖状' : '暂无奖状记录';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+
+    var sorted = filtered.slice().sort(function(a,b){
+      var ra = rankClass(a.prize), rb = rankClass(b.prize);
+      var order = {gold:0, silver:1, bronze:2, normal:3};
+      return (order[ra]||4) - (order[rb]||4);
+    });
+
+    container.innerHTML = sorted.slice(0, 500).map(function(a){
+      var cls = rankClass(a.prize);
+      var thumb = a.image_path
+        ? '<img src="'+a.image_path+'" loading="lazy" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();window.open(\''+a.image_path+'\',\'_blank\')">'
+        : '<div class="medal '+cls+'">'+rankIcon(cls)+'</div>';
+      return [
+        '<div class="award-item" data-id="'+(a.id||'')+'" onclick="showAwardDetailById('+(a.id||0)+')">',
+        thumb,
+        '<div class="info">',
+        '<div class="title">'+a.competition+'</div>',
+        '<div class="student">'+a.student_name+(a.class_name?' · '+a.grade+a.class_name:'')+'</div>',
+        '<span class="prize-tag '+cls+'">'+a.prize+'</span>',
+        '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  window.showAwardDetailById = function(id){
+    var a = AWARDS.find(function(x){ return x.id === id; });
+    if(!a) return;
+    var sorted = AWARDS.slice().sort(function(x,y){
+      var rx = rankClass(x.prize), ry = rankClass(y.prize);
+      return ({gold:0,silver:1,bronze:2,normal:3}[rx]||4)-({gold:0,silver:1,bronze:2,normal:3}[ry]||4);
+    });
+    var idx = sorted.findIndex(function(x){ return x.id === id; });
+    showDetail(idx);
+  };
+
+  window.showAwardDetail = function(name, competition, prize){
+    var a = AWARDS.find(function(x){ return x.student_name===name && x.competition===competition && x.prize===prize; });
+    if(!a) return;
+    var sorted = AWARDS.slice().sort(function(x,y){
+      var rx = rankClass(x.prize), ry = rankClass(y.prize);
+      return ({gold:0,silver:1,bronze:2,normal:3}[rx]||4)-({gold:0,silver:1,bronze:2,normal:3}[ry]||4);
+    });
+    var idx = sorted.findIndex(function(x){ return x.student_name===name && x.competition===competition && x.prize===prize; });
+    showDetail(idx);
+  };
+
+  var _searchDebounceTimer = null;
+  window.onSearchAward = function(){
+    clearTimeout(_searchDebounceTimer);
+    _searchDebounceTimer = setTimeout(function(){
+      var q = document.getElementById('awardSearch').value.trim();
+      _fetchFilteredAwards(q, AWARDS_FILTER_WUYU);
+    }, 300);
+  };
+
+  window.applyAllFilters = function(){
+    var q = document.getElementById('awardSearch').value.trim();
+    _fetchFilteredAwards(q, AWARDS_FILTER_WUYU);
+  };
+
+  async function _fetchFilteredAwards(searchText, wuyu){
+    if(!searchText && !wuyu){
+      // 无筛选时重新从服务器加载第一页
+      AWARDS = [];
+      AWARDS_CERTS_OFFSET = 0;
+      AWARDS_CERTS_HAS_MORE = true;
+      try {
+        var r0 = await apiFetch('/api/award-certs?limit='+AWARDS_PAGE_SIZE+'&offset=0&campus='+CAMPUS);
+        if(r0.ok){
+          var d0 = await r0.json();
+          AWARDS = (d0.certs||[]).map(c => formatAward(c));
+          AWARDS_CERTS_TOTAL = d0.total||0;
+          AWARDS_CERTS_OFFSET = AWARDS.length;
+          AWARDS_CERTS_HAS_MORE = d0.has_more!==false;
+        }
+        var r2 = await apiFetch('/api/awards?limit=2000&campus='+CAMPUS);
+        if(r2.ok){
+          var d2 = await r2.json();
+          var more = (d2.awards||[]).map(a => formatAward(a));
+          var seen0 = new Set(AWARDS.map(a => `${a.student_name}|${a.competition}|${a.prize}`));
+          for(var ai=0; ai<more.length; ai++){
+            var ak = `${more[ai].student_name}|${more[ai].competition}|${more[ai].prize}`;
+            if(!seen0.has(ak)){ AWARDS.push(more[ai]); seen0.add(ak); }
+          }
+        }
+      } catch(e){ console.warn('[search clear]', e); }
+      _updateLoadMoreBtn();
+      renderAll();
+      return;
+    }
+    // 有筛选条件时直接调服务端搜索，绕过客户端分页限制
+    var params = 'campus='+CAMPUS+'&limit=5000';
+    if(searchText) params += '&name='+encodeURIComponent(searchText);
+    if(wuyu) params += '&wuyu='+encodeURIComponent(wuyu);
+    try {
+      var r = await apiFetch('/api/award-certs?'+params);
+      if(r.ok){
+        var d = await r.json();
+        // 保存当前的 certs 分页状态，但临时替换 AWARDS 显示搜索结果
+        var backupOffset = AWARDS_CERTS_OFFSET;
+        var backupHasMore = AWARDS_CERTS_HAS_MORE;
+        var backupTotal = AWARDS_CERTS_TOTAL;
+        // 将搜索结果作为临时视图
+        var certResults = (d.certs||[]).map(c => formatAward(c));
+        // 同时从 awards 表补齐
+        var r2 = await apiFetch('/api/awards?limit=2000&campus='+CAMPUS+(searchText?'&name='+encodeURIComponent(searchText):''));
+        if(r2.ok){
+          var d2 = await r2.json();
+          var more = (d2.awards||[]).map(a => formatAward(a));
+          var seen = new Set(certResults.map(a => `${a.student_name}|${a.competition}|${a.prize}`));
+          for(var ai=0; ai<more.length; ai++){
+            var ak = `${more[ai].student_name}|${more[ai].competition}|${more[ai].prize}`;
+            if(!seen.has(ak)){ certResults.push(more[ai]); seen.add(ak); }
+          }
+        }
+        // 覆盖 AWARDS 为搜索结果
+        AWARDS = certResults;
+        AWARDS_CERTS_TOTAL = d.total||certResults.length;
+        AWARDS_CERTS_HAS_MORE = false;
+        AWARDS_CERTS_OFFSET = AWARDS.length;
+        _updateLoadMoreBtn();
+        renderAll();
+        // 恢复原始分页状态（不清空搜索视图，但在清除搜索时恢复）
+        window._backupCertState = {offset:backupOffset, hasMore:backupHasMore, total:backupTotal};
+      }
+    } catch(e){ console.warn('[fetchFiltered]', e); }
+  }
+
+  window.filterWuyu = function(btn, wuyu){
+    document.querySelectorAll('.wuyu-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    AWARDS_FILTER_WUYU = wuyu;
+    var q = document.getElementById('awardSearch').value.trim();
+    _fetchFilteredAwards(q, wuyu);
+  };
+  window.showDetail = function(idx){
+    const sorted = [...AWARDS].sort((a,b) => {
+      const ra=rankClass(a.prize), rb=rankClass(b.prize);
+      return ({gold:0,silver:1,bronze:2,normal:3}[ra]||4)-({gold:0,silver:1,bronze:2,normal:3}[rb]||4);
+    });
+    const a = sorted[idx];
+    const cls = rankClass(a.prize);
+    const colorMap={gold:'linear-gradient(135deg,#FFE672,#A06B12)',silver:'linear-gradient(135deg,#E8E8E8,#8C8C8C)',bronze:'linear-gradient(135deg,#E0945C,#6A3F10)',normal:'linear-gradient(135deg,#C9EBFB,#7BC8E8)'};
+
+    let overlay = document.getElementById('detailOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'detailOverlay';
+      overlay.className = 'modal-overlay';
+      overlay.onclick = e => { if(e.target === overlay) overlay.remove(); };
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    const isTeacher = USER_ROLE === 'teacher' || USER_ROLE === 'admin';
+    const wuyuOpts = ['','德育','智育','体育','美育','劳育'];
+    const wuyuCurrent = a.wuyu || '';
+    modal.innerHTML = `
+      ${a.image_path ? `<img class="cert-img" src="${a.image_path}" alt="证书" onclick="window.open('${a.image_path}','_blank')"><div style="text-align:center;margin:-8px 0 12px"><button onclick="event.stopPropagation();downloadCert('${a.image_path}','${(a.student_name||'奖状').replace(/'/g,"\\'")}-${(a.competition||'证书').replace(/'/g,"\\'").slice(0,20)}\")" style="border:none;background:#F0F4EE;color:#2D6A4F;font-size:12px;padding:6px 16px;border-radius:20px;cursor:pointer;font-weight:600">📥 下载原图</button></div>` : ''}
+      <h3>${a.competition}</h3>
+      <div style="text-align:center"><span class="prize-badge" style="background:${colorMap[cls]};color:#fff">${a.prize}</span></div>
+      <div id="certInfoGrid">
+        <div class="info-grid">
+          <div class="info-cell"><div class="ll">获奖学生</div><div class="vv">${a.student_name}</div></div>
+          <div class="info-cell"><div class="ll">班级</div><div class="vv">${a.grade}${a.class_name || ''}</div></div>
+          <div class="info-cell"><div class="ll">指导老师</div><div class="vv">${a.teacher || '—'}</div></div>
+          <div class="info-cell"><div class="ll">五育分类</div><div class="vv">${a.wuyu || '—'}</div></div>
+        </div>
+      </div>
+      <div id="certEditForm" style="display:none;margin-top:12px;padding:12px;background:#FFFDF5;border-radius:12px;border:1px solid #FFE082">
+        <div style="font-size:12px;font-weight:700;color:#8B6914;margin-bottom:8px">✏️ 编辑奖状信息</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label style="font-size:11px;color:#7BB8DA">学生姓名</label><input id="edit-student" value="${a.student_name}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #D0E4F0;font-size:13px"></div>
+          <div><label style="font-size:11px;color:#7BB8DA">年级</label><input id="edit-grade" value="${a.grade}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #D0E4F0;font-size:13px"></div>
+          <div><label style="font-size:11px;color:#7BB8DA">班级</label><input id="edit-class" value="${a.class_name||''}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #D0E4F0;font-size:13px"></div>
+          <div><label style="font-size:11px;color:#7BB8DA">五育分类</label><select id="edit-wuyu" style="width:100%;padding:6px;border-radius:6px;border:1px solid #D0E4F0;font-size:13px">${wuyuOpts.map(o => `<option value="${o}" ${o===wuyuCurrent?'selected':''}>${o||'(无)'}</option>`).join('')}</select></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-secondary" onclick="cancelEditCert()" style="font-size:12px;padding:6px 14px">取消</button>
+          <button onclick="saveEditCert(${a.id})" style="font-size:12px;padding:6px 14px;border:none;border-radius:24px;background:#FF9F4A;color:#fff;font-weight:700;cursor:pointer">💾 保存</button>
+        </div>
+      </div>
+      ${!a.image_path ? `<div style="background:#FFF8E5;border-radius:12px;padding:12px;margin-top:12px;font-size:12px;color:#7A4F1B;line-height:1.6">📖 该奖项记录来源于学科竞赛数据，如需查看证书原图请联系老师上传。</div>` : ''}
+      <div class="btn-row">
+        ${isTeacher ? `
+          <button class="btn-secondary" onclick="openEditCert(${a.id})" style="background:#FFFDF5;border-color:#FFE082">✏️ 编辑</button>
+          <button class="btn-secondary" onclick="deleteCert(${a.id})" style="color:#E94B6A;border-color:#FCC">🗑 删除</button>
+        ` : ''}
+        <button class="btn-secondary" onclick="document.getElementById('detailOverlay').remove()">关闭</button>
+      </div>
+    `;
+    overlay.appendChild(modal);
+  };
+
+  /* ── 图片下载 ── */
+  window.downloadCert = function(url, filename){
+    // 方案1: 钉钉图片预览（自带保存按钮）
+    if(window.dd && dd.ready && typeof dd.biz !== 'undefined'){
+      try {
+        dd.ready(function(){
+          if(dd.biz.util && dd.biz.util.previewImage){
+            dd.biz.util.previewImage({ urls: [url], current: url });
+          } else {
+            _openImage(url);
+          }
+        });
+        return;
+      } catch(e){}
+    }
+    // 方案2: 用 a 标签在新窗口打开（钉钉/浏览器通用）
+    _openImage(url);
+  };
+  function _openImage(url){
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    if(typeof showToast === 'function') setTimeout(function(){ showToast('请在打开的图片上长按保存'); }, 600);
+  };
+
+  /* ── 教师编辑 / 删除奖状 ── */
+  window.openEditCert = function(id){
+    document.getElementById('certEditForm').style.display = 'block';
+    document.getElementById('certInfoGrid').style.display = 'none';
+  };
+  window.cancelEditCert = function(){
+    document.getElementById('certEditForm').style.display = 'none';
+    document.getElementById('certInfoGrid').style.display = 'block';
+  };
+  window.saveEditCert = async function(id){
+    var student = document.getElementById('edit-student').value.trim();
+    var grade = document.getElementById('edit-grade').value.trim();
+    var klass = document.getElementById('edit-class').value.trim();
+    var wuyu = document.getElementById('edit-wuyu').value;
+    if(!student){ showToast('学生姓名不能为空', false); return; }
+    try {
+      var r = await apiFetch('/api/award-certs/' + id, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({student_name:student, grade:grade, class_name:klass, wuyu:wuyu})
+      });
+      var data = await r.json();
+      if(r.ok && data.success){
+        // 更新本地数据
+        var a = AWARDS.find(function(x){ return x.id === id; });
+        if(a){ a.student_name = student; a.grade = grade; a.class_name = klass; a.wuyu = wuyu; }
+        document.getElementById('detailOverlay').remove();
+        renderAll();
+        showToast('奖状信息已更新', true);
+      } else {
+        showToast(data.error || '更新失败', false);
+      }
+    } catch(e){ showToast('网络错误: '+e.message, false); }
+  };
+  window.deleteCert = async function(id){
+    if(!confirm('确定要删除这条奖状记录吗？此操作不可恢复。')) return;
+    try {
+      var r = await apiFetch('/api/award-certs/' + id, { method:'DELETE' });
+      var data = await r.json();
+      if(r.ok && data.success){
+        AWARDS = AWARDS.filter(function(x){ return x.id !== id; });
+        document.getElementById('detailOverlay').remove();
+        renderAll();
+        showToast('奖状已删除', true);
+      } else {
+        showToast(data.error || '删除失败', false);
+      }
+    } catch(e){ showToast('网络错误: '+e.message, false); }
+  };
+
+  /* ── 教师上传 ── */
+  // 修复文件 MIME 类型——钉钉内嵌浏览器可能不认 .zip
+  function fixFileMime(file){
+    var ext = file.name.split('.').pop().toLowerCase();
+    if(ext === 'zip'){
+      return new File([file], file.name, { type: 'application/zip' });
+    }
+    // 图片：保底 image/png（浏览器可能把未知二进制设成空或 application/octet-stream）
+    if(['png','jpg','jpeg','webp'].indexOf(ext) >= 0 && (!file.type || file.type === 'application/octet-stream' || file.type === '')){
+      var mimeMap = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp' };
+      return new File([file], file.name, { type: mimeMap[ext] });
+    }
+    return file;
+  }
+
+  window.handleFileSelect = function(event){
+    const files = Array.from(event.target.files);
+    if(!files.length) return;
+    
+    const dropZone = document.getElementById('dropZone');
+    const progress = document.getElementById('uploadProgress');
+    const progressMsg = progress.querySelector('.msg');
+    
+    const singleMaxSize = 20*1024*1024;
+    const multiMode = files.length > 1;
+    
+    dropZone.style.display = 'none';
+    progress.style.display = 'block';
+    
+    if(multiMode){
+      // 多文件模式：打包成一个 FormData
+      progressMsg.textContent = `正在识别 ${files.length} 张奖状图片…`;
+      var formData = new FormData();
+      var oversized = 0;
+      for(var i = 0; i < files.length; i++){
+        if(files[i].size > singleMaxSize){ oversized++; continue; }
+        formData.append('image', fixFileMime(files[i]), files[i].name);
+      }
+      if(oversized > 0) showToast(`${oversized} 张图片超过 20MB 已跳过`, false);
+      if(!formData.has('image')){
+        progress.style.display = 'none';
+        dropZone.style.display = 'block';
+        document.getElementById('fileInput').value = '';
+        showToast('没有可上传的图片（均超过 20MB）', false);
+        return;
+      }
+      formData.append('campus', CAMPUS);
+      var uploadGrade = document.getElementById('uploadGrade').value;
+      var uploadClass = document.getElementById('uploadClass').value;
+      if(uploadGrade) formData.append('grade', uploadGrade);
+      if(uploadClass) formData.append('class', uploadClass);
+      
+      fetch('/api/award-certs/upload-ai', { method:'POST', body:formData,
+        headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('bs_session_token') || '') } })
+        .then(r => r.json())
+        .then(data => handleUploadResult(data, dropZone, progress, multiMode))
+        .catch(e => handleUploadError(e, dropZone, progress));
+    } else {
+      // 单文件模式
+      const file = fixFileMime(files[0]);
+      const isZip = file.name.toLowerCase().endsWith('.zip');
+      progressMsg.textContent = isZip ? '正在解压并识别 ZIP 中的图片…' : 'AI 正在识别奖状信息…';
+      
+      var formData = new FormData();
+      formData.append('image', file, file.name);
+      formData.append('campus', CAMPUS);
+      var uploadGrade = document.getElementById('uploadGrade').value;
+      var uploadClass = document.getElementById('uploadClass').value;
+      if(uploadGrade) formData.append('grade', uploadGrade);
+      if(uploadClass) formData.append('class', uploadClass);
+      
+      fetch('/api/award-certs/upload-ai', { method:'POST', body:formData,
+        headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('bs_session_token') || '') } })
+        .then(r => r.json())
+        .then(data => handleUploadResult(data, dropZone, progress, false))
+        .catch(e => handleUploadError(e, dropZone, progress));
+    }
+  };
+  
+  function handleUploadResult(data, dropZone, progress, multiMode){
+    progress.style.display = 'none';
+    dropZone.style.display = 'block';
+    document.getElementById('fileInput').value = '';
+    if(data.success){
+      if(data.source === 'zip'){
+        showToast('ZIP 识别完成：' + data.saved + ' 条奖状 (' + data.zip_processed + '/' + data.zip_files_total + ' 张图片)', true);
+      } else if(data.source === 'multi'){
+        showToast('批量识别完成：' + data.saved + ' 条奖状 (' + data.files_processed + '/' + data.files_total + ' 张图片)', true);
+      } else {
+        showToast('AI 识别完成：' + data.saved + ' 条奖状已保存', true);
+      }
+      showAiResults(data);
+      AWARDS = data.awards.concat(AWARDS);
+      renderAll();
+    } else {
+      if(data.raw_output){
+        showAiRawOutput(data);
+      } else {
+        showToast(data.error || '识别失败', false);
+      }
+    }
+  }
+  
+  function handleUploadError(e, dropZone, progress){
+    progress.style.display = 'none';
+    dropZone.style.display = 'block';
+    document.getElementById('fileInput').value = '';
+    showToast('上传失败: ' + e.message, false);
+  }
+
+  function showAiResults(data){
+    const panel = document.getElementById('aiResultPanel');
+    const matched = data.awards.filter(a => a.matched);
+    const unmatched = data.unmatched_details || [];
+    const isZip = data.source === 'zip';
+    const isMulti = data.source === 'multi';
+    let zipInfo = '';
+    if(isZip){
+      zipInfo = `<div style="font-size:11px;color:#7BB8DA;margin-bottom:6px">📦 从 ${data.zip_processed}/${data.zip_files_total} 张图片中识别</div>`;
+      if(data.zip_errors && data.zip_errors.length){
+        zipInfo += `<div style="font-size:10px;color:#E94B6A;margin-bottom:6px;max-height:80px;overflow:auto">⚠️ ${data.zip_errors.length} 张处理失败: ${data.zip_errors.join('; ')}</div>`;
+      }
+    }
+    if(isMulti){
+      zipInfo = `<div style="font-size:11px;color:#7BB8DA;margin-bottom:6px">📷 从 ${data.files_processed}/${data.files_total} 张图片中识别</div>`;
+      if(data.errors && data.errors.length){
+        zipInfo += `<div style="font-size:10px;color:#E94B6A;margin-bottom:6px;max-height:80px;overflow:auto">⚠️ ${data.errors.length} 张处理失败: ${data.errors.join('; ')}</div>`;
+      }
+    }
+    const limitShow = 200;
+    const count = data.awards.length;
+    const showCount = Math.min(count, limitShow);
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <h3>🤖 AI 识别结果</h3>
+      ${zipInfo}
+      <div class="summary">✅ 成功 ${data.saved} 条 | ${(data.duplicated||0) > 0 ? '🔄 重复跳过 ' + data.duplicated + ' 条 | ' : ''}${matched.length} 条已匹配学生 | ${unmatched.length} 条未匹配${count > limitShow ? ' | 展示前 '+limitShow+' 条' : ''}</div>
+      <div class="match-list">
+        ${data.awards.slice(0, limitShow).map(a => `
+          <div class="match-item ${a.matched ? 'matched' : 'unmatched'}">
+            <span class="status">${a.matched ? '✅' : '⚠️'}</span>
+            <span style="flex:1"><strong>${a.student_name}</strong> — ${a.competition} · ${a.prize}</span>
+            <span style="font-size:11px;color:#7BB8DA">${a.matched ? (a.grade+a.class_name) : '未匹配到学生'}</span>
+          </div>
+        `).join('')}
+        ${count > limitShow ? `<div style="text-align:center;padding:8px;font-size:12px;color:#7BB8DA">...共 ${count} 条奖状，此处只展示前 ${limitShow} 条</div>` : ''}
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn-secondary" onclick="document.getElementById('aiResultPanel').style.display='none'">关闭</button>
+      </div>
+    `;
+  }
+
+  function showAiRawOutput(data){
+    const panel = document.getElementById('aiResultPanel');
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <h3>⚠️ AI 返回格式异常</h3>
+      <div class="summary" style="color:#E94B6A">${data.error || '格式不符合预期'}</div>
+      <div style="background:#1a1a2e;color:#eee;border-radius:12px;padding:14px;margin:10px 0;font-family:monospace;font-size:11px;max-height:200px;overflow:auto;white-space:pre-wrap">${data.raw_output || '(无)'}</div>
+      <div style="text-align:right">
+        <button class="btn-secondary" onclick="document.getElementById('aiResultPanel').style.display='none'">关闭</button>
+      </div>
+    `;
+  }
+
+  // 拖拽上传
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='#FF9F4A'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor='#C9E0EE'; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor='#C9E0EE';
+    const dt = new DataTransfer();
+    for(var i = 0; i < e.dataTransfer.files.length; i++){
+      dt.items.add(e.dataTransfer.files[i]);
+    }
+    document.getElementById('fileInput').files = dt.files;
+    handleFileSelect({target:{files:dt.files}});
+  });
+
+  /* ── 退出 ── */
+  window.doSignOut = function(){
+    ['bs_session_token','bs_user_nick','bs_user_avatar','bs_dingtalk_unionid',
+     'bs_bound_id_card','bs_bound_grade','bs_bound_class','bs_bound_student_json'].forEach(k => sessionStorage.removeItem(k));
+    location.reload();
+  };
+
+  /* ── Toast ── */
+  function showToast(msg, success){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (success ? 'success' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // 启动
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人工复核 — 营养餐智能分配系统</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>🍱 儿童营养餐智能分配系统</h1>
+  <nav id="mainNav"></nav>
+</header>
+
+<div class="app-content">
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 人工复核</h2>
+      <div class="btn-group">
+        <a href="recommendations.html" class="btn btn-outline btn-sm">← 返回推荐结果</a>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      💡 以下列出<b>需人工处理</b>和<b>待确认</b>的推荐记录。请逐一审查后确认或调整。
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" class="form-control" id="filterDate" onchange="loadReview()">
+      <select class="form-control" id="filterType" onchange="loadReview()">
+        <option value="">全部待复核</option>
+        <option value="MANUAL">仅人工处理</option>
+        <option value="A">推荐A餐（待确认）</option>
+        <option value="B">推荐B餐（待确认）</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="confirmAll()">✅ 全部确认</button>
+    </div>
+
+    <div class="stats-grid" id="reviewStats"></div>
+
+    <div class="table-wrap" id="reviewTable">
+      <div class="loading"><span class="spinner"></span> 加载中...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer class="app-footer">⚠️ 演示系统 — 所有营养阈值均为测试配置，非医学标准。</footer>
+
+<script src="common.js"></script>
+<script>
+  const ROLE = localStorage.getItem('nutrition_role') || 'teacher';
+  let currentPage = 1;
+  document.getElementById('mainNav').innerHTML = [['children.html','儿童管理'],['meal-plans.html','套餐管理'],['rules.html','规则配置'],['recommendations.html','智能推荐'],['review.html','人工复核'],['history.html','历史记录'],['audit-logs.html','审计日志']].map(([u,l]) => `<a href="${u}" class="${window.location.pathname.endsWith(u)?'active':''}">${l}</a>`).join('');
+
+  document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+  loadReview();
+
+  async function loadReview() {
+    const d = document.getElementById('filterDate').value;
+    const type = document.getElementById('filterType').value;
+
+    // 获取未确认的 + 人工处理的
+    let params = `page=${currentPage}&page_size=50&confirmed=0`;
+    if (d) params += `&plan_date=${d}`;
+    if (type) params += `&recommended_plan=${type}`;
+
+    const data = await apiFetch(`/recommendations?${params}`);
+    if (!data) return;
+
+    // Stats
+    const allStats = await apiFetch(`/recommendations/stats?plan_date=${d}`);
+    if (allStats) {
+      document.getElementById('reviewStats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${allStats.manual_count}</div><div class="stat-label">⚠️ 需人工处理</div></div>
+        <div class="stat-card"><div class="stat-value">${allStats.total - allStats.confirmed_count}</div><div class="stat-label">📝 待确认</div></div>
+        <div class="stat-card"><div class="stat-value">${allStats.confirmed_count}</div><div class="stat-label">✅ 已确认</div></div>
+      `;
+    }
+
+    document.getElementById('reviewTable').innerHTML = `
+      ${data.items.length === 0 ? '<p class="text-center" style="padding:40px;color:var(--text-secondary)">🎉 没有待复核记录</p>' : ''}
+      ${data.items.map(r => {
+        const isManual = r.recommended_plan === 'MANUAL';
+        return `
+        <div class="card mb-1" style="${isManual ? 'border-left:4px solid var(--danger)' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:16px;">
+            <div style="flex:1;">
+              <div class="flex gap-1 mb-1">
+                <code>${escHtml(r.child_code)}</code>
+                <span>${escHtml(r.display_name || '')}</span>
+                <span class="badge ${r.data_status==='complete'?'badge-success':'badge-warning'}">${r.data_status==='complete'?'数据完整':'需补充'}</span>
+                <span class="badge badge-neutral">${escHtml(r.campus||'')}校区</span>
+                <span>${r.age}岁 ${escHtml(r.gender||'')}</span>
+              </div>
+              <div class="flex gap-2 mb-1">
+                <span class="badge ${r.recommended_plan==='A'?'badge-info':r.recommended_plan==='B'?'badge-success':'badge-danger'}">
+                  ${isManual ? '⚠️ 需人工处理' : r.recommended_plan+'餐'}</span>
+                ${!isManual ? `<span>A餐 ${formatNum(r.score_a)} | B餐 ${formatNum(r.score_b)}</span>` : ''}
+              </div>
+              <p class="text-sm mb-1"><b>原因：</b>${escHtml(r.reason||'-')}</p>
+              ${r.exclusion_reason ? `<p class="text-sm text-danger"><b>排除：</b>${escHtml(r.exclusion_reason)}</p>` : ''}
+              ${r.risk_notes ? `<p class="text-sm text-warning"><b>风险：</b>${escHtml(r.risk_notes)}</p>` : ''}
+              <p class="text-sm" style="color:var(--text-secondary)">规则版本: ${escHtml(r.rule_version||'-')}</p>
+            </div>
+            <div style="flex-shrink:0;">
+              <button class="btn btn-primary btn-sm" onclick="doConfirm(${r.id})">✅ 确认</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}`;
+    renderPagination(document.getElementById('pagination'), data.total, currentPage, 50, p => { currentPage=p; loadReview(); });
+  }
+
+  async function doConfirm(id) {
+    const result = await apiFetch(`/recommendations/${id}/confirm`, { method: 'POST', body: JSON.stringify({ operator: ROLE }) });
+    if (result) { showSuccess('已确认'); loadReview(); }
+  }
+
+  async function confirmAll() {
+    const d = document.getElementById('filterDate').value;
+    const data = await apiFetch(`/recommendations?page=1&page_size=500&confirmed=0&plan_date=${d}`);
+    if (!data || data.items.length === 0) { showError('没有待确认记录'); return; }
+
+    showConfirm('批量确认', `确定要批量确认 ${data.items.length} 条记录吗？`, async () => {
+      let count = 0;
+      for (const r of data.items) {
+        await apiFetch(`/recommendations/${r.id}/confirm`, { method: 'POST', body: JSON.stringify({ operator: ROLE }) });
+        count++;
+      }
+      showSuccess(`已确认 ${count} 条记录`);
+      loadReview();
+    });
+  }
+</script>
+</body>
+</html>

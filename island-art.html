@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美育岛 · 数字美术馆 · 植韵承国风 妙笔绘芳华 · 宝山区实验小学</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3325;overscroll-behavior:none}
+  body{
+    background:linear-gradient(180deg,#9EC894 0%, #9AC490 70%, #8FBA85 100%);
+    overflow-x:hidden;
+  }
+  .snap-pages{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+  .snap-page{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column}
+
+  /* ========== 顶栏 ========== */
+  .topbar{position:sticky;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:14px;padding:0 24px;z-index:50;background:rgba(76,130,79,0.92);backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(40,72,42,0.3);border-bottom:1.5px solid rgba(217,169,78,0.7)}
+  .back-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#D9A94E,#9C7426);color:#FFF8E5;font-weight:800;font-size:14px;letter-spacing:1px;padding:8px 16px;border-radius:22px;border:none;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.35);transition:transform .15s;font-family:inherit}
+  .back-btn:hover{transform:translateY(-2px)}
+  .crumbs{display:flex;align-items:center;gap:8px;color:#F0E6C2;font-weight:700;font-size:15px;letter-spacing:1px}
+  .crumbs .arrow{color:#D9A94E}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .student-pill{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;border-radius:30px;background:rgba(255,252,240,0.95);box-shadow:0 3px 10px rgba(0,0,0,0.25)}
+  .stu-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#2E8C5A,#175C38);color:#F0CE82;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+  .stu-info .name{font-weight:800;font-size:14px;color:#1F3325}
+  .stu-info .meta{font-size:11px;color:#7C9070;letter-spacing:.5px}
+
+  .upload-btn{padding:8px 16px;border-radius:22px;background:linear-gradient(135deg,#F0CE82,#C8973A);color:#1F3325;font-weight:800;font-size:13px;letter-spacing:1px;cursor:pointer;border:none;box-shadow:0 4px 10px rgba(0,0,0,0.3);font-family:inherit;display:none;align-items:center;gap:6px}
+  .upload-btn.show{display:inline-flex}
+  .upload-btn:hover{transform:translateY(-1px)}
+
+  /* ========== 美术馆标题 ========== */
+  .hall-title{position:relative;z-index:1;text-align:center;padding:clamp(36px, 6vh, 72px) 20px clamp(12px, 2vh, 20px);color:#2C4A2E;text-shadow:0 1px 0 rgba(255,255,255,0.45)}
+  .hall-title .eng{font-size:14px;letter-spacing:6px;color:#8C6420;font-weight:700;opacity:.95;margin-bottom:2px}
+  .hall-title .cn{font-size:clamp(28px, 4.5vw, 46px);font-weight:900;letter-spacing:8px;background:linear-gradient(180deg,#35663A 0%,#1F4527 60%,#16361D 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(255,255,255,0.35))}
+  .hall-title .theme-pill{display:inline-block;margin-top:10px;padding:8px 26px;border-radius:24px;background:linear-gradient(135deg,#4C824F,#35663A);color:#F7F1DC;font-size:16px;font-weight:900;letter-spacing:3px;box-shadow:0 4px 14px rgba(40,72,42,0.35), inset 0 0 0 1.5px rgba(240,206,130,0.7)}
+  .hall-title .sub{margin-top:8px;font-size:13px;letter-spacing:3px;color:#3E5E40;font-weight:600;text-shadow:none}
+  .hall-title .sub .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#C8973A;margin:0 10px;vertical-align:middle}
+  .hall-title .divider{width:120px;height:12px;margin:6px auto 0;background:
+    radial-gradient(circle at 50% 50%, #D9A94E 0 3px, transparent 4px),
+    linear-gradient(90deg, transparent 0%, rgba(217,169,78,0.9) 20%, rgba(217,169,78,0.9) 80%, transparent 100%) center/100% 1.5px no-repeat}
+
+  /* ========== 筛选条(奖项) ========== */
+  .filter-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 20px 12px;max-width:1100px;margin:0 auto}
+  .filter-chip{padding:8px 16px;border-radius:18px;background:rgba(255,252,240,0.92);border:1.5px solid rgba(200,151,58,0.6);color:#2F5A33;font-weight:800;font-size:12.5px;letter-spacing:.8px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+  .filter-chip:hover{transform:translateY(-1px);border-color:#C8973A}
+  .filter-chip.active{background:linear-gradient(135deg,#4C824F,#35663A);color:#F7F1DC;border-color:#D9A94E;box-shadow:0 4px 10px rgba(40,72,42,0.35)}
+  .filter-chip .ic{font-size:14px}
+  .filter-chip .badge{background:rgba(255,255,255,0.25);padding:1px 7px;border-radius:8px;font-size:11px}
+  .filter-chip:not(.active) .badge{background:rgba(23,92,56,0.12)}
+
+  /* ========== 画廊舞台 ========== */
+  .stage{
+    position:relative;
+    flex:1 0 auto;
+    padding:20px 0 40px;
+    /* 上墙 + 下地板 + 双金踢脚线 */
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 64%, rgba(200,151,58,0.85) 64%, rgba(200,151,58,0.85) 64.3%, rgba(0,0,0,0) 64.3%, rgba(0,0,0,0) 64.9%, rgba(200,151,58,0.5) 64.9%, rgba(200,151,58,0.5) 65.1%, rgba(47,90,51,0.22) 65.1%, rgba(47,90,51,0.34) 100%);
+    overflow:hidden;
+    min-height:0;
+    z-index:1;
+  }
+  /* 顶部射灯 */
+  .stage::before{
+    content:''; position:absolute; left:50%; top:0; width:60%; height:120px;
+    background:radial-gradient(50% 100% at 50% 0%, rgba(255,243,205,0.45), transparent 70%);
+    transform:translateX(-50%); pointer-events:none;
+  }
+
+  .gallery{
+    display:flex; align-items:center; gap:clamp(20px, 3vw, 34px);
+    padding:10px calc(50vw - clamp(130px, 19vw, 190px)) 10px;
+    transition:transform .48s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change:transform;
+    cursor:grab;
+  }
+  .gallery.dragging{transition:none;cursor:grabbing}
+
+  /* 单件作品 = 画框 + caption */
+  .art{
+    flex:0 0 auto; width:clamp(260px, 38vw, 380px);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    opacity:.38; transform:scale(.78); transition:opacity .5s,transform .5s;
+    user-select:none;
+  }
+  .art.active{opacity:1; transform:scale(1.06)}
+  .art.near{opacity:.62; transform:scale(.88)}
+  .art.active .plaque{box-shadow:0 10px 24px rgba(0,10,4,0.45), inset 0 1px 0 rgba(255,255,255,0.6), 0 0 0 2px rgba(217,169,78,0.5)}
+  .art.active .plaque .title{font-size:19px}
+  .art.active .plaque .who{font-size:14px;font-weight:800}
+  .art.active .plaque .award{font-size:13px;padding:5px 14px}
+
+  .frame{
+    position:relative;
+    background:linear-gradient(135deg,#C8973A 0%,#8C6420 50%,#C8973A 100%);
+    padding:24px; border-radius:6px;
+    box-shadow:
+      0 26px 50px rgba(36,66,38,0.4),
+      0 0 0 2px rgba(255,236,180,0.25) inset,
+      0 0 0 8px #2F5A33 inset;
+  }
+  /* 画框金纹 */
+  .frame::before{
+    content:''; position:absolute; inset:8px; border-radius:3px;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,230,160,0.07) 0 3px, transparent 3px 7px),
+      linear-gradient(135deg,#D9A94E 0%,#8C6420 100%);
+    pointer-events:none;
+  }
+  .mat{
+    position:relative;
+    background:linear-gradient(180deg,#F7F1DC,#EDE3C2);
+    padding:18px; border-radius:2px;
+    box-shadow:0 0 0 1px rgba(17,52,31,0.6), inset 0 2px 6px rgba(17,52,31,0.18);
+  }
+  .canvas{
+    width:100%; aspect-ratio:4/3; border-radius:1px;
+    background:#10281A;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    box-shadow:inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .canvas img{width:100%;height:100%;object-fit:cover;display:block}
+  .canvas .ph{font-size:64px; opacity:.4; color:#F7F1DC}
+
+  /* 画框上方铭牌灯光小钉 */
+  .frame .nail{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:radial-gradient(circle at 30% 30%,#FFE672,#8C6420);border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,0.5)}
+
+  /* 画下铭牌 */
+  .plaque{
+    background:linear-gradient(180deg,#FBF5E0,#EDE3C2);
+    border:1.5px solid #B8923E;
+    border-radius:8px;
+    padding:14px 20px;
+    text-align:center;
+    min-width:280px; max-width:380px;
+    box-shadow:0 6px 14px rgba(0,10,4,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+    position:relative;
+  }
+  .plaque::before, .plaque::after{
+    content:''; position:absolute; top:-6px; width:5px; height:5px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#FFE672,#8C6420);
+    box-shadow:0 1px 2px rgba(0,0,0,0.5);
+  }
+  .plaque::before{left:14px}
+  .plaque::after{right:14px}
+  .plaque .title{font-size:17px;font-weight:900;color:#1C4029;letter-spacing:1.5px;line-height:1.3}
+  .plaque .who{margin-top:6px;font-size:12.5px;color:#3E6B4A;font-weight:700;letter-spacing:.5px}
+  .plaque .who .grade{color:#7C9070;font-weight:600}
+  .plaque .award{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 12px;border-radius:12px;font-size:11.5px;font-weight:800;letter-spacing:.5px}
+  .plaque .award.gold{background:linear-gradient(135deg,#FFE672,#A06B12);color:#fff;box-shadow:0 2px 6px rgba(160,107,18,0.4)}
+  .plaque .award.silver{background:linear-gradient(135deg,#F0F0F0,#8C8C8C);color:#fff;box-shadow:0 2px 6px rgba(140,140,140,0.4)}
+  .plaque .award.bronze{background:linear-gradient(135deg,#E0945C,#7A4F1B);color:#fff;box-shadow:0 2px 6px rgba(122,79,27,0.4)}
+  .plaque .award.merit{background:linear-gradient(135deg,#7FCDB8,#3E8C76);color:#fff;box-shadow:0 2px 6px rgba(62,140,118,0.35)}
+
+  /* ========== 点赞 & 评论按钮 ========== */
+  .art-actions{display:flex;gap:10px;margin-top:10px;justify-content:center;align-items:center}
+  .like-btn,.comment-btn{
+    display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:16px;
+    border:1.5px solid rgba(200,151,58,0.5);background:rgba(255,252,240,0.9);
+    cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#3E5E40;
+    transition:all .15s;letter-spacing:.5px;
+  }
+  .like-btn:hover,.comment-btn:hover{background:#fff;border-color:#C8973A;box-shadow:0 2px 8px rgba(40,72,42,0.2)}
+  .like-btn.liked{background:linear-gradient(135deg,#FFE0E0,#FFB3B3);border-color:#E07070;color:#C0392B}
+  .like-icon{font-size:15px;line-height:1}
+  .like-count,.comment-count{font-size:12px;color:#7C9070;font-weight:600}
+  .like-btn.liked .like-count{color:#C0392B}
+
+  /* ========== 评论面板 ========== */
+  .comment-panel{
+    position:fixed;right:0;top:0;bottom:0;width:400px;max-width:92vw;
+    background:linear-gradient(180deg,#FBF5E0,#F0E8CC);z-index:200;
+    box-shadow:-8px 0 30px rgba(0,10,4,0.35);border-left:2px solid #D9A94E;
+    display:flex;flex-direction:column;animation:slideIn .3s ease;
+  }
+  @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+  .cp-header{
+    display:flex;align-items:center;gap:10px;padding:16px 20px;
+    background:linear-gradient(135deg,#4C824F,#35663A);color:#F7F1DC;
+    border-bottom:2px solid rgba(217,169,78,0.6);flex-shrink:0;
+  }
+  .cp-title{font-size:17px;font-weight:900;letter-spacing:2px}
+  .cp-count{margin-left:auto;font-size:12px;opacity:.85;font-weight:700}
+  .cp-close{
+    width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,0.2);
+    color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;font-family:inherit;margin-left:8px;
+  }
+  .cp-close:hover{background:rgba(255,255,255,0.35)}
+  .cp-list{flex:1;overflow-y:auto;padding:16px 20px}
+  .cp-empty{text-align:center;color:#7C9070;font-weight:700;padding:40px 20px;font-size:14px;letter-spacing:1px}
+  .cp-item{display:flex;gap:10px;margin-bottom:16px;animation:fadeUp .25s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .cp-avatar{
+    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#C8973A,#8C6420);
+    color:#FFF8E5;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;
+    flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.2);
+  }
+  .cp-body{flex:1;min-width:0}
+  .cp-name{
+    font-size:13px;font-weight:800;color:#1C4029;letter-spacing:.5px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .cp-self{tiny;background:#4C824F;color:#F7F1DC;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800}
+  .cp-time{font-size:10.5px;color:#9CB08A;font-weight:600}
+  .cp-del{
+    background:none;border:none;color:#C8973A;cursor:pointer;font-size:10.5px;font-weight:700;
+    font-family:inherit;padding:0;opacity:.7;transition:opacity .15s;
+  }
+  .cp-del:hover{opacity:1;color:#E07070}
+  .cp-text{font-size:14px;color:#2F4A36;line-height:1.6;margin-top:4px;word-break:break-word}
+  .cp-input-row{
+    padding:12px 20px 16px;border-top:1.5px solid rgba(217,169,78,0.4);flex-shrink:0;position:relative;
+  }
+  .cp-input{
+    width:100%;padding:12px 48px 12px 16px;border:2px solid #C8973A;border-radius:14px;
+    font-size:14px;color:#1C4029;outline:none;background:#FFFCF5;font-family:inherit;
+    transition:all .15s;
+  }
+  .cp-input:focus{border-color:#D9A94E;box-shadow:0 0 0 3px rgba(217,169,78,0.15);background:#fff}
+  .cp-send{
+    position:absolute;right:26px;top:50%;transform:translateY(-50%);
+    background:linear-gradient(135deg,#4C824F,#35663A);color:#F7F1DC;
+    border:none;border-radius:12px;padding:7px 14px;font-weight:800;font-size:13px;
+    cursor:pointer;font-family:inherit;letter-spacing:1px;transition:all .15s;
+  }
+  .cp-send:hover{box-shadow:0 2px 8px rgba(40,72,42,0.35)}
+  .cp-err{
+    position:absolute;bottom:-20px;left:20px;font-size:11.5px;color:#C0392B;font-weight:700;
+    display:none;white-space:nowrap;
+  }
+
+  /* ========== 用户标签 ========== */
+  .user-tag{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:14px;
+    background:rgba(76,130,79,0.85);color:#F7F1DC;font-size:12px;font-weight:700;
+    border:1px solid rgba(240,206,130,0.5);letter-spacing:1px;
+  }
+  .user-tag .ut-avatar{
+    width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#F0CE82,#C8973A);color:#175C38;font-weight:900;font-size:12px;
+  }
+
+  /* ========== 左右切换按钮 ========== */
+  .nav-btn{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(250,246,232,0.92);color:#175C38;font-size:22px;font-weight:900;
+    box-shadow:0 6px 18px rgba(0,10,4,0.4), 0 0 0 1.5px rgba(217,169,78,0.5);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;z-index:10;font-family:inherit;
+  }
+  .nav-btn:hover{background:#fff;transform:translateY(-50%) scale(1.08)}
+  .nav-btn:disabled{opacity:.3;cursor:not-allowed}
+  .nav-prev{left:28px}
+  .nav-next{right:28px}
+
+  /* ========== 进度指示 ========== */
+  .progress{
+    position:relative;z-index:1;text-align:center;margin-top:6px;color:#2F5A33;font-weight:700;font-size:13px;letter-spacing:2px;
+  }
+  .progress .num{font-size:22px;color:#9C7426}
+
+  /* ========== 空状态 ========== */
+  .empty{
+    max-width:520px;margin:60px auto;padding:40px 30px;text-align:center;
+    background:rgba(255,252,240,0.75);border-radius:20px;
+    border:2px dashed #C8973A;color:#3E5E40;
+  }
+  .empty .e{font-size:64px;margin-bottom:14px}
+  .empty .t{font-size:18px;font-weight:900;color:#1F4527;letter-spacing:2px}
+  .empty .s{margin-top:8px;font-size:13px;line-height:1.7}
+
+  /* ========== Lightbox 放大查看 ========== */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(3,18,10,0.93);z-index:300;
+    display:none;align-items:center;justify-content:center;padding:30px;
+    cursor:zoom-out;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{max-width:100%;max-height:80vh;border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,0.6),0 0 0 12px #11341F,0 0 0 16px rgba(217,169,78,0.45)}
+  .lightbox .lb-caption{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);color:#F7F1DC;text-align:center;background:rgba(8,32,19,0.7);padding:14px 24px;border-radius:14px;backdrop-filter:blur(8px);border:1px solid rgba(217,169,78,0.4)}
+  .lightbox .lb-caption .t{font-size:18px;font-weight:900;letter-spacing:2px}
+  .lightbox .lb-caption .w{margin-top:4px;font-size:12px;opacity:.85;letter-spacing:1px}
+  .lightbox .lb-close{position:absolute;top:24px;right:24px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;border:none;font-size:22px;cursor:pointer;font-family:inherit}
+
+  /* ========== 上传对话框 ========== */
+  .modal-veil{position:fixed;inset:0;background:rgba(3,18,10,0.65);z-index:250;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+  .modal-veil.show{display:flex}
+  .modal{background:linear-gradient(180deg,#FBF5E0,#F0E8CC);border-radius:20px;width:520px;max-width:100%;padding:26px;border:2px solid #C8973A;box-shadow:0 24px 60px rgba(0,12,5,0.55)}
+  .modal h3{font-size:20px;font-weight:900;color:#175C38;letter-spacing:2px;margin-bottom:8px}
+  .modal p{font-size:13px;color:#3E6B4A;line-height:1.7}
+  .modal .drop{margin-top:14px;border:2px dashed #C8973A;border-radius:14px;padding:30px 20px;text-align:center;background:rgba(255,252,240,0.6);cursor:pointer;transition:all .2s}
+  .modal .drop.hover{background:rgba(240,206,130,0.25);border-color:#9C7426}
+  .modal .drop .e{font-size:42px;margin-bottom:8px}
+  .modal .drop .t{font-size:14px;font-weight:800;color:#1C4029;letter-spacing:1px}
+  .modal .drop .s{font-size:11.5px;color:#7C9070;margin-top:4px}
+  .modal .fname{margin-top:10px;font-size:13px;color:#1C4029;font-weight:800;text-align:center}
+  .modal .btns{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+  .modal button{font-family:inherit;font-weight:800;font-size:13px;padding:10px 18px;border-radius:14px;cursor:pointer;border:none;letter-spacing:.5px}
+  .modal .cancel{background:#F0E8CC;color:#3E6B4A;border:1.5px solid #C8973A}
+  .modal .confirm{background:linear-gradient(135deg,#2E8C5A,#175C38);color:#FFF8E5;box-shadow:0 4px 10px rgba(0,12,5,0.35)}
+  .modal .confirm:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ========== 获奖名册 ========== */
+  .roster-section{position:relative;z-index:1;max-width:1200px;margin:30px auto 50px;padding:0 24px}
+  .roster-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .roster-head .ic{font-size:28px}
+  .roster-head h2{font-size:22px;font-weight:900;color:#1F4527;letter-spacing:3px;text-shadow:0 1px 0 rgba(255,255,255,0.4)}
+  .roster-head .sub{margin-left:auto;font-size:12px;color:#2F5A33;font-weight:700;letter-spacing:1px;background:rgba(255,252,240,0.9);padding:6px 14px;border-radius:12px;border:1.5px solid rgba(200,151,58,0.65)}
+  .roster-group{margin-bottom:24px}
+  .roster-group-h{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding:8px 16px;background:linear-gradient(90deg,rgba(217,169,78,0.28),rgba(217,169,78,0));border-left:4px solid #D9A94E;border-radius:0 12px 12px 0}
+  .roster-group-h .ic{font-size:20px}
+  .roster-group-h .nm{font-size:15px;font-weight:900;color:#1F4527;letter-spacing:2px}
+  .roster-group-h .cnt{margin-left:auto;font-size:11px;font-weight:800;color:#2F5A33;background:rgba(255,252,240,0.95);padding:3px 10px;border-radius:10px}
+  .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .roster-card{background:rgba(255,252,240,0.94);border-radius:12px;padding:12px 14px;border:1.5px solid rgba(200,151,58,0.5);display:flex;align-items:center;gap:10px;transition:all .15s}
+  .roster-card:hover{transform:translateY(-2px);border-color:#D9A94E;box-shadow:0 6px 14px rgba(0,10,4,0.3)}
+  .roster-card .seal{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.18)}
+  .roster-card .seal.gold{background:linear-gradient(135deg,#FFE672,#A06B12);color:#fff}
+  .roster-card .seal.silver{background:linear-gradient(135deg,#F0F0F0,#8C8C8C);color:#fff}
+  .roster-card .seal.bronze{background:linear-gradient(135deg,#E0945C,#7A4F1B);color:#fff}
+  .roster-card .seal.merit{background:linear-gradient(135deg,#7FCDB8,#3E8C76);color:#fff}
+  .roster-card .info{flex:1;min-width:0}
+  .roster-card .nm{font-size:14px;font-weight:900;color:#1F3325;letter-spacing:.5px;line-height:1.2}
+  .roster-card .meta{font-size:11px;color:#3E6B4A;margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .roster-card .teacher{font-size:10.5px;color:#7C9070;margin-top:2px}
+
+  /* 切换章节标签 */
+  .section-tabs{display:flex;justify-content:center;gap:10px;margin:8px auto 14px;max-width:600px}
+  .section-tab{padding:8px 18px;border-radius:18px;background:rgba(255,252,240,0.75);border:1.5px solid rgba(217,169,78,0.55);color:#175C38;font-weight:800;font-size:13px;letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+  .section-tab.active{background:linear-gradient(135deg,#D9A94E,#9C7426);color:#FFF8E5;border-color:#F0CE82}
+
+  /* toast */
+  .toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-30px);background:#2F5A33;color:#F7F1DC;padding:12px 22px;border-radius:24px;font-weight:800;font-size:14px;letter-spacing:1px;box-shadow:0 10px 26px rgba(36,66,38,0.45), 0 0 0 1.5px rgba(217,169,78,0.6);opacity:0;transition:all .35s;z-index:400;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ========== 底部国风山水装饰 ========== */
+  .deco-bottom{position:fixed;left:0;right:0;bottom:0;height:190px;pointer-events:none;z-index:0;opacity:.95}
+  .deco-bottom svg{width:100%;height:100%;display:block}
+
+  @media (max-width: 900px){
+    .hall-title .cn{font-size:clamp(26px, 6.5vw, 36px);letter-spacing:5px}
+    .hall-title .eng{font-size:12px;letter-spacing:4px}
+    .hall-title .theme-pill{font-size:13px;letter-spacing:1.5px;padding:7px 18px}
+    .hall-title .sub{font-size:11.5px;letter-spacing:1.5px}
+    .filter-bar{padding:2px 12px 8px;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start;scrollbar-width:none}
+    .filter-bar::-webkit-scrollbar{display:none}
+    .filter-chip{flex-shrink:0;padding:6px 12px;font-size:11px;letter-spacing:.5px}
+    .plaque{padding:12px 14px;min-width:unset;max-width:90vw}
+    .plaque .title{font-size:15px}
+    .plaque .who{font-size:11px}
+    .like-btn,.comment-btn{padding:8px 16px;font-size:14px;gap:6px}
+    .like-icon{font-size:17px}
+    .snap-page{min-height:100vh} .stage{min-height:0}
+  }
+  @media (max-width: 720px){
+    .hall-title .cn{font-size:clamp(22px, 6vw, 28px);letter-spacing:4px}
+    .hall-title .theme-pill{font-size:12px;padding:6px 14px}
+    .nav-btn{width:40px;height:40px;font-size:18px}
+    .nav-prev{left:4px}
+    .nav-next{right:4px}
+    .frame{padding:16px}
+    .mat{padding:12px}
+    .plaque{padding:10px 12px;border-radius:6px}
+    .plaque .title{font-size:14px}
+    .filter-bar{gap:5px;padding:4px 8px 10px}
+    .filter-chip{padding:6px 11px;font-size:11px}
+    .like-btn,.comment-btn{padding:9px 18px;font-size:14px;border-radius:18px;min-height:44px}
+    .like-icon{font-size:18px}
+    .progress{font-size:12px;margin-top:6px}
+    .progress .num{font-size:18px}
+    .snap-page{min-height:100vh} .stage{min-height:0}
+    .deco-bottom{display:none}
+  }
+  @media (max-width: 480px){
+    .hall-title .cn{font-size:20px;letter-spacing:2px}
+    .hall-title .eng{font-size:10px;letter-spacing:2px}
+    .hall-title .theme-pill{font-size:11px;padding:5px 12px}
+    .hall-title .sub{font-size:10px}
+    .frame{padding:12px}
+    .mat{padding:10px}
+    .plaque{padding:10px 12px}
+    .plaque .title{font-size:14px;letter-spacing:1px}
+    .plaque .who{font-size:11px}
+    .plaque .award{font-size:11px;padding:4px 10px}
+    .like-btn,.comment-btn{padding:10px 20px;font-size:15px;border-radius:20px;min-height:46px;gap:8px}
+    .like-icon{font-size:19px}
+    .art-actions{margin-top:12px;gap:14px}
+    .hall-title{padding:10px 12px 6px}
+    .filter-bar{gap:5px;padding:4px 6px 8px}
+    .filter-chip{padding:6px 10px;font-size:11px;border-radius:16px}
+    .snap-page{min-height:100vh} .stage{min-height:0;padding:10px 0 24px}
+    .stage .gallery{gap:12px}
+    .art{width:clamp(240px, 72vw, 340px)}
+  }
+</style>
+<!-- 钉钉 JSAPI 仅钉钉内需要,异步加载不阻塞页面 -->
+<script>window.BS_DINGTALK_CORP_ID = '__INJECT_CORP_ID__';</script>
+<script>
+(function(){
+  if(!/DingTalk/i.test(navigator.userAgent)) return;
+  var s = document.createElement('script');
+  s.src = 'https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js';
+  s.async = true;
+  s.onerror = function(){ console.warn('[Art] 钉钉 JSAPI 加载失败,页面可正常使用'); };
+  document.head.appendChild(s);
+})();
+</script>
+<script src="assets/dingtalk-bootstrap.js"></script>
+<script src="assets/user-auth.js"></script>
+<script src="assets/student-roster.js"></script>
+<script src="assets/art-comments.js"></script>
+</head>
+<body>
+
+
+
+<div class="snap-pages">
+<div class="snap-page" id="page-gallery">
+<!-- 美术馆标题 -->
+<div class="hall-title">
+  <div class="eng">DIGITAL ART GALLERY · 数字美术馆</div>
+  <div class="cn">植韵承国风 · 妙笔绘芳华</div>
+  <div class="divider"></div>
+  <div><span class="theme-pill">宝山区第十一届"宝小杯"学生植物插画展</span></div>
+  <div class="sub">
+    <span>📍 宝山区实验小学</span>
+    <span class="dot"></span>
+    <span id="totalCount">— 件作品</span>
+    <span class="dot"></span>
+    <span>左右滑动浏览</span>
+  </div>
+</div>
+
+<!-- 奖项筛选 -->
+<div class="filter-bar" id="filterBar"></div>
+
+<!-- 画廊主舞台 -->
+<div class="stage" id="stage">
+  <button class="nav-btn nav-prev" id="prevBtn" onclick="step(-1)" aria-label="上一幅">‹</button>
+  <button class="nav-btn nav-next" id="nextBtn" onclick="step(1)" aria-label="下一幅">›</button>
+  <div class="gallery" id="gallery"></div>
+  <div id="emptyHolder"></div>
+</div>
+
+<div class="progress" id="progress" style="display:none">
+  <span class="num" id="curIdx">1</span> / <span id="totIdx">1</span>
+</div>
+</div><!-- /snap-page gallery -->
+
+<div class="snap-page" id="page-roster">
+<!-- 获奖名册(无图作品 / 公示名单类) -->
+<div class="roster-section" id="rosterSection" style="display:none">
+  <div class="roster-head">
+    <span class="ic">📋</span>
+    <h2>完整获奖名册</h2>
+    <span class="sub" id="rosterSub">— 条记录</span>
+  </div>
+  <div id="rosterBody"></div>
+</div>
+</div><!-- /snap-page roster -->
+</div><!-- /snap-pages -->
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lb-close" onclick="closeLightbox(event,true)">×</button>
+  <img id="lbImg" src="" alt="">
+  <div class="lb-caption">
+    <div class="t" id="lbTitle"></div>
+    <div class="w" id="lbWho"></div>
+  </div>
+</div>
+
+<!-- 上传对话框 -->
+<div class="modal-veil" id="uploadVeil">
+  <div class="modal">
+    <h3>📤 上传作品包</h3>
+    <p>请上传 <strong>*奖项名*.zip</strong>(zip 文件名即为该批作品的奖项名)。<br>
+       zip 内每个文件命名:<strong>学生名+作品名.png/jpg</strong>(分隔符 + _ - 空格均可)。</p>
+    <div class="drop" id="drop" onclick="document.getElementById('zipInput').click()">
+      <div class="e">📦</div>
+      <div class="t">点击选择 zip 文件,或拖拽到此处</div>
+      <div class="s">支持 .png .jpg .jpeg .webp .gif</div>
+    </div>
+    <div class="fname" id="fname"></div>
+    <input id="zipInput" type="file" accept=".zip" style="display:none" onchange="onPickZip(event)">
+    <div class="btns">
+      <button class="cancel" onclick="closeUpload()">取消</button>
+      <button class="confirm" id="confirmBtn" onclick="doUpload()" disabled>开始上传</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 底部国风装饰:中间留白,两侧山水 -->
+<div class="deco-bottom" aria-hidden="true">
+  <svg viewBox="0 0 1440 190" preserveAspectRatio="xMidYMax slice" fill="none">
+    <!-- ===== 左侧:青绿山峦 + 橙金沙丘 + 红花 ===== -->
+    <path d="M-20 190 L90 78 Q118 52 148 76 L260 190 Z" fill="#3FA08A" opacity=".75"/>
+    <path d="M90 78 Q118 52 148 76" stroke="#F0CE82" stroke-width="2" opacity=".8"/>
+    <path d="M-20 190 L30 120 Q55 96 82 118 L160 190 Z" fill="#2E8C72" opacity=".8"/>
+    <path d="M120 190 L210 105 Q232 86 256 104 L340 190 Z" fill="#2E8C72" opacity=".6"/>
+    <path d="M210 105 Q232 86 256 104" stroke="#F0CE82" stroke-width="1.6" opacity=".6"/>
+    <!-- 左侧沙丘与波纹 -->
+    <path d="M-20 190 Q120 142 280 168 Q380 182 460 190 Z" fill="#E89A4A" opacity=".9"/>
+    <path d="M-20 190 Q150 160 320 180 Q400 188 470 190 Z" fill="#F2B96B" opacity=".85"/>
+    <path d="M-10 168 Q130 142 290 166" stroke="#FFF3D6" stroke-width="1.6" opacity=".6"/>
+    <path d="M40 180 Q110 172 175 180 M230 184 Q290 177 345 184" stroke="#C8973A" stroke-width="1.3" opacity=".65"/>
+    <!-- ===== 右侧:山 + 沙丘 ===== -->
+    <path d="M1180 190 L1280 92 Q1305 70 1330 90 L1440 190 Z" fill="#3FA08A" opacity=".7"/>
+    <path d="M1280 92 Q1305 70 1330 90" stroke="#F0CE82" stroke-width="2" opacity=".75"/>
+    <path d="M1300 190 L1380 122 Q1400 105 1422 120 L1460 158 L1460 190 Z" fill="#2E8C72" opacity=".75"/>
+    <path d="M980 190 Q1120 148 1280 172 Q1380 186 1460 190 Z" fill="#E89A4A" opacity=".9"/>
+    <path d="M1000 190 Q1150 166 1310 184 Q1390 192 1460 190 Z" fill="#F2B96B" opacity=".85"/>
+    <path d="M1010 172 Q1150 148 1300 170" stroke="#FFF3D6" stroke-width="1.6" opacity=".6"/>
+    <!-- ===== 中间:只留两道极浅的水波线,不抢内容 ===== -->
+    <path d="M520 182 Q600 174 680 182 Q760 190 840 182" stroke="#5FBFAE" stroke-width="2" opacity=".5"/>
+    <path d="M600 188 Q680 181 760 188" stroke="#F0CE82" stroke-width="1.4" opacity=".4"/>
+  </svg>
+</div>
+
+<script>
+let WORKS = [];           // 全部作品
+let AWARDS = [];          // 所有奖项{award_name, award_level, cnt}
+let currentAward = 'all'; // 当前筛选
+let filtered = [];        // 当前展示
+let curIdx = 0;
+let pickedZip = null;
+
+const LEVEL_LABEL = {gold:'金奖',silver:'银奖',bronze:'铜奖',merit:'优秀奖'};
+const LEVEL_ICON = {gold:'🥇',silver:'🥈',bronze:'🥉',merit:'🏅'};
+
+// ============ 登录守卫 ============
+(function(){
+  const name = sessionStorage.getItem('artUser');
+  if(!name){ location.replace('art-login.html'); return; }
+  // 在标题区注入用户标签
+  function injectUserTag(){
+    const subEl = document.querySelector('.hall-title .sub');
+    if(!subEl) return;
+    const tag = document.createElement('span');
+    tag.className = 'user-tag';
+    const safeName = escapeHtml(name);
+    tag.innerHTML = `<span class="ut-avatar">${name[0]}</span> ${safeName}`;
+    tag.title = '点击退出登录';
+    tag.style.cursor = 'pointer';
+    tag.onclick = function(){
+      if(confirm('确定退出美术馆吗？')){
+        sessionStorage.removeItem('artUser');
+        sessionStorage.removeItem('artUserGrade');
+        sessionStorage.removeItem('artUserClass');
+        sessionStorage.removeItem('artUserRole');
+        location.replace('art-login.html');
+      }
+    };
+    subEl.appendChild(document.createTextNode(' · '));
+    subEl.appendChild(tag);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', injectUserTag);
+  } else {
+    injectUserTag();
+  }
+})();
+
+// ============ 载入 ============
+async function loadData(){
+  try{
+    const r = await fetch('/api/art-works?limit=2000');
+    if(r.ok){
+      const d = await r.json();
+      WORKS = d.works || [];
+      AWARDS = d.awards || [];
+    }
+  }catch(e){ /* fall through to mock */ }
+
+  if(WORKS.length === 0){
+    WORKS = mockWorks();
+    AWARDS = buildAwardsFromWorks(WORKS);
+  }
+  renderFilter();
+  applyFilter();
+  showUploadIfTeacher();
+  startAuto();
+}
+
+function buildAwardsFromWorks(list){
+  const m = new Map();
+  list.forEach(w => {
+    const key = w.award_name;
+    if(!m.has(key)) m.set(key, {award_name:key, award_level:w.award_level || 'merit', cnt:0});
+    m.get(key).cnt++;
+  });
+  return [...m.values()];
+}
+
+function mockWorks(){
+  const samples = [
+    {award:'"宝小杯"植物插画展一等奖', level:'gold',   stu:'林思雨', title:'庭前芍药映春晖',   emoji:'🌸'},
+    {award:'"宝小杯"植物插画展一等奖', level:'gold',   stu:'王梓涵', title:'窗台上的绿萝',     emoji:'🪴'},
+    {award:'"宝小杯"植物插画展二等奖', level:'silver', stu:'陈奕轩', title:'外婆院里的银杏',   emoji:'🍂'},
+    {award:'"宝小杯"植物插画展二等奖', level:'silver', stu:'张沐宸', title:'雨后的荷塘',       emoji:'🪷'},
+    {award:'"宝小杯"植物插画展三等奖', level:'bronze', stu:'李知夏', title:'夏夜瓜藤与萤火',   emoji:'🍉'},
+    {award:'优秀作品奖',               level:'merit',  stu:'周清扬', title:'校园里的香樟树',   emoji:'🌳'},
+    {award:'优秀作品奖',               level:'merit',  stu:'吴书豪', title:'竹影摇风',         emoji:'🎋'},
+    {award:'优秀作品奖',               level:'merit',  stu:'孙若汐', title:'窗前水仙',         emoji:'💐'},
+  ];
+  return samples.map((s,i) => ({
+    id:'m'+i, award_name:s.award, award_level:s.level,
+    student_name:s.stu, work_title:s.title,
+    image_path:null, _placeholder:s.emoji,
+    grade:'五年级', class_name:'五(1)班'
+  }));
+}
+
+// ============ 筛选条 ============
+function renderFilter(){
+  const total = WORKS.length;
+  const chips = [
+    `<button class="filter-chip ${currentAward==='all'?'active':''}" onclick="setAward('all')">
+      <span class="ic">🎨</span><span>全部</span><span class="badge">${total}</span>
+    </button>`
+  ];
+  AWARDS.forEach(a => {
+    // 跳过该奖项下无任何作品的奖项(如纯三等奖无图,不显示筛选入口)
+    const hasImage = WORKS.some(w => w.award_name === a.award_name && w.image_path);
+    if(!hasImage) return;
+    chips.push(`<button class="filter-chip ${currentAward===a.award_name?'active':''}" onclick="setAward('${encodeURIComponent(a.award_name)}')">
+      <span class="ic">${LEVEL_ICON[a.award_level]||'🏅'}</span><span>${a.award_name}</span><span class="badge">${a.cnt}</span>
+    </button>`);
+  });
+  document.getElementById('filterBar').innerHTML = chips.join('');
+  document.getElementById('totalCount').textContent = `${total} 件作品`;
+}
+
+function setAward(name){
+  currentAward = (name === 'all') ? 'all' : decodeURIComponent(name);
+  curIdx = 0;
+  renderFilter();
+  applyFilter();
+}
+
+function applyFilter(){
+  const base = (currentAward === 'all') ? WORKS.slice() : WORKS.filter(w => w.award_name === currentAward);
+  // 画廊只展示有图作品(真·作品图);无图记录归入"获奖名册"
+  filtered = base.filter(w => w.image_path);
+  const rosterList = base.filter(w => !w.image_path);
+  renderGallery();
+  renderRoster(rosterList);
+}
+
+// ============ 画廊渲染 ============
+function renderGallery(){
+  const gallery = document.getElementById('gallery');
+  const holder = document.getElementById('emptyHolder');
+  const prog = document.getElementById('progress');
+  document.getElementById('prevBtn').style.display = filtered.length ? '' : 'none';
+  document.getElementById('nextBtn').style.display = filtered.length ? '' : 'none';
+
+  if(!filtered.length){
+    gallery.innerHTML = '';
+    prog.style.display = 'none';
+    // 如果获奖名册有内容,画廊就显示一个温和提示,不显示"筹备中"大空状态
+    const hasRoster = document.getElementById('rosterSection').style.display !== 'none';
+    holder.innerHTML = hasRoster
+      ? `<div style="text-align:center;color:#E8DFC0;font-weight:700;padding:60px 20px;letter-spacing:1.5px">本奖项暂未提供作品图,完整获奖名单请见下方 📋</div>`
+      : `<div class="empty">
+          <div class="e">🖼️</div>
+          <div class="t">美术馆筹备中</div>
+          <div class="s">还没有作品哦~ <br>老师可以点击右上角"上传作品包",把孩子们的作品 zip 上传进来。</div>
+        </div>`;
+    return;
+  }
+  holder.innerHTML = '';
+  prog.style.display = '';
+
+  gallery.innerHTML = filtered.map((w, i) => {
+    const lv = w.award_level || classifyLevel(w.award_name);
+    const lvLabel = LEVEL_LABEL[lv] || w.award_name;
+    const lvIcon = LEVEL_ICON[lv] || '🏅';
+    const canvasInner = w.image_path
+      ? `<img src="${w.image_path}" alt="${escapeHtml(w.work_title)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=ph>🎨</div>'">`
+      : `<div class="ph">${w._placeholder || '🎨'}</div>`;
+    const grade = w.grade || '';
+    const klass = w.class_name || '';
+    return `
+      <div class="art" data-idx="${i}" onclick="onArtClick(${i}, event)">
+        <div class="frame">
+          <div class="nail"></div>
+          <div class="mat">
+            <div class="canvas">${canvasInner}</div>
+          </div>
+        </div>
+        <div class="plaque">
+          <div class="title">《${escapeHtml(w.work_title)}》</div>
+          <div class="who">
+            <strong>${escapeHtml(w.student_name)}</strong>
+            ${grade||klass ? `<span class="grade"> · ${escapeHtml([grade,klass].filter(Boolean).join(' '))}</span>`:''}
+          </div>
+          <div class="award ${lv}">${lvIcon} ${escapeHtml(w.award_name)}</div>
+          <div class="art-actions" onclick="event.stopPropagation()">
+            ${isGuest() ? '<span style="font-size:11px;color:#9BA88A;padding:4px 8px;font-weight:600">登录后可互动</span>' : ArtComments.likeBtnHTML(w.id) + ArtComments.commentBtnHTML(w.id)}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('totIdx').textContent = filtered.length;
+  // 等待 DOM 测量后再 goto
+  requestAnimationFrame(() => goto(curIdx));
+}
+
+function isGuest(){
+  return sessionStorage.getItem('artUserRole') === 'guest';
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============ 获奖名册渲染(无图作品/公示名单) ============
+function renderRoster(list){
+  const section = document.getElementById('rosterSection');
+  const body = document.getElementById('rosterBody');
+  const sub = document.getElementById('rosterSub');
+  if(!list || !list.length){ section.style.display = 'none'; return; }
+  section.style.display = '';
+  sub.textContent = `${list.length} 条记录`;
+
+  // 按 award_name 分组
+  const groups = new Map();
+  list.forEach(w => {
+    const k = w.award_name;
+    if(!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(w);
+  });
+  // 按 level 排序(gold→silver→bronze→merit),其次按名字
+  const order = {gold:0, silver:1, bronze:2, merit:3};
+  const sortedKeys = [...groups.keys()].sort((a,b) => {
+    const la = order[groups.get(a)[0].award_level] ?? 9;
+    const lb = order[groups.get(b)[0].award_level] ?? 9;
+    return la - lb || a.localeCompare(b, 'zh');
+  });
+
+  body.innerHTML = sortedKeys.map(awardName => {
+    const items = groups.get(awardName);
+    const lv = items[0].award_level || classifyLevel(awardName);
+    const icon = LEVEL_ICON[lv] || '🏅';
+    // 同奖项内按组别分小段
+    const byGrade = new Map();
+    items.forEach(w => {
+      const g = w.grade || '其他';
+      if(!byGrade.has(g)) byGrade.set(g, []);
+      byGrade.get(g).push(w);
+    });
+    const gradeOrder = ['幼儿组','小学组','中学组','其他'];
+    const gradeSections = [...byGrade.entries()]
+      .sort((a,b) => (gradeOrder.indexOf(a[0])+99)%100 - (gradeOrder.indexOf(b[0])+99)%100)
+      .map(([g, arr]) => {
+        const cards = arr.map(w => {
+          const teacher = (w.uploaded_by || '').replace(/^doc:/, '');
+          const school = w.class_name || '';
+          return `
+            <div class="roster-card" title="${escapeHtml(school)}${teacher?' / 指导:'+escapeHtml(teacher):''}">
+              <div class="seal ${lv}">${icon}</div>
+              <div class="info">
+                <div class="nm">${escapeHtml(w.student_name)}</div>
+                <div class="meta">${escapeHtml(school)}</div>
+                ${teacher ? `<div class="teacher">指导:${escapeHtml(teacher)}</div>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+        const subHead = byGrade.size > 1
+          ? `<div class="roster-group-h" style="background:linear-gradient(90deg,rgba(217,169,78,0.16),rgba(217,169,78,0));border-left-color:#C8973A">
+               <span class="ic">🎒</span><span class="nm">${escapeHtml(g)}</span>
+               <span class="cnt">${arr.length} 人</span>
+             </div>`
+          : '';
+        return subHead + `<div class="roster-grid">${cards}</div>`;
+      }).join('');
+
+    return `
+      <div class="roster-group">
+        <div class="roster-group-h">
+          <span class="ic">${icon}</span>
+          <span class="nm">${escapeHtml(awardName)}</span>
+          <span class="cnt">${items.length} 人</span>
+        </div>
+        ${gradeSections}
+      </div>`;
+  }).join('');
+}
+
+function classifyLevel(s){
+  s = String(s||'');
+  if(/特等|金奖|一等/.test(s)) return 'gold';
+  if(/银奖|二等/.test(s)) return 'silver';
+  if(/铜奖|三等/.test(s)) return 'bronze';
+  return 'merit';
+}
+
+// ============ 切换 / 滑动 ============
+
+// 计算让第 i 张画居中所需的 translateX
+function offsetForIndex(i){
+  const gallery = document.getElementById('gallery');
+  const arts = gallery.querySelectorAll('.art');
+  const target = arts[i];
+  if(!target) return 0;
+  const stageW = document.getElementById('stage').clientWidth;
+  return (stageW/2) - (target.offsetLeft + target.offsetWidth/2);
+}
+
+// 给定当前 transformX,找最接近 stage 中心的那张画
+function nearestIndex(transformX){
+  const arts = document.getElementById('gallery').querySelectorAll('.art');
+  if(!arts.length) return 0;
+  const stageW = document.getElementById('stage').clientWidth;
+  const center = stageW/2;
+  let best = 0, bestDist = Infinity;
+  for(let i = 0; i < arts.length; i++){
+    const el = arts[i];
+    const elCenter = el.offsetLeft + el.offsetWidth/2 + transformX;
+    const d = Math.abs(elCenter - center);
+    if(d < bestDist){ best = i; bestDist = d; }
+  }
+  return best;
+}
+
+// 只更新 active/near class + curIdx 显示;不动 transform(拖拽期间用)
+function updateActiveOnly(idx){
+  curIdx = idx;
+  const arts = document.getElementById('gallery').querySelectorAll('.art');
+  arts.forEach((el, i) => {
+    el.classList.remove('active','near');
+    if(i === idx) el.classList.add('active');
+    else if(Math.abs(i-idx) === 1) el.classList.add('near');
+  });
+  document.getElementById('curIdx').textContent = curIdx + 1;
+  document.getElementById('prevBtn').disabled = (curIdx === 0);
+  document.getElementById('nextBtn').disabled = (curIdx === filtered.length - 1);
+}
+
+function goto(i){
+  if(!filtered.length){ return; }
+  i = Math.max(0, Math.min(filtered.length - 1, i));
+  updateActiveOnly(i);
+  const gallery = document.getElementById('gallery');
+  gallery.style.transform = `translateX(${offsetForIndex(i)}px)`;
+}
+
+function step(d){ goto(curIdx + d); }
+
+function onArtClick(i, ev){
+  if(i !== curIdx){ goto(i); return; }
+  const w = filtered[i];
+  if(!w || !w.image_path){
+    showToast('暂无大图');
+    return;
+  }
+  openLightbox(w);
+}
+
+// 拖拽 + 触摸 + 滚轮
+let dragStartX = 0, dragOffsetStart = 0, dragLastX = 0, dragLastTs = 0;
+let isDragging = false, hasMoved = false;
+function setupDrag(){
+  const gallery = document.getElementById('gallery');
+  const stage = document.getElementById('stage');
+
+  function getX(e){ return e.touches ? e.touches[0].clientX : e.clientX; }
+  function getCurrentX(){
+    const m = /translateX\(([-\d.]+)px\)/.exec(gallery.style.transform || '');
+    return m ? parseFloat(m[1]) : 0;
+  }
+  function onStart(e){
+    if(!filtered.length) return;
+    if(e.target.closest('.nav-btn,.filter-chip,.upload-btn,.back-btn,.modal,.lightbox,.like-btn,.comment-btn,.comment-panel,.cp-close,.cp-send,.cp-input,.cp-del')) return;
+    isDragging = true; hasMoved = false;
+    dragStartX = getX(e);
+    dragLastX = dragStartX;
+    dragLastTs = performance.now();
+    dragOffsetStart = getCurrentX();
+    gallery.classList.add('dragging');     // transition:none → 跟手指逐帧
+  }
+  function onMove(e){
+    if(!isDragging) return;
+    const x = getX(e);
+    const dx = x - dragStartX;
+    if(Math.abs(dx) > 10) hasMoved = true;
+    const newX = dragOffsetStart + dx;
+    gallery.style.transform = `translateX(${newX}px)`;
+    // 实时找最接近中心的画,即时高亮(用户的"接近中间自动放大"反馈)
+    const idx = nearestIndex(newX);
+    if(idx !== curIdx) updateActiveOnly(idx);
+    // 记录速度,用于松手时的惯性 snap
+    dragLastX = x;
+    dragLastTs = performance.now();
+    if(e.cancelable) e.preventDefault();
+  }
+  function onEnd(e){
+    if(!isDragging) return;
+    isDragging = false;
+    gallery.classList.remove('dragging');  // transition 恢复 → 平滑吸附
+    // 1. 计算松手瞬时速度(px/ms) → 决定要不要再滑一张
+    const endX = e.changedTouches ? e.changedTouches[0].clientX : (e.clientX || dragLastX);
+    const dxTotal = endX - dragStartX;
+    const dt = Math.max(1, performance.now() - dragLastTs);
+    const vx = (endX - dragLastX) / dt;     // 越大表示松手时还在快速移动
+    // 2. 取当前最接近中心的索引,作为基础落点
+    const curX = dragOffsetStart + dxTotal;
+    let targetIdx = nearestIndex(curX);
+    // 3. 如果是"一掷"式快速 fling(速度 >0.5 px/ms),朝速度方向再多吸 1 张
+    if(Math.abs(vx) > 0.5){
+      targetIdx += (vx < 0 ? 1 : -1);
+    }
+    // 4. 微小拖动(< 12px)直接回到原位
+    if(!hasMoved && Math.abs(dxTotal) < 12){
+      targetIdx = curIdx;
+    }
+    goto(targetIdx);
+    if(hasMoved){
+      setTimeout(()=>{ hasMoved = false; }, 80);
+    }
+  }
+  stage.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+  stage.addEventListener('touchstart', onStart, {passive:true});
+  stage.addEventListener('touchmove', onMove, {passive:false});
+  stage.addEventListener('touchend', onEnd);
+
+  // ===== 鼠标滚轮 / 触控板横向滚:节流 + 累加 =====
+  let wheelAccum = 0;
+  let wheelTimer = null;
+  let lastStepAt = 0;
+  stage.addEventListener('wheel', (e) => {
+    // 竖滚为主时不响应(避免与页面滚动冲突)
+    if(Math.abs(e.deltaY) > Math.abs(e.deltaX) * 1.2) return;
+    wheelAccum += e.deltaX;
+    // 节流:同方向连续滚动每 350ms 至多触发 1 张
+    const now = performance.now();
+    const STEP_PX = 60;             // 累计达 60px 走 1 张
+    const COOLDOWN = 350;
+    if(now - lastStepAt >= COOLDOWN && Math.abs(wheelAccum) >= STEP_PX){
+      step(wheelAccum > 0 ? 1 : -1);
+      lastStepAt = now;
+      wheelAccum = 0;
+    }
+    // 用户停手 200ms 后清空累计,避免长时间残留
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(()=>{ wheelAccum = 0; }, 200);
+  }, {passive:true});
+}
+
+// 防止"拖完正好松手在画上 → 触发 click"打开 lightbox
+document.addEventListener('click', e => {
+  if(hasMoved){ e.stopPropagation(); e.preventDefault(); }
+}, true);
+
+// ============ Lightbox ============
+function openLightbox(w){
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lbImg').src = w.image_path;
+  document.getElementById('lbTitle').textContent = `《${w.work_title}》`;
+  document.getElementById('lbWho').textContent = `${w.student_name} · ${w.award_name}`;
+  lb.classList.add('show');
+}
+function closeLightbox(ev, force){
+  if(force || ev.target.id === 'lightbox' || ev.target.classList.contains('lb-close')){
+    document.getElementById('lightbox').classList.remove('show');
+  }
+}
+
+// ============ 上传(老师/管理员) ============
+function showUploadIfTeacher(){
+  const btn = document.getElementById('uploadBtn');
+  if(!btn) return;
+  if(window.UserAuth && (UserAuth.isTeacher && UserAuth.isTeacher() || UserAuth.getRole && UserAuth.getRole() === 'admin')){
+    btn.classList.add('show');
+  }
+}
+function openUpload(){
+  pickedZip = null;
+  document.getElementById('fname').textContent = '';
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('uploadVeil').classList.add('show');
+}
+function closeUpload(){
+  document.getElementById('uploadVeil').classList.remove('show');
+}
+function onPickZip(e){
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  if(!f.name.toLowerCase().endsWith('.zip')){
+    showToast('仅支持 .zip 文件');
+    return;
+  }
+  pickedZip = f;
+  document.getElementById('fname').textContent = `已选: ${f.name} (${(f.size/1024).toFixed(0)} KB)`;
+  document.getElementById('confirmBtn').disabled = false;
+}
+async function doUpload(){
+  if(!pickedZip) return;
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = '上传中…';
+  const fd = new FormData();
+  fd.append('zip', pickedZip);
+  try{
+    const r = await fetch('/api/art-works/upload', { method:'POST', body:fd });
+    const d = await r.json();
+    if(!r.ok){
+      showToast(d.error || '上传失败');
+      btn.disabled = false; btn.textContent = '开始上传';
+      return;
+    }
+    showToast(d.message || `已导入 ${d.inserted} 件`);
+    closeUpload();
+    await loadData();
+  }catch(e){
+    showToast('上传出错: ' + e.message);
+    btn.disabled = false; btn.textContent = '开始上传';
+  }
+}
+// 拖入 zip
+(function(){
+  const drop = document.getElementById('drop');
+  if(!drop) return;
+  ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hover'); }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { drop.classList.remove('hover'); }));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!f) return;
+    if(!f.name.toLowerCase().endsWith('.zip')){ showToast('仅支持 .zip'); return; }
+    pickedZip = f;
+    document.getElementById('fname').textContent = `已选: ${f.name} (${(f.size/1024).toFixed(0)} KB)`;
+    document.getElementById('confirmBtn').disabled = false;
+  });
+})();
+
+// ============ 杂项 ============
+function goHome(){ location.href = 'island-homepage.html'; }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+// 键盘 ← →
+document.addEventListener('keydown', e => {
+  if(document.getElementById('lightbox').classList.contains('show') && e.key === 'Escape'){
+    document.getElementById('lightbox').classList.remove('show'); return;
+  }
+  if(document.getElementById('uploadVeil').classList.contains('show')) return;
+  if(e.key === 'ArrowLeft') step(-1);
+  else if(e.key === 'ArrowRight') step(1);
+});
+// 窗口变化时重新对齐
+window.addEventListener('resize', () => goto(curIdx));
+
+// ============ 自动轮播 ============
+let autoTimer = null;
+let _autoStepping = false;
+const AUTO_INTERVAL = 6000;
+
+function startAuto(){
+  stopAuto();
+  if(!filtered.length || filtered.length <= 1) return;
+  autoTimer = setInterval(() => {
+    _autoStepping = true; step(1); _autoStepping = false;
+  }, AUTO_INTERVAL);
+}
+function stopAuto(){
+  if(autoTimer){ clearInterval(autoTimer); autoTimer = null; }
+}
+function pauseAuto(){
+  if(_autoStepping) return;
+  stopAuto();
+  clearTimeout(window._autoResume);
+  window._autoResume = setTimeout(startAuto, 3000);
+}
+
+const _origStep = step;
+step = function(d){ pauseAuto(); _origStep(d); };
+const _origGoto = goto;
+goto = function(i){
+  if(filtered.length){
+    if(i >= filtered.length) i = 0;
+    else if(i < 0) i = filtered.length - 1;
+  }
+  _origGoto(i);
+};
+
+// ============ 启动 ============
+if(window.UserAuth && UserAuth.ready){
+  UserAuth.ready(() => loadData());
+} else {
+  loadData();
+}
+setupDrag();
+document.addEventListener('keydown', e => {
+  if(document.getElementById('lightbox').classList.contains('show') && e.key === 'Escape'){
+    document.getElementById('lightbox').classList.remove('show'); return;
+  }
+  if(document.getElementById('uploadVeil').classList.contains('show')) return;
+  if(e.key === 'ArrowLeft') step(-1);
+  else if(e.key === 'ArrowRight') step(1);
+});
+</script>
+</body>
+</html>
