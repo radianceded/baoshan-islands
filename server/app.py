@@ -222,7 +222,7 @@ AUTH_DB_PATH = os.environ.get('AUTH_DB_PATH') or os.path.join(BASE_DIR, 'auth_ac
 BAOLIN_DATA_DIR = os.environ.get('BAOLIN_DATA_DIR') or os.path.join(BASE_DIR, 'campus_data', 'baolin')
 BAOLIN_DB_PATH = os.environ.get('BAOLIN_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'student_data.db')
 BAOLIN_AUTH_DB_PATH = os.environ.get('BAOLIN_AUTH_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'auth_accounts.db')
-ACCOUNT_SESSION_TTL = int(os.environ.get('ACCOUNT_SESSION_TTL', str(7 * 24 * 60 * 60)))
+ACCOUNT_SESSION_TTL = int(os.environ.get('ACCOUNT_SESSION_TTL', str(90 * 24 * 60 * 60)))
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
 app.config['NUTRITION_ALLOW_DEMO_HEADERS'] = not DISABLE_DEMO
 # 儿童营养餐智能分配系统
@@ -1516,6 +1516,7 @@ def _current_user():
             return {
                 'role': row['role'],
                 'sub_role': row['sub_role'],
+                'display_name': row['display_name'],
                 'bound_id_card': row['bound_id_card'],
                 'bound_student_userid': row['bound_student_userid'],
                 'bound_grade': row['bound_grade'],
@@ -1626,6 +1627,8 @@ def auth_me():
     info = {
         'role': u['role'],
         'subRole': u['sub_role'],
+        'displayName': u.get('display_name'),
+        'campus': u.get('campus'),
         'boundStudentUserId': u.get('bound_student_userid'),
         'boundIdCard': u['bound_id_card'],
         'boundGrade': u['bound_grade'],

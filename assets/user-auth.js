@@ -463,8 +463,10 @@
     },
     /** 清掉所有 session 身份，跳回登录页 */
     signOut(){
+      const campus = sessionStorage.getItem('bs_campus') || 'benbu';
+      localStorage.removeItem('bs_persistent_session_' + campus);
       ['bs_role','bs_sub_role','bs_bound_idx','bs_bound_id_card','bs_bound_student_json','bs_bound_grade','bs_bound_class','bs_kid_name','bs_kids_json','bs_available_roles','bs_session_token','bs_user_nick','bs_user_avatar'].forEach(k => sessionStorage.removeItem(k));
-      location.href = 'login.html';
+      location.href = 'login.html?campus=' + encodeURIComponent(campus);
     },
     /** 写入身份并就地刷新，让所有岛屿生效 */
     signIn(opts){

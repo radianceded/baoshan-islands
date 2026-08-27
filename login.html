@@ -137,10 +137,76 @@ const LOCAL_API_BASE = (
   )
 ) ? 'http://127.0.0.1:5051' : '';
 
-// 每次从钉钉工作台进入都必须重新登录，清除旧版残留的老师/家长状态。
+const PERSISTENT_SESSION_KEY = `bs_persistent_session_${CAMPUS_ID}`;
+
+// 页面级身份仍只放 sessionStorage；localStorage 只保存当前校区的签名令牌。
 sessionStorage.clear();
 document.getElementById('campusGreeting').textContent =
   `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 请选择身份入口，再输入对应账号密码`;
+
+function rememberSession(token){
+  if(token) localStorage.setItem(PERSISTENT_SESSION_KEY, token);
+}
+
+function forgetSession(){
+  localStorage.removeItem(PERSISTENT_SESSION_KEY);
+}
+
+function hydrateSession(token, user){
+  sessionStorage.clear();
+  sessionStorage.setItem('bs_session_token', token);
+  sessionStorage.setItem('bs_campus', user.campus || CAMPUS_ID);
+  sessionStorage.setItem('bs_role', user.role);
+  if(user.sub_role || user.subRole) sessionStorage.setItem('bs_sub_role', user.sub_role || user.subRole);
+  if(user.bound_grade || user.boundGrade) sessionStorage.setItem('bs_bound_grade', user.bound_grade || user.boundGrade);
+  if(user.bound_class || user.boundClass) sessionStorage.setItem('bs_bound_class', user.bound_class || user.boundClass);
+  if(user.kid_name) sessionStorage.setItem('bs_kid_name', user.kid_name);
+  if(user.boundIdCard || user.bound_id_card) sessionStorage.setItem('bs_bound_id_card', user.boundIdCard || user.bound_id_card);
+  if(user.demo_idx != null) sessionStorage.setItem('bs_bound_idx', String(user.demo_idx));
+  if(user.displayName) sessionStorage.setItem('bs_user_nick', user.displayName);
+  if(user.boundStudent){
+    const stu = user.boundStudent;
+    sessionStorage.setItem('bs_bound_student_json', JSON.stringify(stu));
+    sessionStorage.setItem('bs_bound_id_card', stu.idCard || '');
+    sessionStorage.setItem('bs_bound_grade', stu.grade || '');
+    sessionStorage.setItem('bs_bound_class', stu.class || '');
+    sessionStorage.setItem('bs_kid_name', stu.displayName || user.kid_name || '');
+  }
+}
+
+function goToApplication(user){
+  if(user.role === 'parent'){
+    const childCode = sessionStorage.getItem('bs_bound_id_card') || user.bound_id_card || user.boundIdCard || '';
+    const params = new URLSearchParams({role:'parent', campus:user.campus || CAMPUS_ID});
+    if(childCode) params.set('childCode', childCode);
+    location.replace(`/nutrition/recommendations.html?${params.toString()}#parentSelection`);
+  } else {
+    location.replace(`island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`);
+  }
+}
+
+async function restoreSavedLogin(){
+  const token = localStorage.getItem(PERSISTENT_SESSION_KEY);
+  if(!token) return;
+  document.getElementById('campusGreeting').textContent =
+    `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 正在恢复登录...`;
+  try {
+    const response = await fetch(`${LOCAL_API_BASE}/api/auth/me`, {
+      headers:{'Authorization':'Bearer ' + token}
+    });
+    const user = await response.json();
+    if(!response.ok || user.role === 'none' || user.campus !== CAMPUS_ID || !String(user.owner || '').startsWith('account:')){
+      throw new Error('保存的登录状态已失效');
+    }
+    hydrateSession(token, user);
+    goToApplication(user);
+  } catch(e){
+    forgetSession();
+    sessionStorage.clear();
+    document.getElementById('campusGreeting').textContent =
+      `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 登录已失效，请重新输入账号密码`;
+  }
+}
 
 document.querySelectorAll('.role-entry-btn').forEach(button => {
   button.addEventListener('click', () => {
@@ -179,20 +245,10 @@ async function doLogin(e){
       btn.disabled = false; btn.textContent = '登 录';
       return false;
     }
-    // 把登录信息写入 sessionStorage（与 UserAuth 字段约定一致）
+    // 页面身份写入 sessionStorage，签名令牌按校区持久保存。
     const user = data.user;
-    sessionStorage.clear();
-    if(data.sessionToken) sessionStorage.setItem('bs_session_token', data.sessionToken);
-    sessionStorage.setItem('bs_campus', user.campus || CAMPUS_ID);
-    sessionStorage.setItem('bs_role', user.role);
-    if(user.sub_role) sessionStorage.setItem('bs_sub_role', user.sub_role);
-    if(user.bound_grade) sessionStorage.setItem('bs_bound_grade', user.bound_grade);
-    if(user.bound_class) sessionStorage.setItem('bs_bound_class', user.bound_class);
-    if(user.kid_name) sessionStorage.setItem('bs_kid_name', user.kid_name);
-    if(user.boundIdCard) sessionStorage.setItem('bs_bound_id_card', user.boundIdCard);
-    if(user.bound_id_card) sessionStorage.setItem('bs_bound_id_card', user.bound_id_card);
-    if(user.demo_idx != null) sessionStorage.setItem('bs_bound_idx', String(user.demo_idx));
-    if(user.displayName) sessionStorage.setItem('bs_user_nick', user.displayName);
+    hydrateSession(data.sessionToken, user);
+    rememberSession(data.sessionToken);
 
     // 家长：把绑定学生的真实档案预拉一次，缓存到 sessionStorage
     if(user.role === 'parent'){
@@ -213,14 +269,7 @@ async function doLogin(e){
         }
       } catch(e){ /* 后端不可达时静默跳过，岛屿仍可走 fallback */ }
     }
-    if(user.role === 'parent'){
-      const childCode = sessionStorage.getItem('bs_bound_id_card') || user.bound_id_card || '';
-      const params = new URLSearchParams({role:'parent', campus:user.campus || CAMPUS_ID});
-      if(childCode) params.set('childCode', childCode);
-      location.href = `/nutrition/recommendations.html?${params.toString()}#parentSelection`;
-    } else {
-      location.href = `island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`;
-    }
+    goToApplication(user);
     return false;
   } catch(ex){
     err.textContent = `网络错误：${ex.message}（接口：${LOCAL_API_BASE || location.origin}）`;
@@ -229,6 +278,8 @@ async function doLogin(e){
     return false;
   }
 }
+
+restoreSavedLogin();
 
 </script>
 </body>
