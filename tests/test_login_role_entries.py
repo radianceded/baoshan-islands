@@ -50,8 +50,18 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertNotIn("dingtalk-bootstrap.js", self.html)
         self.assertNotIn("autoJumpOnDingtalkAuth", self.html)
         self.assertIn("sessionStorage.clear();", self.html)
+        self.assertIn("bs_persistent_session_${CAMPUS_ID}", self.html)
+        self.assertIn("restoreSavedLogin();", self.html)
+        self.assertIn("user.campus !== CAMPUS_ID", self.html)
         self.assertIn("/nutrition/recommendations.html?${params.toString()}#parentSelection", self.html)
         self.assertIn("user.campus || CAMPUS_ID", self.html)
+
+    def test_logout_clears_persistent_session_for_current_campus(self):
+        user_auth = (
+            Path(__file__).resolve().parents[1] / "assets" / "user-auth.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("localStorage.removeItem('bs_persistent_session_' + campus)", user_auth)
+        self.assertIn("login.html?campus=' + encodeURIComponent(campus)", user_auth)
 
 
 class DingTalkSourceSafetyTests(unittest.TestCase):
@@ -194,6 +204,18 @@ class IndependentPasswordAuthTests(unittest.TestCase):
         payload = json.loads(base64.urlsafe_b64decode(token.split('.')[0]).decode())
         self.assertEqual(set(payload), {'accountId', 'authVersion', 'campus', 'exp'})
         self.assertEqual(payload['campus'], 'benbu')
+
+    def test_account_auth_me_returns_restore_fields(self):
+        login = self._login('STUDENT-UID', 'parent').get_json()
+        response = self.client.get(
+            '/api/auth/me',
+            headers={'Authorization': f"Bearer {login['sessionToken']}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data['owner'], 'account:1')
+        self.assertEqual(data['campus'], 'benbu')
+        self.assertEqual(data['displayName'], '测试学生')
 
     def test_dingtalk_sso_endpoint_is_disabled(self):
         with mock.patch.object(server_app, 'PASSWORD_LOGIN_ONLY', True):
