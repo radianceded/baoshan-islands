@@ -129,9 +129,9 @@
   function _buildStudentVM(stu, kidNameOverride){
     if(!stu) return null;
     const COLORS = ['#7C5BCC','#FF8C42','#22A05B','#E94B6A','#3DB7E2','#FFC23F','#0E5E80','#A893E8'];
-    const realName = kidNameOverride || stu.name || '我的孩子';
-    const grade = stu.grade_name || '小学';
-    const klass = stu.class_name || '';
+    const realName = kidNameOverride || stu.name || stu.displayName || '我的孩子';
+    const grade = stu.grade_name || stu.grade || '小学';
+    const klass = stu.class_name || stu.class || '';
     const fitArr = Array.isArray(stu.fitness) && stu.fitness.length ? stu.fitness[0] : (stu.total_level ? stu : null);
     const fitness = [
       {name:'50米跑',    status:_lvl(fitArr && fitArr.run_50m_level),   emoji:'🏃'},
@@ -157,7 +157,8 @@
       fitness: fitness,
       allergy: allergies, special: null,
       interests: [], borrowed: [], joined: joined,
-      idCard: stu.id_card,
+      idCard: stu.id_card || stu.idCard,
+      studentUserId: stu.dingtalk_userid || stu.studentUserId || null,
       _raw: stu,
     };
   }
