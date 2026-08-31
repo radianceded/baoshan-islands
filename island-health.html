@@ -1372,7 +1372,7 @@ async function loadParentGrowth(){
     }
   }
 
-  const url = idc ? '/api/students/' + encodeURIComponent(idc) + '?role=parent&kid=' + encodeURIComponent(idc)
+  const url = idc ? '/api/students/' + encodeURIComponent(idc)
              : kidName ? '/api/students/name/' + encodeURIComponent(kidName) : null;
   if(!url){ panel.style.display = 'none'; return; }
 
@@ -1385,7 +1385,8 @@ async function loadParentGrowth(){
     if(el) el.innerHTML = '<div style="padding:18px;text-align:center;color:#7BB8DA;font-weight:700">⏳ 加载中…</div>';
   });
   try {
-    const r = await fetch(url);
+    const headers = window.UserAuth && UserAuth.authHeaders ? UserAuth.authHeaders() : {};
+    const r = await fetch(url, {headers});
     if(!r.ok){ console.warn('[loadParentGrowth] HTTP', r.status); panel.style.display = 'none'; return; }
     const stu = await r.json();
     renderGrowthSimple(stu);

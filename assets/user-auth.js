@@ -57,6 +57,13 @@
     ].forEach(k => sessionStorage.removeItem(k));
   }
 
+  function _sessionHeaders(includeJson){
+    const headers = includeJson ? {'Content-Type':'application/json'} : {};
+    const token = sessionStorage.getItem('bs_session_token');
+    if(token) headers.Authorization = 'Bearer ' + token;
+    return headers;
+  }
+
   async function _switchKid(studentUserId){
     if(!studentUserId) throw new Error('缺少学生 UserId，无法切换');
     const headers = {'Content-Type':'application/json'};
@@ -156,7 +163,9 @@
   }
   async function _fetchBoundStudent(idCard){
     try {
-      const r = await fetch('/api/students/' + encodeURIComponent(idCard));
+      const r = await fetch('/api/students/' + encodeURIComponent(idCard), {
+        headers: _sessionHeaders()
+      });
       if(!r.ok) return null;
       const data = await r.json();
       return _buildStudentVM(data, STATE.kidName);
@@ -405,6 +414,7 @@
     getKidName(){ return STATE.kidName; },
     getKids(){ return STATE.kids.slice(); },
     getAvailableRoles(){ return STATE.availableRoles.slice(); },
+    authHeaders(includeJson){ return _sessionHeaders(includeJson); },
     getDisplayName(){ return sessionStorage.getItem('bs_user_nick') || ''; },
     async switchRole(target){
       if(!STATE.availableRoles.includes(target)) throw new Error('当前账号无此身份');
