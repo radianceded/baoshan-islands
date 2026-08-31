@@ -4,6 +4,7 @@ import sqlite3
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from threading import Barrier
 from unittest.mock import patch
 
@@ -1074,8 +1075,12 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     @staticmethod
-    def _parent_headers(student_id="BS001"):
-        return {"X-Demo-Role": "parent", "X-Demo-Kid": student_id}
+    def _parent_headers(student_id="BS001", grade="三年级"):
+        return {
+            "X-Demo-Role": "parent",
+            "X-Demo-Kid": student_id,
+            "X-Demo-Grade": grade,
+        }
 
     @staticmethod
     def _general_headers():
@@ -1138,6 +1143,27 @@ class ClubSignupRegressionTests(unittest.TestCase):
         finally:
             conn.close()
 
+    def _set_window(self, preview_at, open_at, close_at, published_at=None):
+        self.client.get("/api/clubs", headers=self._general_headers())
+        conn = sqlite3.connect(server_app.DB_PATH)
+        try:
+            conn.execute(
+                """INSERT OR REPLACE INTO club_admission_windows(
+                       semester, grade, preview_at, open_at, close_at,
+                       published_at, updated_by
+                   ) VALUES (?, '三年级', ?, ?, ?, ?, 'test')""",
+                (
+                    server_app.CLUB_SEMESTER,
+                    preview_at.isoformat(timespec="seconds"),
+                    open_at.isoformat(timespec="seconds"),
+                    close_at.isoformat(timespec="seconds"),
+                    published_at,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
     def test_course_catalog_exposes_counts_only_to_teacher(self):
         self._signup()
 
@@ -1152,7 +1178,12 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertEqual(teacher_response.status_code, 200)
         parent_data = parent_response.get_json()
         teacher_data = teacher_response.get_json()
-        self.assertEqual(parent_data["total"], len(server_app.COURSES))
+        expected_parent_courses = [
+            course for course in server_app.COURSES
+            if course["selection_mode"] != "draft"
+            and "三年级" in course["eligible_grades"]
+        ]
+        self.assertEqual(parent_data["total"], len(expected_parent_courses))
         self.assertEqual(parent_data["semester"], server_app.CLUB_SEMESTER)
 
         parent_course = next(
@@ -1181,6 +1212,8 @@ class ClubSignupRegressionTests(unittest.TestCase):
         expected = [
             course for course in server_app.COURSES
             if course["campus"] == campus
+            and course["selection_mode"] != "draft"
+            and "三年级" in course["eligible_grades"]
         ]
         self.assertEqual(data["total"], len(expected))
         self.assertTrue(data["clubs"])
@@ -1198,6 +1231,7 @@ class ClubSignupRegressionTests(unittest.TestCase):
             "location": "测试教室",
             "capacity": 12,
             "note": "测试备注",
+            "eligibleGrades": ["三年级"],
         }
         parent_create = self.client.post(
             "/api/clubs", json=payload, headers=self._parent_headers()
@@ -1309,6 +1343,8 @@ class ClubSignupRegressionTests(unittest.TestCase):
                     "grade": "五年级",
                     "class": "1班",
                     "registeredAt": data["students"][0]["registeredAt"],
+                    "status": "pending",
+                    "confirmedAt": None,
                 },
                 {
                     "studentId": "BS002",
@@ -1316,6 +1352,8 @@ class ClubSignupRegressionTests(unittest.TestCase):
                     "grade": "五年级",
                     "class": "2班",
                     "registeredAt": data["students"][1]["registeredAt"],
+                    "status": "pending",
+                    "confirmedAt": None,
                 },
             ],
         )
@@ -1407,6 +1445,47 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertEqual(general.status_code, 403)
         self.assertEqual(unbound_class.status_code, 403)
 
+    def test_class_teacher_can_export_full_name_club_roster(self):
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute(
+            """CREATE TABLE students(
+                id_card TEXT PRIMARY KEY,
+                name TEXT,
+                grade_name TEXT,
+                class_name TEXT
+            )"""
+        )
+        conn.executemany(
+            "INSERT INTO students VALUES (?, ?, ?, ?)",
+            [
+                ("BS001", "学生甲", "三年级", "1班"),
+                ("BS002", "学生乙", "三年级", "1班"),
+            ],
+        )
+        conn.execute("CREATE TABLE students_benbu AS SELECT * FROM students")
+        conn.commit()
+        conn.close()
+        self._signup(student_id="BS001")
+
+        response = self.client.get(
+            "/api/export/class-club.xlsx",
+            headers=self._class_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            response.content_type,
+        )
+        from openpyxl import load_workbook
+        workbook = load_workbook(io.BytesIO(response.data), read_only=True)
+        rows = list(workbook.active.iter_rows(values_only=True))
+        self.assertEqual(rows[0][:6], ("学籍号", "姓名", "年级", "班级", "状态", "社团"))
+        by_name = {row[1]: row for row in rows[1:]}
+        self.assertEqual(by_name["学生甲"][4], "待确认")
+        self.assertEqual(by_name["学生甲"][5], self.course["name"])
+        self.assertEqual(by_name["学生乙"][4], "未提交")
+
     def test_signup_requires_bound_parent(self):
         anonymous = self.client.post(
             "/api/clubs/signups", json={"course_id": self.course["id"]}
@@ -1433,7 +1512,8 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertEqual(created.status_code, 201)
         self.assertEqual(duplicate.status_code, 409)
         self.assertTrue(created.get_json()["success"])
-        self.assertEqual(created.get_json()["course"]["id"], self.course["id"])
+        self.assertEqual(created.get_json()["status"], "pending")
+        self.assertNotIn("course", created.get_json())
 
         conn = sqlite3.connect(server_app.DB_PATH)
         try:
@@ -1448,6 +1528,80 @@ class ClubSignupRegressionTests(unittest.TestCase):
             row,
             ("BS001", server_app.CLUB_SEMESTER, "demo:parent"),
         )
+
+    def test_preview_open_review_publish_workflow_hides_result_until_publish(self):
+        now = datetime.now()
+        self._set_window(
+            now - timedelta(hours=1),
+            now + timedelta(hours=1),
+            now + timedelta(hours=2),
+        )
+        preview_catalog = self.client.get(
+            "/api/clubs", headers=self._parent_headers()
+        ).get_json()
+        preview_course = next(
+            course for course in preview_catalog["clubs"]
+            if course["id"] == self.course["id"]
+        )
+        self.assertEqual(preview_course["phase"], "preview")
+        self.assertFalse(preview_course["canApply"])
+        self.assertEqual(self._signup().status_code, 409)
+
+        self._set_window(
+            now - timedelta(hours=2),
+            now - timedelta(hours=1),
+            now + timedelta(hours=1),
+        )
+        submitted = self._signup()
+        self.assertEqual(submitted.status_code, 201)
+        self.assertEqual(submitted.get_json()["status"], "pending")
+        self.assertNotIn(self.course["name"], submitted.get_json()["message"])
+
+        self._set_window(
+            now - timedelta(hours=3),
+            now - timedelta(hours=2),
+            now - timedelta(hours=1),
+        )
+        pending = self.client.get(
+            "/api/clubs/signups", headers=self._parent_headers()
+        ).get_json()["signups"][0]
+        self.assertEqual(pending["status"], "pending")
+
+        conn = sqlite3.connect(server_app.DB_PATH)
+        conn.execute(
+            """CREATE TABLE students(
+                id_card TEXT PRIMARY KEY,
+                name TEXT,
+                grade_name TEXT,
+                class_name TEXT
+            )"""
+        )
+        conn.execute(
+            "INSERT INTO students VALUES ('BS001', '学生甲', '三年级', '1班')"
+        )
+        conn.execute("CREATE TABLE students_benbu AS SELECT * FROM students")
+        conn.commit()
+        conn.close()
+
+        published = self.client.post(
+            "/api/clubs/windows/三年级/publish",
+            headers=self._general_headers(),
+        )
+        self.assertEqual(published.status_code, 200)
+        confirmed = self.client.get(
+            "/api/clubs/signups", headers=self._parent_headers()
+        ).get_json()["signups"][0]
+        self.assertEqual(confirmed["status"], "confirmed")
+
+    def test_information_only_club_cannot_be_selected(self):
+        course = next(
+            course for course in server_app.COURSES
+            if course["selection_mode"] == "info_only"
+            and "三年级" in course["eligible_grades"]
+        )
+        response = self._signup(course_id=course["id"])
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("不开放选课", response.get_json()["error"])
 
     def test_signup_rejects_course_on_same_weekday(self):
         same_weekday_course = server_app.COURSES[1]
@@ -1465,10 +1619,12 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertEqual(self._student_signup_count(), 1)
 
     def test_each_student_can_signup_for_at_most_one_course(self):
-        courses = [
-            server_app.COURSES[0],
-            server_app.COURSES[3],
-        ]
+        courses = [self.course, next(
+            course for course in server_app.COURSES
+            if course["weekday"] != self.course["weekday"]
+            and course["selection_mode"] == "selectable"
+            and "三年级" in course["eligible_grades"]
+        )]
         self.assertEqual(len({course["weekday"] for course in courses}), 2)
 
         responses = [
@@ -1487,7 +1643,12 @@ class ClubSignupRegressionTests(unittest.TestCase):
         self.assertEqual(self._student_signup_count(), 1)
 
     def test_concurrent_requests_cannot_exceed_student_signup_limit(self):
-        candidates = [server_app.COURSES[0], server_app.COURSES[3]]
+        candidates = [self.course, next(
+            course for course in server_app.COURSES
+            if course["weekday"] != self.course["weekday"]
+            and course["selection_mode"] == "selectable"
+            and "三年级" in course["eligible_grades"]
+        )]
         barrier = Barrier(2)
 
         def submit(course):

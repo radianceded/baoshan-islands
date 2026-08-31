@@ -64,6 +64,21 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertIn("login.html?campus=' + encodeURIComponent(campus)", user_auth)
 
 
+class StudentHomepageIslandVisibilityTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.html = (
+            Path(__file__).resolve().parents[1] / "island-homepage.html"
+        ).read_text(encoding="utf-8")
+
+    def test_student_parent_homepage_exposes_all_six_islands(self):
+        island_keys = ("growth", "interest", "art", "health", "literacy", "labor")
+        for key in island_keys:
+            self.assertIn(f"onclick=\"enterIsland('{key}'", self.html)
+        self.assertEqual(self.html.count('class="hotspot"'), 6)
+        self.assertNotIn('class="hotspot" data-hide-for="parent"', self.html)
+
+
 class DingTalkSourceSafetyTests(unittest.TestCase):
     def test_auth_code_material_is_not_written_to_logs(self):
         source = (

@@ -79,6 +79,14 @@
   .club-admin-form[hidden]{display:none}
   .club-admin-form input,.club-admin-form select{width:100%;padding:10px 12px;border:2px solid #E0EBF0;border-radius:12px;background:#F8FCFE;color:#1F3A4D;font:700 12px inherit;outline:none}
   .club-admin-form input:focus,.club-admin-form select:focus{border-color:#A893E8}
+  .club-grade-options{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border:2px solid #E0EBF0;border-radius:12px;background:#F8FCFE}
+  .club-grade-options label{display:flex;align-items:center;gap:4px;color:#405D6E;font-size:12px;font-weight:800}
+  .club-grade-options input{width:auto}
+  .club-window-form{display:grid;grid-template-columns:120px repeat(3,minmax(180px,1fr)) auto;gap:10px;align-items:end}
+  .club-window-form label{display:grid;gap:5px;color:#536F7F;font-size:11px;font-weight:800}
+  .club-window-form input,.club-window-form select{min-height:42px;padding:8px 10px;border:2px solid #E0EBF0;border-radius:10px;background:#F8FCFE;color:#1F3A4D;font:700 12px inherit}
+  .club-window-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .club-window-chip{padding:7px 10px;border-radius:10px;background:#F0F6F9;color:#536F7F;font-size:11px;font-weight:800}
   .club-admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
   .club-admin-btn{border:none;border-radius:10px;padding:6px 10px;color:#fff;background:#5C42A0;font:800 11px inherit;cursor:pointer}
   .club-admin-btn.danger{background:#C2410C}
@@ -178,6 +186,7 @@
     .general-club-card{min-height:0}
     .general-club-capacity{grid-template-columns:1fr 84px}
     .general-club-capacity .club-admin-btn{grid-column:1/-1}
+    .club-window-form{grid-template-columns:1fr}
   }
 
   /* 活动日历 */
@@ -242,7 +251,7 @@
        data-text-teacher="看课程 · 查名额 · 管报名"
        data-text-parent="为孩子选择本学期社团课程"
     >选课程 · 抢名额 · 开启新兴趣</p>
-    <span class="tag"><span class="dot"></span>2025 学年第二学期 · <strong id="bannerClubCount">34</strong> 门课程</span>
+    <span class="tag"><span class="dot"></span><span id="bannerSemester">2026 学年第一学期</span> · <strong id="bannerClubCount">0</strong> 门课程</span>
   </div>
 </div>
 
@@ -270,7 +279,7 @@
         <div class="card-h">
           <div class="icon" style="background:#E8DCFF">⚙️</div>
           <h2>社团管理</h2>
-          <div class="sub">新增社团后立即开放报名</div>
+          <div class="sub">课程先录入，再按年级设置展示、抢课和发布时间</div>
           <button class="club-admin-toggle" id="clubAdminToggle" type="button" aria-expanded="false" aria-controls="clubAdminForm">新增社团</button>
         </div>
         <form class="club-admin-form" id="clubAdminForm" hidden>
@@ -287,10 +296,39 @@
             <option>周四</option><option>周五</option>
           </select>
           <input id="newClubLocation" placeholder="上课地点" maxlength="80" required>
-          <input id="newClubCapacity" type="number" min="1" max="500" placeholder="人数上限" required>
-          <input id="newClubNote" placeholder="备注（选填）" maxlength="120" style="grid-column:span 2">
-          <button class="club-admin-btn" type="submit" style="min-height:40px">＋ 新增社团</button>
+          <select id="newClubMode" aria-label="社团类型" required>
+            <option value="selectable">开放抢课</option>
+            <option value="info_only">只展示，不抢课</option>
+            <option value="draft">资料待补充</option>
+          </select>
+          <input id="newClubCapacity" type="number" min="1" max="500" placeholder="开放人数">
+          <div class="club-grade-options" id="newClubGrades">
+            <label><input type="checkbox" value="一年级">一年级</label>
+            <label><input type="checkbox" value="二年级">二年级</label>
+            <label><input type="checkbox" value="三年级">三年级</label>
+            <label><input type="checkbox" value="四年级">四年级</label>
+            <label><input type="checkbox" value="五年级">五年级</label>
+          </div>
+          <input id="newClubNote" placeholder="招生要求或备注（选填）" maxlength="500" style="grid-column:span 2">
+          <button class="club-admin-btn" id="clubFormSubmit" type="submit" style="min-height:40px">＋ 新增社团</button>
+          <button class="club-admin-btn secondary" id="clubFormCancel" type="button" style="display:none;min-height:40px">取消编辑</button>
         </form>
+      </div>
+
+      <div class="card" id="clubWindowPanel" style="display:none;margin-bottom:16px">
+        <div class="card-h">
+          <div class="icon" style="background:#FFF0D6">⏰</div>
+          <h2>年级抢课时间</h2>
+          <div class="sub">先预览，后开放；截止后由总务发布结果</div>
+        </div>
+        <form class="club-window-form" id="clubWindowForm">
+          <label>年级<select id="clubWindowGrade"><option>一年级</option><option>二年级</option><option>三年级</option><option>四年级</option><option>五年级</option></select></label>
+          <label>预览时间<input id="clubPreviewAt" type="datetime-local" required></label>
+          <label>开放时间<input id="clubOpenAt" type="datetime-local" required></label>
+          <label>截止时间<input id="clubCloseAt" type="datetime-local" required></label>
+          <button class="club-admin-btn" type="submit" style="min-height:42px">保存时间</button>
+        </form>
+        <div class="club-window-list" id="clubWindowList"></div>
       </div>
 
       <div class="card" id="classClubPanel" style="display:none;margin-bottom:16px">
@@ -298,6 +336,7 @@
           <div class="icon" style="background:#DDF4E3">👩‍🏫</div>
           <h2 id="classClubTitle">本班社团报名</h2>
           <div class="sub" id="classClubSummary">正在加载...</div>
+          <button class="club-admin-btn" type="button" onclick="downloadClassClubExcel()">下载Excel</button>
         </div>
         <div class="class-club-list" id="classClubList"></div>
       </div>
@@ -325,7 +364,7 @@
       <div class="card my-card">
         <div class="card-h" style="margin-bottom:10px">
           <div class="icon" style="background:#fff;border:2px solid #A893E8">⭐</div>
-          <h2>我已报名</h2>
+          <h2>我的社团申请</h2>
           <div class="sub" style="color:#5C42A0" id="myCount">0 门</div>
         </div>
         <div class="my-list" id="myList"></div>
@@ -362,6 +401,10 @@ let clubSearchQuery = '';
 let signed = new Set();
 let signedCourses = [];
 let maxSignups = 1;
+let clubSemester = '';
+let clubWindow = null;
+let clubWindows = [];
+let editingCourseId = null;
 
 function isGeneralClubManager(){
   return Boolean(window.UserAuth && UserAuth.isGeneralTeacher && UserAuth.isGeneralTeacher());
@@ -391,6 +434,10 @@ async function loadClubsFromDB(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     const d = await r.json();
     CLUBS = (d.clubs || []).map(c => ({...c, loc: c.location}));
+    clubSemester = d.semester || '';
+    clubWindow = d.window || null;
+    const semester = document.getElementById('bannerSemester');
+    if(semester && clubSemester) semester.textContent = clubSemester;
     return true;
   } catch(e){
     console.warn('[clubs] DB 拉不到，留空：', e.message);
@@ -435,6 +482,12 @@ function matchesClubSearch(course){
 
 function signupBlockReason(course){
   if(!isParentClubUser() || signed.has(course.id)) return null;
+  if(course.selectionMode !== 'selectable'){
+    return {label:'仅展示', message:'该社团无需选课'};
+  }
+  if(!course.canApply){
+    return {label:'未开放', message:course.phaseMessage || '当前不在开放抢课时间'};
+  }
   const conflict = signedCourses.find(item => item.weekday === course.weekday);
   if(conflict){
     return {
@@ -498,6 +551,9 @@ function renderClubs(){
     const tags = [];
     tags.push(`<span class="tag">${escapeClubText(c.campus)}</span>`);
     tags.push(`<span class="tag">${escapeClubText(c.time)}</span>`);
+    if(c.eligibleGrades && c.eligibleGrades.length) tags.push(`<span class="tag">${escapeClubText(c.eligibleGrades.join('、'))}</span>`);
+    const modeLabel = {selectable:'开放抢课',info_only:'只展示',draft:'资料待补'}[c.selectionMode] || '开放抢课';
+    tags.push(`<span class="tag ${c.selectionMode==='draft'?'hot':''}">${modeLabel}</span>`);
     const isSigned = signed.has(c.id);
     const full = Boolean(c.full);
     const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
@@ -505,6 +561,8 @@ function renderClubs(){
     const canSignup = isParentClubUser();
     const blockReason = signupBlockReason(c);
     const remaining = canSeeCounts ? Math.max(0, c.max - c.count) : 0;
+    const signedCourse = signedCourses.find(item => item.id === c.id);
+    const signedLabel = signedCourse && signedCourse.status === 'confirmed' ? '已录取' : '已提交待确认';
     return `
       <div class="club-card ${isGeneral ? 'general-club-card' : ''}" data-course-id="${escapeClubText(c.id)}" onclick="showClubDetail(${realIdx})">
         <div class="top">
@@ -517,6 +575,7 @@ function renderClubs(){
         <div class="tags">${tags.join('')}</div>
         ${isGeneral
           ? `<div class="general-club-management">
+               ${c.selectionMode === 'selectable' ? `
                <div class="general-club-status">
                  <span class="general-club-count">已报名 <strong>${c.count}</strong> / ${c.max} 人</span>
                  <span class="general-club-remaining ${remaining === 0 ? 'is-full' : ''}">${remaining === 0 ? '名额已满' : `剩余 ${remaining} 人`}</span>
@@ -525,17 +584,20 @@ function renderClubs(){
                  <label for="capacity-${escapeClubText(c.id)}">人数上限</label>
                  <input id="capacity-${escapeClubText(c.id)}" class="club-capacity-input" data-capacity-for="${escapeClubText(c.id)}" type="number" min="${c.count}" max="500" value="${c.max}" aria-label="${escapeClubText(c.name)}人数上限">
                  <button class="club-admin-btn" type="button" onclick="saveClubCapacity('${c.id}')">保存上限</button>
-               </div>
+               </div>` : `<div class="general-club-status"><span class="general-club-count">${escapeClubText(c.phaseMessage || modeLabel)}</span></div>`}
                <div class="general-club-footer">
-                 <button class="club-admin-btn secondary" type="button" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看报名名单</button>
+                 ${c.selectionMode === 'selectable' ? `<button class="club-admin-btn secondary" type="button" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看申请名单</button>` : ''}
+                 <button class="club-admin-btn" type="button" onclick="event.stopPropagation();editClub('${c.id}')">编辑</button>
                  <button class="club-admin-btn danger" type="button" onclick="event.stopPropagation();archiveClub('${c.id}')">下架社团</button>
                </div>
              </div>`
           : `<div class="signup">
-             <span class="count">${canSeeCounts ? `${c.count} / ${c.max} 人` : (isSigned ? '已报名' : (full ? '名额已满' : (blockReason ? blockReason.message : '可报名')))}</span>
+             <span class="count">${isSigned ? signedLabel : (c.phaseMessage || (full ? '名额已满' : '查看详情'))}</span>
              ${canSignup
-            ? (isSigned
-              ? `<button class="signup-btn signed" onclick="event.stopPropagation();cancelSignup('${c.id}')">✓ 已报名</button>`
+            ? (c.selectionMode !== 'selectable'
+              ? `<button class="signup-btn" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看信息</button>`
+              : isSigned
+              ? `<button class="signup-btn signed" onclick="event.stopPropagation();showClubDetail(${realIdx})">${signedLabel}</button>`
               : full ? `<button class="signup-btn" disabled style="background:#CFD8DD;cursor:not-allowed" onclick="event.stopPropagation()">已满</button>`
               : blockReason ? `<button class="signup-btn" disabled style="background:#CFD8DD;cursor:not-allowed" onclick="event.stopPropagation()">${blockReason.label}</button>`
               : `<button class="signup-btn" onclick="event.stopPropagation();signup('${c.id}')">立即报名</button>`)
@@ -565,10 +627,12 @@ function showClubDetail(i){
   const isSigned = signed.has(c.id);
   const full = Boolean(c.full);
   const canSeeCounts = Number.isFinite(c.count) && Number.isFinite(c.max);
-  const canSignup = isParentClubUser();
+  const canSignup = isParentClubUser() && c.selectionMode === 'selectable';
   const blockReason = signupBlockReason(c);
   const pct = canSeeCounts ? Math.round(c.count/c.max*100) : 0;
-  const TIPS = [c.note, '报名成功后请按学校通知准时到课', '如需取消，请在本页面操作'].filter(Boolean);
+  const signedCourse = signedCourses.find(item => item.id === c.id);
+  const signedLabel = signedCourse && signedCourse.status === 'confirmed' ? '已录取' : '已提交，等待学校确认';
+  const TIPS = [c.note, c.selectionMode === 'info_only' ? '该社团只展示信息，无需选课' : '提交申请后，学校确认并发布最终结果'].filter(Boolean);
   const ACT = ['月初汇报演出','期中联谊活动','参加校外比赛','作品参展','期末展示日'];
   let veil = document.getElementById('clubVeil');
   if(!veil){
@@ -597,7 +661,7 @@ function showClubDetail(i){
         ? `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">已报名</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.count} / ${c.max}</div></div>
            <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">还剩</div><div style="font-size:13px;font-weight:900;color:${c.max-c.count<5?'#E94B6A':'#22A05B'};margin-top:3px">${c.max-c.count} 个名额</div></div>`
         : `<div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">校区</div><div style="font-size:13px;font-weight:900;color:#1F3A4D;margin-top:3px">${c.campus}</div></div>
-           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">报名状态</div><div style="font-size:13px;font-weight:900;color:${(full&&!isSigned)||blockReason?'#C2410C':'#22A05B'};margin-top:3px">${isSigned?'已报名':(full?'已满':(blockReason ? blockReason.label : '可报名'))}</div></div>`}
+           <div style="background:#F4FAFD;border-radius:12px;padding:10px;text-align:center"><div style="font-size:11px;color:#7BB8DA;font-weight:700">当前状态</div><div style="font-size:13px;font-weight:900;color:${(full&&!isSigned)||blockReason?'#C2410C':'#22A05B'};margin-top:3px">${isSigned?signedLabel:(c.phaseMessage || (full?'已满':'可申请'))}</div></div>`}
     </div>
     ${canSeeCounts ? `<div style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#7BB8DA;font-weight:700;margin-bottom:6px"><span>报名进度</span><span>${pct}%</span></div>
@@ -623,8 +687,9 @@ function showClubDetail(i){
     </div>
     <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
       <button onclick="document.getElementById('clubVeil').remove()" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button>
-      ${!canSignup || canSeeCounts ? '' : isSigned
-        ? `<button onclick="cancelSignup('${c.id}');document.getElementById('clubVeil').remove()" style="background:#FFE0E0;color:#C2410C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">取消报名</button>`
+      ${!canSignup || canSeeCounts ? '' : isSigned && signedCourse && signedCourse.status !== 'confirmed' && c.canApply
+        ? `<button onclick="cancelSignup('${c.id}');document.getElementById('clubVeil').remove()" style="background:#FFE0E0;color:#C2410C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">撤回申请</button>`
+        : isSigned ? ''
         : full
         ? `<button disabled style="background:#CFD8DD;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:not-allowed">已满员</button>`
         : blockReason
@@ -657,7 +722,8 @@ async function loadClubSignupStudents(courseId){
       return;
     }
     box.innerHTML = students.map((student, index) => {
-      const meta = [student.grade, student['class'], student.studentId]
+      const status = student.status === 'confirmed' ? '已确认' : '待确认';
+      const meta = [student.grade, student['class'], student.studentId, status]
         .filter(Boolean).map(escapeClubText).join(' · ');
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 8px;${index ? 'border-top:1px solid #DCEBF3' : ''}">
         <span style="width:24px;height:24px;border-radius:8px;background:#E8DCFF;color:#5C42A0;display:grid;place-items:center;font-size:11px;font-weight:900;flex-shrink:0">${index + 1}</span>
@@ -684,7 +750,7 @@ async function loadClassClubSignups(){
     if(!r.ok) throw new Error(data.error || '本班报名信息加载失败');
     const students = data.students || [];
     title.textContent = `${data.grade || ''}${data.class || ''}社团报名`;
-    summary.textContent = `${data.signedStudents || 0} / ${data.totalStudents || 0} 人已报名`;
+    summary.textContent = `${data.signedStudents || 0} / ${data.totalStudents || 0} 人已提交 · ${data.confirmedStudents || 0} 人已确认`;
     if(!students.length){
       list.innerHTML = '<div class="class-club-empty" style="padding:20px;text-align:center">本班暂无学生数据</div>';
       return;
@@ -692,7 +758,7 @@ async function loadClassClubSignups(){
     list.innerHTML = students.map((student, index) => {
       const clubs = student.clubs || [];
       const tags = clubs.length
-        ? clubs.map(club => `<span class="class-club-tag" title="${escapeClubText(`${club.teacher || ''} · ${club.weekday || ''} · ${club.location || ''}`)}">${escapeClubText(club.name)}</span>`).join('')
+        ? clubs.map(club => `<span class="class-club-tag" title="${escapeClubText(`${club.teacher || ''} · ${club.weekday || ''} · ${club.location || ''}`)}">${escapeClubText(club.name)} · ${club.status === 'confirmed' ? '已确认' : '待确认'}</span>`).join('')
         : '<span class="class-club-empty">尚未报名社团</span>';
       return `<div class="class-club-row">
         <span class="class-club-index">${index + 1}</span>
@@ -771,30 +837,128 @@ function setClubAdminFormOpen(open){
 async function createClubFromForm(event){
   event.preventDefault();
   const form = event.currentTarget;
+  const wasEditing = Boolean(editingCourseId);
+  const eligibleGrades = [...document.querySelectorAll('#newClubGrades input:checked')].map(input => input.value);
   const payload = {
     campus: document.getElementById('newClubCampus').value,
     name: document.getElementById('newClubName').value,
     teacher: document.getElementById('newClubTeacher').value,
     weekday: document.getElementById('newClubWeekday').value,
     location: document.getElementById('newClubLocation').value,
-    capacity: Number(document.getElementById('newClubCapacity').value),
+    capacity: Number(document.getElementById('newClubCapacity').value) || 1,
     note: document.getElementById('newClubNote').value,
+    selectionMode: document.getElementById('newClubMode').value,
+    eligibleGrades,
   };
   try {
-    const r = await fetch('/api/clubs', {
-      method:'POST',
+    const r = await fetch(editingCourseId ? `/api/clubs/${encodeURIComponent(editingCourseId)}` : '/api/clubs', {
+      method:editingCourseId ? 'PATCH' : 'POST',
       headers:authHeaders(true),
       body:JSON.stringify(payload),
     });
     const data = await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(data.error || '社团新增失败');
-    form.reset();
+    if(!r.ok) throw new Error(data.error || '社团保存失败');
+    resetClubForm();
     setClubAdminFormOpen(false);
     await refreshClubCatalog();
-    showToast('社团已新增');
+    showToast(wasEditing ? '社团已更新' : '社团已新增');
   } catch(e){
     showToast(e.message);
   }
+}
+
+async function loadClubWindows(){
+  const r = await fetch('/api/clubs/windows', {headers:authHeaders()});
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error || '抢课时间加载失败');
+  clubWindows = data.windows || [];
+  renderClubWindows();
+}
+
+function clubDateText(value){
+  return value ? String(value).replace('T',' ') : '未设置';
+}
+
+function renderClubWindows(){
+  const list = document.getElementById('clubWindowList');
+  if(!list) return;
+  list.innerHTML = ['一年级','二年级','三年级','四年级','五年级'].map(grade => {
+    const item = clubWindows.find(windowItem => windowItem.grade === grade);
+    if(!item) return `<span class="club-window-chip">${grade} · 未设置</span>`;
+    const published = item.published_at
+      ? `<strong style="color:#15803D">已发布</strong>`
+      : `<button class="club-admin-btn" type="button" onclick="publishClubGrade('${grade}')">截止后发布</button>`;
+    return `<span class="club-window-chip">${grade} · 预览 ${escapeClubText(clubDateText(item.preview_at))} · 开放 ${escapeClubText(clubDateText(item.open_at))} · 截止 ${escapeClubText(clubDateText(item.close_at))} · ${published}</span>`;
+  }).join('');
+}
+
+function fillClubWindowForm(){
+  const grade = document.getElementById('clubWindowGrade').value;
+  const item = clubWindows.find(windowItem => windowItem.grade === grade);
+  document.getElementById('clubPreviewAt').value = item ? item.preview_at : '';
+  document.getElementById('clubOpenAt').value = item ? item.open_at : '';
+  document.getElementById('clubCloseAt').value = item ? item.close_at : '';
+}
+
+async function saveClubWindow(event){
+  event.preventDefault();
+  const grade = document.getElementById('clubWindowGrade').value;
+  const payload = {
+    previewAt:document.getElementById('clubPreviewAt').value,
+    openAt:document.getElementById('clubOpenAt').value,
+    closeAt:document.getElementById('clubCloseAt').value,
+  };
+  try {
+    const r = await fetch(`/api/clubs/windows/${encodeURIComponent(grade)}`, {
+      method:'PUT', headers:authHeaders(true), body:JSON.stringify(payload),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '抢课时间保存失败');
+    await loadClubWindows();
+    showToast(`${grade}抢课时间已保存`);
+  } catch(e){ showToast(e.message); }
+}
+
+async function publishClubGrade(grade){
+  if(!confirm(`确认发布${grade}社团录取结果吗？发布后家长将看到最终课程。`)) return;
+  try {
+    const r = await fetch(`/api/clubs/windows/${encodeURIComponent(grade)}/publish`, {
+      method:'POST', headers:authHeaders(),
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || '结果发布失败');
+    await Promise.all([loadClubWindows(), refreshClubCatalog()]);
+    showToast(`${grade}结果已发布，共确认 ${data.confirmed || 0} 人`);
+  } catch(e){ showToast(e.message); }
+}
+
+function resetClubForm(){
+  const form = document.getElementById('clubAdminForm');
+  if(form) form.reset();
+  editingCourseId = null;
+  document.getElementById('clubFormSubmit').textContent = '＋ 新增社团';
+  document.getElementById('clubFormCancel').style.display = 'none';
+}
+
+function editClub(courseId){
+  const course = CLUBS.find(item => item.id === courseId);
+  if(!course) return;
+  editingCourseId = courseId;
+  document.getElementById('newClubCampus').value = course.campus || '';
+  document.getElementById('newClubName').value = course.name || '';
+  document.getElementById('newClubTeacher').value = course.teacher || '';
+  document.getElementById('newClubWeekday').value = course.weekday || '';
+  document.getElementById('newClubLocation').value = course.location || '';
+  document.getElementById('newClubMode').value = course.selectionMode || 'selectable';
+  document.getElementById('newClubCapacity').value = course.capacity || course.max || '';
+  document.getElementById('newClubNote').value = course.note || '';
+  document.querySelectorAll('#newClubGrades input').forEach(input => {
+    input.checked = (course.eligibleGrades || []).includes(input.value);
+  });
+  document.getElementById('clubFormSubmit').textContent = '保存修改';
+  document.getElementById('clubFormCancel').style.display = '';
+  setClubAdminFormOpen(true);
+  document.getElementById('clubAdminPanel').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 async function signup(courseId){
@@ -808,7 +972,7 @@ async function signup(courseId){
     const d = await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(d.error || '报名失败');
     await Promise.all([loadClubsFromDB(), loadMySignups()]);
-    showToast(`🎉 ${course ? course.name : '课程'} 报名成功！`);
+    showToast(d.message || '申请已提交，等待学校确认');
     renderCampuses();
     renderCats();
     renderClubs();
@@ -819,7 +983,7 @@ async function signup(courseId){
 }
 async function cancelSignup(courseId){
   const course = CLUBS.find(c => c.id === courseId);
-  if(confirm('确定取消 '+(course ? course.name : '这门课程')+' 的报名吗？')){
+  if(confirm('确定撤回 '+(course ? course.name : '这门课程')+' 的申请吗？')){
     try {
       const r = await fetch('/api/clubs/signups/'+encodeURIComponent(courseId), {
         method:'DELETE',
@@ -828,7 +992,7 @@ async function cancelSignup(courseId){
       const d = await r.json().catch(()=>({}));
       if(!r.ok) throw new Error(d.error || '取消失败');
       await Promise.all([loadClubsFromDB(), loadMySignups()]);
-      showToast(`已取消 ${course ? course.name : '课程'} 的报名`);
+      showToast(`已撤回 ${course ? course.name : '课程'} 的申请`);
     } catch(e){
       showToast(e.message);
     }
@@ -852,21 +1016,19 @@ function renderMyList(){
   const courseIds = Array.from(signed);
   cnt.textContent = `${courseIds.length} / ${maxSignups} 门`;
   if(!courseIds.length){
-    list.innerHTML = '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px">还没报名课程 · 请先登录并绑定学生，再从左侧抢课 🎯</div>';
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:#7BB8DA;font-weight:700;font-size:13px">当前没有社团申请</div>';
     return;
   }
-  const weekdayCounts = signedCourses.reduce((counts, course) => {
-    if(course.weekday) counts[course.weekday] = (counts[course.weekday] || 0) + 1;
-    return counts;
-  }, {});
   list.innerHTML = courseIds.map(courseId => {
     const activeCourse = CLUBS.find(x => x.id === courseId);
-    const c = activeCourse || signedCourses.find(x => x.id === courseId);
+    const signupRecord = signedCourses.find(x => x.id === courseId);
+    const c = activeCourse || signupRecord;
     const weekday = c && (c.weekday || c.time);
-    const hasConflict = weekday && weekdayCounts[weekday] > 1;
     const ic = activeCourse ? activeCourse.ic : '🎯';
     const bg = activeCourse ? (CAT_BG[activeCourse.cat] || 'linear-gradient(135deg,#E0D6FF,#A893E8)') : 'linear-gradient(135deg,#E0D6FF,#A893E8)';
     const meta = c ? `${c.teacher}老师 · ${weekday} · ${c.campus}${activeCourse ? '' : ' · 已下架'}` : '课程已下架';
+    const status = signupRecord && signupRecord.status === 'confirmed' ? '已录取' : '已提交待确认';
+    const canCancel = signupRecord && signupRecord.status !== 'confirmed' && activeCourse && activeCourse.canApply;
     return `
       <div class="my-row">
         <div class="ic" style="background:${bg}">${ic}</div>
@@ -874,8 +1036,8 @@ function renderMyList(){
           <div class="nm">${escapeClubText(c ? c.name : courseId)}</div>
           <div class="tm">${escapeClubText(meta)}</div>
         </div>
-        <span class="badge" style="${hasConflict ? 'background:#FFE0E0;color:#C2410C' : ''}">${hasConflict ? '时间冲突' : '已报名'}</span>
-        <button type="button" class="cancel-btn" onclick="cancelSignup('${courseId}')" aria-label="取消报名${escapeClubText(c ? c.name : courseId)}">取消报名</button>
+        <span class="badge">${status}</span>
+        ${canCancel ? `<button type="button" class="cancel-btn" onclick="cancelSignup('${courseId}')" aria-label="撤回申请${escapeClubText(c ? c.name : courseId)}">撤回申请</button>` : ''}
       </div>
     `;
   }).join('');
@@ -888,6 +1050,23 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2400);
 }
 function goHome(){ location.href='island-homepage.html' }
+
+async function downloadClassClubExcel(){
+  try {
+    const r = await fetch('/api/export/class-club.xlsx', {headers:authHeaders()});
+    if(!r.ok){
+      const data = await r.json().catch(()=>({}));
+      throw new Error(data.error || '下载失败');
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '本班社团结果.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch(e){ showToast(e.message); }
+}
 
 </script>
 
@@ -928,7 +1107,8 @@ const ACTIVITY_SYSTEM = `${AIHelper.SAFETY}
 function buildActivityPrompt(){
   const s = getCurStudent();
   if(!s) return '请先选择一个学生';
-  const clubsList = CLUBS.slice(0,20).map(c=>`${c.name}(${c.cat}/${c.time})`).join('；');
+  const availableClubs = CLUBS.filter(c => c.selectionMode === 'selectable');
+  const clubsList = availableClubs.slice(0,20).map(c=>`${c.name}(${c.cat}/${c.time})`).join('；');
   const joined = (s.joined || []).join('、') || '暂无';
   return `学生信息：
 ${StudentRoster.studentInfoBlock(s)}
@@ -939,7 +1119,7 @@ ${StudentRoster.fitnessBlock(s)}
 兴趣偏好：${s.interests.join('、')}
 已报名社团：${joined}
 
-可选社团（共 ${Math.min(CLUBS.length,20)} 个，请只从这里挑）：
+可选社团（共 ${Math.min(availableClubs.length,20)} 个，请只从这里挑）：
 ${clubsList}
 
 请按 system 中 JSON 格式从"可选社团"里选 3 个最适合的。`;
@@ -1090,10 +1270,18 @@ function renderCalendar(){
   if(classMode && bannerSubtitle) bannerSubtitle.textContent = '查看本班学生社团选择';
   const adminPanel = document.getElementById('clubAdminPanel');
   if(adminPanel) adminPanel.style.display = generalMode ? 'block' : 'none';
+  const windowPanel = document.getElementById('clubWindowPanel');
+  if(windowPanel) windowPanel.style.display = generalMode ? 'block' : 'none';
   const classPanel = document.getElementById('classClubPanel');
   if(classPanel) classPanel.style.display = classMode ? 'block' : 'none';
   const adminForm = document.getElementById('clubAdminForm');
   if(adminForm) adminForm.addEventListener('submit', createClubFromForm);
+  const clubFormCancel = document.getElementById('clubFormCancel');
+  if(clubFormCancel) clubFormCancel.addEventListener('click', () => { resetClubForm(); setClubAdminFormOpen(false); });
+  const windowForm = document.getElementById('clubWindowForm');
+  if(windowForm) windowForm.addEventListener('submit', saveClubWindow);
+  const windowGrade = document.getElementById('clubWindowGrade');
+  if(windowGrade) windowGrade.addEventListener('change', fillClubWindowForm);
   const adminToggle = document.getElementById('clubAdminToggle');
   if(adminToggle) adminToggle.addEventListener('click', () => {
     setClubAdminFormOpen(adminToggle.getAttribute('aria-expanded') !== 'true');
@@ -1113,7 +1301,8 @@ function renderCalendar(){
     });
   }
   if(generalMode){
-    await loadClubsFromDB();
+    await Promise.all([loadClubsFromDB(), loadClubWindows()]);
+    fillClubWindowForm();
   } else if(classMode){
     await Promise.all([loadClubsFromDB(), loadClassClubSignups()]);
   } else {

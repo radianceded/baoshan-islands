@@ -1,0 +1,1109 @@
+[
+  {
+    "id": "benbu-2026s1-east-001",
+    "campus": "东校区",
+    "name": "田径（一）",
+    "teacher": "教师01",
+    "weekday": "周一",
+    "location": "操场",
+    "capacity": 3,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 1
+  },
+  {
+    "id": "benbu-2026s1-east-002",
+    "campus": "东校区",
+    "name": "花样跳绳（一）",
+    "teacher": "教师02",
+    "weekday": "周一",
+    "location": "三楼体育空间",
+    "capacity": 15,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 2
+  },
+  {
+    "id": "benbu-2026s1-east-003",
+    "campus": "东校区",
+    "name": "红领巾讲解员",
+    "teacher": "教师03",
+    "weekday": "周一",
+    "location": "三3班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 3
+  },
+  {
+    "id": "benbu-2026s1-east-004",
+    "campus": "东校区",
+    "name": "乒乓（一）",
+    "teacher": "教师04",
+    "weekday": "周一",
+    "location": "三楼乒乓馆",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "五年级"
+    ],
+    "source_number": 4
+  },
+  {
+    "id": "benbu-2026s1-east-005",
+    "campus": "东校区",
+    "name": "电子创新社团（二）",
+    "teacher": "教师05",
+    "weekday": "周一",
+    "location": "东校区劳动教室",
+    "capacity": 5,
+    "note": "材料费835自费，动手能力强，能积极参加比赛活动，且二年级未参加过电子社团的学生",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 5
+  },
+  {
+    "id": "benbu-2026s1-east-006",
+    "campus": "东校区",
+    "name": "辩论社团",
+    "teacher": "教师06",
+    "weekday": "周一",
+    "location": "五7班教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 6
+  },
+  {
+    "id": "benbu-2026s1-east-007",
+    "campus": "东校区",
+    "name": "AI英语口语社团（四）",
+    "teacher": "教师07",
+    "weekday": "周一",
+    "location": "B501",
+    "capacity": 6,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "五年级"
+    ],
+    "source_number": 7
+  },
+  {
+    "id": "benbu-2026s1-east-008",
+    "campus": "东校区",
+    "name": "腰旗橄榄球社团（一）",
+    "teacher": "教师08",
+    "weekday": "周一",
+    "location": "操场",
+    "capacity": 20,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 8
+  },
+  {
+    "id": "benbu-2026s1-east-009",
+    "campus": "东校区",
+    "name": "脑力加油站（三）",
+    "teacher": "教师09",
+    "weekday": "周一",
+    "location": "三6教室",
+    "capacity": 30,
+    "note": "以趣味思维拓展为主，需具备一定课内数学基础，愿意主动思考、乐于钻研难题。课堂重在思维探究，欢迎对数学有兴趣，想锻炼逻辑能力的同学踊跃参与。",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 9
+  },
+  {
+    "id": "benbu-2026s1-east-010",
+    "campus": "东校区",
+    "name": "急救小能手",
+    "teacher": "教师10",
+    "weekday": "周一",
+    "location": "三楼音乐教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 10
+  },
+  {
+    "id": "benbu-2026s1-east-011",
+    "campus": "东校区",
+    "name": "超能心理社",
+    "teacher": "教师11",
+    "weekday": "周一",
+    "location": "五楼录播室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 11
+  },
+  {
+    "id": "benbu-2026s1-east-012",
+    "campus": "东校区",
+    "name": "理财小高手",
+    "teacher": "教师12",
+    "weekday": "周一",
+    "location": "五4班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 12
+  },
+  {
+    "id": "benbu-2026s1-east-013",
+    "campus": "东校区",
+    "name": "小小创变家（三到五）",
+    "teacher": "教师13",
+    "weekday": "周一",
+    "location": "三8班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 13
+  },
+  {
+    "id": "benbu-2026s1-east-014",
+    "campus": "东校区",
+    "name": "足球社团",
+    "teacher": "教师14",
+    "weekday": "周一",
+    "location": "足球场",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 14
+  },
+  {
+    "id": "benbu-2026s1-east-015",
+    "campus": "东校区",
+    "name": "卡通创意坊",
+    "teacher": "教师15",
+    "weekday": "周一",
+    "location": "东部美术教室1",
+    "capacity": 5,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级"
+    ],
+    "source_number": 15
+  },
+  {
+    "id": "benbu-2026s1-east-016",
+    "campus": "东校区",
+    "name": "AI英语口语社团（二）",
+    "teacher": "教师16",
+    "weekday": "周一",
+    "location": "B504",
+    "capacity": 6,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 16
+  },
+  {
+    "id": "benbu-2026s1-east-017",
+    "campus": "东校区",
+    "name": "了不起的罗辑思维",
+    "teacher": "教师17",
+    "weekday": "都可以",
+    "location": "三8班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 17
+  },
+  {
+    "id": "benbu-2026s1-east-018",
+    "campus": "东校区",
+    "name": "花样跳绳（二）",
+    "teacher": "教师02",
+    "weekday": "周二",
+    "location": "三楼体育空间",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [
+      "一年级",
+      "二年级",
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 18
+  },
+  {
+    "id": "benbu-2026s1-east-019",
+    "campus": "东校区",
+    "name": "乒乓（二）",
+    "teacher": "教师04",
+    "weekday": "周二",
+    "location": "三楼乒乓馆",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [
+      "五年级"
+    ],
+    "source_number": 19
+  },
+  {
+    "id": "benbu-2026s1-east-020",
+    "campus": "东校区",
+    "name": "国画",
+    "teacher": "教师18",
+    "weekday": "周二",
+    "location": "三楼美术教室1",
+    "capacity": 10,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 20
+  },
+  {
+    "id": "benbu-2026s1-east-021",
+    "campus": "东校区",
+    "name": "om社团",
+    "teacher": "教师19",
+    "weekday": "周二",
+    "location": "自然实验室b408",
+    "capacity": 20,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 21
+  },
+  {
+    "id": "benbu-2026s1-east-022",
+    "campus": "东校区",
+    "name": "扑克牌益智社团",
+    "teacher": "教师20",
+    "weekday": "周二",
+    "location": "劳技室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 22
+  },
+  {
+    "id": "benbu-2026s1-east-023",
+    "campus": "东校区",
+    "name": "发明与设计",
+    "teacher": "教师21",
+    "weekday": "周二",
+    "location": "三楼美术教室2",
+    "capacity": 20,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 23
+  },
+  {
+    "id": "benbu-2026s1-east-024",
+    "campus": "东校区",
+    "name": "我们的城市",
+    "teacher": "教师22",
+    "weekday": "周二",
+    "location": "三3班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 24
+  },
+  {
+    "id": "benbu-2026s1-east-025",
+    "campus": "东校区",
+    "name": "羽毛球",
+    "teacher": "教师23",
+    "weekday": "周二",
+    "location": "篮球场",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 25
+  },
+  {
+    "id": "benbu-2026s1-east-026",
+    "campus": "东校区",
+    "name": "木工",
+    "teacher": "教师24",
+    "weekday": "周二",
+    "location": "东二校区",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 26
+  },
+  {
+    "id": "benbu-2026s1-east-027",
+    "campus": "东校区",
+    "name": "艺术创想",
+    "teacher": "教师25",
+    "weekday": "周二",
+    "location": "东部美术教室2",
+    "capacity": 5,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 27
+  },
+  {
+    "id": "benbu-2026s1-east-028",
+    "campus": "东校区",
+    "name": "田径（二）",
+    "teacher": "教师01",
+    "weekday": "周三",
+    "location": "操场",
+    "capacity": 3,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 28
+  },
+  {
+    "id": "benbu-2026s1-east-029",
+    "campus": "东校区",
+    "name": "小记者",
+    "teacher": "教师26",
+    "weekday": "周三",
+    "location": "多元空间教室",
+    "capacity": 4,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 29
+  },
+  {
+    "id": "benbu-2026s1-east-030",
+    "campus": "东校区",
+    "name": "小蜜蜂读书社团",
+    "teacher": "教师27",
+    "weekday": "周三",
+    "location": "图书馆",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 30
+  },
+  {
+    "id": "benbu-2026s1-east-031",
+    "campus": "东校区",
+    "name": "乐高编程",
+    "teacher": "教师28",
+    "weekday": "周三",
+    "location": "东部自然实验室",
+    "capacity": 22,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 31
+  },
+  {
+    "id": "benbu-2026s1-east-032",
+    "campus": "东校区",
+    "name": "腰旗橄榄球社团（三）",
+    "teacher": "教师08",
+    "weekday": "周三",
+    "location": "操场",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 32
+  },
+  {
+    "id": "benbu-2026s1-east-033",
+    "campus": "东校区",
+    "name": "课桌舞社团",
+    "teacher": "教师29",
+    "weekday": "周三",
+    "location": "四8教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 33
+  },
+  {
+    "id": "benbu-2026s1-east-034",
+    "campus": "东校区",
+    "name": "脑力加油站（四）",
+    "teacher": "教师30",
+    "weekday": "周三",
+    "location": "四7教室",
+    "capacity": 30,
+    "note": "以趣味思维拓展为主，需具备一定课内数学基础，愿意主动思考、乐于钻研难题。课堂重在思维探究，欢迎对数学有兴趣，想锻炼逻辑能力的同学踊跃参与。",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级"
+    ],
+    "source_number": 34
+  },
+  {
+    "id": "benbu-2026s1-east-035",
+    "campus": "东校区",
+    "name": "ai趣星球",
+    "teacher": "教师31",
+    "weekday": "周三",
+    "location": "四楼电脑房",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 35
+  },
+  {
+    "id": "benbu-2026s1-east-036",
+    "campus": "东校区",
+    "name": "花样跳绳（三）",
+    "teacher": "教师02",
+    "weekday": "周四",
+    "location": "三楼乒乓馆",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [
+      "一年级",
+      "二年级",
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 36
+  },
+  {
+    "id": "benbu-2026s1-east-037",
+    "campus": "东校区",
+    "name": "AI英语口语社团（三）",
+    "teacher": "教师32",
+    "weekday": "周四",
+    "location": "B503",
+    "capacity": 6,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级"
+    ],
+    "source_number": 37
+  },
+  {
+    "id": "benbu-2026s1-east-038",
+    "campus": "东校区",
+    "name": "脑力加油站（五）",
+    "teacher": "教师33",
+    "weekday": "周四",
+    "location": "五2教室",
+    "capacity": 30,
+    "note": "以趣味思维拓展为主，需具备一定课内数学基础，愿意主动思考、乐于钻研难题。课堂重在思维探究，欢迎对数学有兴趣，想锻炼逻辑能力的同学踊跃参与。",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "五年级"
+    ],
+    "source_number": 38
+  },
+  {
+    "id": "benbu-2026s1-east-039",
+    "campus": "东校区",
+    "name": "体育游戏（女生）",
+    "teacher": "教师34",
+    "weekday": "周四",
+    "location": "三楼体操房",
+    "capacity": 8,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级"
+    ],
+    "source_number": 39
+  },
+  {
+    "id": "benbu-2026s1-east-040",
+    "campus": "东校区",
+    "name": "击剑（二）",
+    "teacher": "教师35",
+    "weekday": "周四",
+    "location": "东校区三楼体育空间",
+    "capacity": 5,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级"
+    ],
+    "source_number": 40
+  },
+  {
+    "id": "benbu-2026s1-east-041",
+    "campus": "东校区",
+    "name": "无人机",
+    "teacher": "教师36",
+    "weekday": "周四",
+    "location": "大队部",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "三年级",
+      "四年级"
+    ],
+    "source_number": 41
+  },
+  {
+    "id": "benbu-2026s1-east-042",
+    "campus": "东校区",
+    "name": "ai赛车",
+    "teacher": "教师37",
+    "weekday": "周一",
+    "location": "五楼赛车教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 42
+  },
+  {
+    "id": "benbu-2026s1-east-043",
+    "campus": "东校区",
+    "name": "点绿长江",
+    "teacher": "教师38",
+    "weekday": "周一",
+    "location": "东校区B404",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 43
+  },
+  {
+    "id": "benbu-2026s1-east-044",
+    "campus": "东校区",
+    "name": "铜管乐",
+    "teacher": "教师39",
+    "weekday": "周三",
+    "location": "东校区一楼音乐、接待、三楼音乐、四楼劳动、自然、党建",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "四年级"
+    ],
+    "source_number": 44
+  },
+  {
+    "id": "benbu-2026s1-east-045",
+    "campus": "东校区",
+    "name": "篮球（一）",
+    "teacher": "教师40",
+    "weekday": "周一",
+    "location": "篮球馆",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 45
+  },
+  {
+    "id": "benbu-2026s1-east-046",
+    "campus": "东校区",
+    "name": "篮球（二）",
+    "teacher": "教师41",
+    "weekday": "周三",
+    "location": "篮球馆",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 46
+  },
+  {
+    "id": "benbu-2026s1-east-047",
+    "campus": "东校区",
+    "name": "合唱",
+    "teacher": "教师42",
+    "weekday": "周一",
+    "location": "一楼音乐室",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 47
+  },
+  {
+    "id": "benbu-2026s1-east-048",
+    "campus": "东校区",
+    "name": "合唱",
+    "teacher": "教师43",
+    "weekday": "周二",
+    "location": "一楼音乐室",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 48
+  },
+  {
+    "id": "benbu-2026s1-east-049",
+    "campus": "东校区",
+    "name": "好小囡舞蹈团",
+    "teacher": "教师44",
+    "weekday": "周三",
+    "location": "三楼体操房",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "三年级",
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 49
+  },
+  {
+    "id": "benbu-2026s1-east-050",
+    "campus": "东校区",
+    "name": "操级先锋",
+    "teacher": "教师45",
+    "weekday": "周一",
+    "location": "三楼体操房",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 50
+  },
+  {
+    "id": "benbu-2026s1-east-051",
+    "campus": "东校区",
+    "name": "操级先锋",
+    "teacher": "教师45",
+    "weekday": "周四",
+    "location": "三楼体操房",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 51
+  },
+  {
+    "id": "benbu-2026s1-east-052",
+    "campus": "东校区",
+    "name": "体育游戏（女生）",
+    "teacher": "教师34",
+    "weekday": "周四",
+    "location": "三楼体操房",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "四年级",
+      "五年级"
+    ],
+    "source_number": 52
+  },
+  {
+    "id": "benbu-2026s1-west-016",
+    "campus": "西校区",
+    "name": "AI英语口语社团（一）",
+    "teacher": "教师46",
+    "weekday": "周一",
+    "location": "多媒体教室",
+    "capacity": 6,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 16
+  },
+  {
+    "id": "benbu-2026s1-west-017",
+    "campus": "西校区",
+    "name": "小小创变家（一到三）",
+    "teacher": "教师47",
+    "weekday": "周一",
+    "location": "二2班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 17
+  },
+  {
+    "id": "benbu-2026s1-west-018",
+    "campus": "西校区",
+    "name": "艺术创想",
+    "teacher": "教师48",
+    "weekday": "周一",
+    "location": "一6班",
+    "capacity": 5,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 18
+  },
+  {
+    "id": "benbu-2026s1-west-019",
+    "campus": "西校区",
+    "name": "脑力加油站（二）",
+    "teacher": "教师49",
+    "weekday": "周一",
+    "location": "二4教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 19
+  },
+  {
+    "id": "benbu-2026s1-west-020",
+    "campus": "西校区",
+    "name": "趣造空间",
+    "teacher": "教师50",
+    "weekday": "周二",
+    "location": "一6班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 20
+  },
+  {
+    "id": "benbu-2026s1-west-021",
+    "campus": "西校区",
+    "name": "小雏鹰篮球社（一）",
+    "teacher": "教师51",
+    "weekday": "周二",
+    "location": "西部篮球场",
+    "capacity": 10,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 21
+  },
+  {
+    "id": "benbu-2026s1-west-022",
+    "campus": "西校区",
+    "name": "电子创新社团（一）",
+    "teacher": "教师05",
+    "weekday": "周三",
+    "location": "西校阶梯教室",
+    "capacity": 8,
+    "note": "材料费820元（自费），动手能力较强，能积极参与比赛与活动",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 22
+  },
+  {
+    "id": "benbu-2026s1-west-023",
+    "campus": "西校区",
+    "name": "小雏鹰篮球社（一）",
+    "teacher": "教师51",
+    "weekday": "周三",
+    "location": "西部篮球场",
+    "capacity": 10,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 23
+  },
+  {
+    "id": "benbu-2026s1-west-024",
+    "campus": "西校区",
+    "name": "击剑（一）",
+    "teacher": "教师35",
+    "weekday": "周三",
+    "location": "西校区",
+    "capacity": 8,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 24
+  },
+  {
+    "id": "benbu-2026s1-west-025",
+    "campus": "西校区",
+    "name": "劳动乐趣多1",
+    "teacher": "教师52",
+    "weekday": "周三",
+    "location": "一5班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 25
+  },
+  {
+    "id": "benbu-2026s1-west-026",
+    "campus": "西校区",
+    "name": "折纸奥秘",
+    "teacher": "教师53",
+    "weekday": "周三",
+    "location": "一2班",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 26
+  },
+  {
+    "id": "benbu-2026s1-west-027",
+    "campus": "西校区",
+    "name": "海底探秘",
+    "teacher": "教师54",
+    "weekday": "周四",
+    "location": "二3教室",
+    "capacity": 25,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 27
+  },
+  {
+    "id": "benbu-2026s1-west-028",
+    "campus": "西校区",
+    "name": "脑力加油站（一）",
+    "teacher": "教师55",
+    "weekday": "周四",
+    "location": "一2教室",
+    "capacity": 30,
+    "note": "",
+    "selection_mode": "selectable",
+    "eligible_grades": [
+      "一年级"
+    ],
+    "source_number": 28
+  },
+  {
+    "id": "benbu-2026s1-west-029",
+    "campus": "西校区",
+    "name": "新闻课堂",
+    "teacher": "教师56",
+    "weekday": "",
+    "location": "一3班教室",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 29
+  },
+  {
+    "id": "benbu-2026s1-west-030",
+    "campus": "西校区",
+    "name": "国际象棋",
+    "teacher": "",
+    "weekday": "",
+    "location": "",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "draft",
+    "eligible_grades": [],
+    "source_number": 30
+  },
+  {
+    "id": "benbu-2026s1-west-031",
+    "campus": "西校区",
+    "name": "低年级舞蹈",
+    "teacher": "教师57",
+    "weekday": "周三",
+    "location": "西校区四楼音乐室",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "一年级",
+      "二年级"
+    ],
+    "source_number": 31
+  },
+  {
+    "id": "benbu-2026s1-west-032",
+    "campus": "西校区",
+    "name": "二年级合唱",
+    "teacher": "教师39",
+    "weekday": "周一",
+    "location": "西校区412",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 32
+  },
+  {
+    "id": "benbu-2026s1-west-033",
+    "campus": "西校区",
+    "name": "跑酷",
+    "teacher": "教师58",
+    "weekday": "周一",
+    "location": "西校区跑酷教室",
+    "capacity": 1,
+    "note": "",
+    "selection_mode": "info_only",
+    "eligible_grades": [
+      "二年级"
+    ],
+    "source_number": 33
+  }
+]

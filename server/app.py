@@ -2262,6 +2262,14 @@ def _ensure_club_signups_table():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )''')
+    course_columns = {row[1] for row in db.execute('PRAGMA table_info(club_course_catalog)').fetchall()}
+    for name, definition in (
+        ('selection_mode', "TEXT NOT NULL DEFAULT 'selectable'"),
+        ('eligible_grades', "TEXT NOT NULL DEFAULT '[]'"),
+        ('source_number', 'INTEGER'),
+    ):
+        if name not in course_columns:
+            db.execute(f'ALTER TABLE club_course_catalog ADD COLUMN {name} {definition}')
     db.execute('''CREATE TABLE IF NOT EXISTS club_signups(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
@@ -2271,19 +2279,41 @@ def _ensure_club_signups_table():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(student_id, course_id, semester)
     )''')
+    signup_columns = {row[1] for row in db.execute('PRAGMA table_info(club_signups)').fetchall()}
+    for name, definition in (
+        ('status', "TEXT NOT NULL DEFAULT 'pending'"),
+        ('confirmed_by', 'TEXT'),
+        ('confirmed_at', 'TEXT'),
+    ):
+        if name not in signup_columns:
+            db.execute(f'ALTER TABLE club_signups ADD COLUMN {name} {definition}')
+    db.execute('''CREATE TABLE IF NOT EXISTS club_admission_windows(
+        semester TEXT NOT NULL,
+        grade TEXT NOT NULL,
+        preview_at TEXT NOT NULL,
+        open_at TEXT NOT NULL,
+        close_at TEXT NOT NULL,
+        published_at TEXT,
+        updated_by TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(semester, grade)
+    )''')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_course ON club_signups(course_id, semester)')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_student ON club_signups(student_id, semester)')
     for sort_order, course in enumerate(COURSES):
         db.execute(
             '''INSERT OR IGNORE INTO club_course_catalog(
                    id, semester, campus, name, teacher, weekday, location,
-                   capacity, note, is_active, sort_order
-               ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)''',
+                   capacity, note, is_active, sort_order, selection_mode,
+                   eligible_grades, source_number
+               ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)''',
             (
                 course['id'], course['semester'], course['campus'],
                 course['name'], course['teacher'], course['weekday'],
                 course['location'], course['capacity'], course.get('note', ''),
-                sort_order,
+                sort_order, course.get('selection_mode', 'selectable'),
+                json.dumps(course.get('eligible_grades', []), ensure_ascii=False),
+                course.get('source_number'),
             )
         )
     db.commit()
@@ -2293,7 +2323,8 @@ def _club_courses_from_db(db, include_inactive=False):
     where = '' if include_inactive else 'AND is_active = 1'
     rows = db.execute(
         f'''SELECT id, semester, campus, name, teacher, weekday, location,
-                   capacity, note, is_active
+                   capacity, note, is_active, selection_mode,
+                   eligible_grades, source_number
             FROM club_course_catalog
             WHERE semester = ? {where}
             ORDER BY sort_order, created_at, id''',
@@ -2306,7 +2337,8 @@ def _club_course_from_db(db, course_id, include_inactive=False):
     active_clause = '' if include_inactive else 'AND is_active = 1'
     row = db.execute(
         f'''SELECT id, semester, campus, name, teacher, weekday, location,
-                   capacity, note, is_active
+                   capacity, note, is_active, selection_mode,
+                   eligible_grades, source_number
             FROM club_course_catalog
             WHERE id = ? AND semester = ? {active_clause}''',
         (course_id, CLUB_SEMESTER)
@@ -2325,21 +2357,101 @@ def _club_general_teacher():
     return user, None
 
 
-def _club_course_payload(course, count=0, include_counts=False):
+CLUB_GRADES = ('一年级', '二年级', '三年级', '四年级', '五年级')
+
+
+def _club_grades(course):
+    raw = course.get('eligible_grades') or '[]'
+    if isinstance(raw, list):
+        values = raw
+    else:
+        try:
+            values = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            values = re.split(r'[,，、\s]+', str(raw))
+    return [grade for grade in CLUB_GRADES if grade in values]
+
+
+def _club_window(db, grade):
+    if not grade:
+        return None
+    row = db.execute(
+        '''SELECT semester, grade, preview_at, open_at, close_at, published_at
+           FROM club_admission_windows WHERE semester = ? AND grade = ?''',
+        (CLUB_SEMESTER, grade)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def _club_datetime(value):
+    try:
+        return datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _club_phase(course, grade, window, now=None):
+    mode = course.get('selection_mode') or 'selectable'
+    if mode == 'draft':
+        return 'draft'
+    if grade and grade not in _club_grades(course):
+        return 'ineligible'
+    if not window:
+        return 'open' if not DISABLE_DEMO and mode == 'selectable' else (
+            'information' if not DISABLE_DEMO and mode == 'info_only' else 'unscheduled'
+        )
+    now = now or datetime.now()
+    preview_at = _club_datetime(window.get('preview_at'))
+    open_at = _club_datetime(window.get('open_at'))
+    close_at = _club_datetime(window.get('close_at'))
+    if not all((preview_at, open_at, close_at)) or now < preview_at:
+        return 'hidden'
+    if mode == 'info_only':
+        return 'information'
+    if window.get('published_at'):
+        return 'published'
+    if now < open_at:
+        return 'preview'
+    if now < close_at:
+        return 'open'
+    return 'review'
+
+
+def _club_phase_message(phase):
+    return {
+        'draft': '资料待补充',
+        'unscheduled': '开放时间待设置',
+        'preview': '社团信息预览中',
+        'open': '正在开放申请',
+        'review': '申请已截止，等待学校确认',
+        'published': '录取结果已发布',
+        'information': '信息展示，无需选课',
+        'ineligible': '不面向当前年级',
+    }.get(phase, '')
+
+
+def _club_course_payload(course, count=0, include_counts=False, phase=None):
     cat = _club_category(course['name'])
     capacity = course['capacity']
     payload = {
         key: value for key, value in course.items()
-        if key not in ('capacity', 'is_active')
+        if key not in ('capacity', 'is_active', 'eligible_grades', 'selection_mode')
     }
+    mode = course.get('selection_mode') or 'selectable'
+    phase = phase or ('draft' if mode == 'draft' else 'unscheduled')
     payload.update({
         'remaining': max(0, capacity - count),
-        'full': count >= capacity,
+        'full': mode == 'selectable' and count >= capacity,
         'cat': cat,
         'ic': _club_emoji(course['name'], cat),
         'time': course['weekday'],
+        'selectionMode': mode,
+        'eligibleGrades': _club_grades(course),
+        'phase': phase,
+        'phaseMessage': _club_phase_message(phase),
+        'canApply': mode == 'selectable' and phase == 'open',
     })
-    if include_counts:
+    if include_counts and mode == 'selectable':
         payload.update({
             'capacity': capacity,
             'count': count,
@@ -2360,6 +2472,128 @@ def _club_signup_user():
     return user, None
 
 
+def _club_user_grade(user, db):
+    if user.get('bound_grade'):
+        return user['bound_grade']
+    if not user.get('bound_id_card'):
+        return None
+    student_table = _students_table(_resolve_campus())
+    if not db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,)
+    ).fetchone():
+        return None
+    row = db.execute(
+        f'SELECT grade_name FROM {student_table} WHERE id_card = ?',
+        (user['bound_id_card'],)
+    ).fetchone()
+    return row['grade_name'] if row else None
+
+
+@app.route('/api/clubs/windows', methods=['GET'])
+def list_club_windows():
+    """总务查看本学期各年级的展示、抢课和发布时间。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    _ensure_club_signups_table()
+    rows = get_db().execute(
+        '''SELECT grade, preview_at, open_at, close_at, published_at
+           FROM club_admission_windows WHERE semester = ? ORDER BY grade''',
+        (CLUB_SEMESTER,)
+    ).fetchall()
+    return jsonify({'semester': CLUB_SEMESTER, 'windows': [dict(row) for row in rows]})
+
+
+@app.route('/api/clubs/windows/<grade>', methods=['PUT'])
+def save_club_window(grade):
+    """总务按年级设置预览、开放和截止时间。"""
+    user, error = _club_general_teacher()
+    if error:
+        return error
+    if grade not in CLUB_GRADES:
+        return jsonify({'error': '年级无效'}), 400
+    data = request.get_json(silent=True) or {}
+    values = {
+        key: str(data.get(key) or '').strip()
+        for key in ('previewAt', 'openAt', 'closeAt')
+    }
+    parsed = [_club_datetime(values[key]) for key in ('previewAt', 'openAt', 'closeAt')]
+    if not all(parsed):
+        return jsonify({'error': '预览、开放和截止时间均为必填'}), 400
+    if not parsed[0] <= parsed[1] < parsed[2]:
+        return jsonify({'error': '时间顺序必须为：预览时间 ≤ 开放时间 < 截止时间'}), 400
+    _ensure_club_signups_table()
+    db = get_db()
+    db.execute(
+        '''INSERT INTO club_admission_windows(
+               semester, grade, preview_at, open_at, close_at,
+               published_at, updated_by, updated_at
+           ) VALUES(?, ?, ?, ?, ?, NULL, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(semester, grade) DO UPDATE SET
+               preview_at = excluded.preview_at,
+               open_at = excluded.open_at,
+               close_at = excluded.close_at,
+               published_at = NULL,
+               updated_by = excluded.updated_by,
+               updated_at = CURRENT_TIMESTAMP''',
+        (
+            CLUB_SEMESTER, grade, values['previewAt'], values['openAt'],
+            values['closeAt'], user['identity'],
+        )
+    )
+    db.commit()
+    return jsonify({'success': True, 'window': _club_window(db, grade)})
+
+
+@app.route('/api/clubs/windows/<grade>/publish', methods=['POST'])
+def publish_club_results(grade):
+    """总务确认并发布一个年级的最终录取结果。"""
+    user, error = _club_general_teacher()
+    if error:
+        return error
+    if grade not in CLUB_GRADES:
+        return jsonify({'error': '年级无效'}), 400
+    _ensure_club_signups_table()
+    db = get_db()
+    window = _club_window(db, grade)
+    if not window:
+        return jsonify({'error': '请先设置该年级的抢课时间'}), 409
+    close_at = _club_datetime(window['close_at'])
+    if not close_at or datetime.now() < close_at:
+        return jsonify({'error': '抢课尚未截止，不能发布结果'}), 409
+    student_table = _students_table(_resolve_campus())
+    table_exists = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,)
+    ).fetchone()
+    if not table_exists:
+        return jsonify({'error': '当前校区学生名册不存在'}), 409
+    published_at = datetime.now().isoformat(timespec='minutes')
+    cursor = db.execute(
+        f'''UPDATE club_signups
+            SET status = 'confirmed', confirmed_by = ?, confirmed_at = ?
+            WHERE semester = ? AND status = 'pending'
+              AND student_id IN (
+                  SELECT id_card FROM {student_table} WHERE grade_name = ?
+              )''',
+        (user['identity'], published_at, CLUB_SEMESTER, grade)
+    )
+    db.execute(
+        '''UPDATE club_admission_windows
+           SET published_at = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE semester = ? AND grade = ?''',
+        (published_at, user['identity'], CLUB_SEMESTER, grade)
+    )
+    db.commit()
+    return jsonify({
+        'success': True,
+        'grade': grade,
+        'confirmed': cursor.rowcount,
+        'publishedAt': published_at,
+    })
+
+
 @app.route('/api/clubs', methods=['GET'])
 def list_clubs():
     """本学期可抢课程目录，附实时报名人数与剩余名额。"""
@@ -2375,22 +2609,36 @@ def list_clubs():
         for row in db.execute(
             '''SELECT course_id, COUNT(*) AS count
                FROM club_signups
-               WHERE semester = ?
+               WHERE semester = ? AND status != 'rejected'
                GROUP BY course_id''',
             (CLUB_SEMESTER,)
         ).fetchall()
     }
     items = []
     campus = (request.args.get('campus') or '').strip()
+    viewer_grade = _club_user_grade(user, db)
+    window = _club_window(db, viewer_grade)
     for course in _club_courses_from_db(db):
         if campus and campus != course['campus']:
+            continue
+        phase = _club_phase(course, viewer_grade, window)
+        if user['role'] == 'parent' and phase in ('hidden', 'draft', 'ineligible', 'unscheduled'):
+            continue
+        if user['role'] == 'teacher' and user.get('sub_role') == 'class' and phase in ('draft', 'ineligible'):
             continue
         items.append(_club_course_payload(
             course,
             counts.get(course['id'], 0),
             include_counts=include_counts,
+            phase=phase,
         ))
-    return jsonify({'clubs': items, 'total': len(items), 'semester': CLUB_SEMESTER})
+    return jsonify({
+        'clubs': items,
+        'total': len(items),
+        'semester': CLUB_SEMESTER,
+        'grade': viewer_grade,
+        'window': window,
+    })
 
 
 @app.route('/api/clubs', methods=['POST'])
@@ -2409,15 +2657,23 @@ def create_club():
     limits = {'campus': 30, 'name': 60, 'teacher': 60, 'weekday': 20, 'location': 80}
     if any(len(fields[key]) > limit for key, limit in limits.items()):
         return jsonify({'error': '社团信息过长，请缩短后重试'}), 400
+    selection_mode = str(data.get('selectionMode') or 'selectable').strip()
+    if selection_mode not in ('selectable', 'info_only', 'draft'):
+        return jsonify({'error': '社团类型无效'}), 400
+    eligible_grades = [
+        grade for grade in data.get('eligibleGrades', []) if grade in CLUB_GRADES
+    ]
+    if not eligible_grades:
+        return jsonify({'error': '至少选择一个适用年级'}), 400
     try:
-        capacity = int(data.get('capacity'))
+        capacity = int(data.get('capacity') or 1)
     except (TypeError, ValueError):
         return jsonify({'error': '人数上限必须是正整数'}), 400
     if capacity < 1 or capacity > 500:
         return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
     note = str(data.get('note') or '').strip()
-    if len(note) > 120:
-        return jsonify({'error': '备注不能超过 120 个字符'}), 400
+    if len(note) > 500:
+        return jsonify({'error': '备注不能超过 500 个字符'}), 400
 
     _ensure_club_signups_table()
     db = get_db()
@@ -2430,12 +2686,14 @@ def create_club():
     db.execute(
         '''INSERT INTO club_course_catalog(
                id, semester, campus, name, teacher, weekday, location,
-               capacity, note, is_active, sort_order
-           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)''',
+               capacity, note, is_active, sort_order, selection_mode,
+               eligible_grades
+           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)''',
         (
             course_id, CLUB_SEMESTER, fields['campus'], fields['name'],
             fields['teacher'], fields['weekday'], fields['location'],
-            capacity, note, sort_order,
+            capacity, note, sort_order, selection_mode,
+            json.dumps(eligible_grades, ensure_ascii=False),
         )
     )
     db.commit()
@@ -2449,18 +2707,11 @@ def create_club():
 
 @app.route('/api/clubs/<course_id>', methods=['PATCH'])
 def update_club_capacity(course_id):
-    """总务老师调整本学期社团人数上限。"""
+    """总务老师调整本学期社团信息。"""
     _, error = _club_general_teacher()
     if error:
         return error
     data = request.get_json(silent=True) or {}
-    try:
-        capacity = int(data.get('capacity'))
-    except (TypeError, ValueError):
-        return jsonify({'error': '人数上限必须是正整数'}), 400
-    if capacity < 1 or capacity > 500:
-        return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
-
     _ensure_club_signups_table()
     db = get_db()
     course = _club_course_from_db(db, course_id)
@@ -2468,18 +2719,55 @@ def update_club_capacity(course_id):
         return jsonify({'error': '社团不存在或已下架'}), 404
     count = db.execute(
         '''SELECT COUNT(*) AS count FROM club_signups
-           WHERE course_id = ? AND semester = ?''',
+           WHERE course_id = ? AND semester = ? AND status != 'rejected' ''',
         (course_id, CLUB_SEMESTER)
     ).fetchone()['count']
-    if capacity < count:
-        return jsonify({
-            'error': f'人数上限不能低于当前已报名人数（{count} 人）'
-        }), 409
+    updates = []
+    params = []
+    if 'capacity' in data:
+        try:
+            capacity = int(data.get('capacity'))
+        except (TypeError, ValueError):
+            return jsonify({'error': '人数上限必须是正整数'}), 400
+        if capacity < 1 or capacity > 500:
+            return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
+        if capacity < count:
+            return jsonify({'error': f'人数上限不能低于当前已提交人数（{count} 人）'}), 409
+        updates.append('capacity = ?')
+        params.append(capacity)
+    for api_name, column, limit in (
+        ('campus', 'campus', 30), ('name', 'name', 60),
+        ('teacher', 'teacher', 60), ('weekday', 'weekday', 20),
+        ('location', 'location', 80), ('note', 'note', 500),
+    ):
+        if api_name in data:
+            value = str(data.get(api_name) or '').strip()
+            if api_name != 'note' and not value:
+                return jsonify({'error': f'{api_name}不能为空'}), 400
+            if len(value) > limit:
+                return jsonify({'error': '社团信息过长，请缩短后重试'}), 400
+            updates.append(f'{column} = ?')
+            params.append(value)
+    if 'selectionMode' in data:
+        mode = str(data.get('selectionMode') or '').strip()
+        if mode not in ('selectable', 'info_only', 'draft'):
+            return jsonify({'error': '社团类型无效'}), 400
+        updates.append('selection_mode = ?')
+        params.append(mode)
+    if 'eligibleGrades' in data:
+        eligible_grades = [grade for grade in data.get('eligibleGrades', []) if grade in CLUB_GRADES]
+        if not eligible_grades:
+            return jsonify({'error': '至少选择一个适用年级'}), 400
+        updates.append('eligible_grades = ?')
+        params.append(json.dumps(eligible_grades, ensure_ascii=False))
+    if not updates:
+        return jsonify({'error': '没有需要更新的社团信息'}), 400
+    params.extend([course_id, CLUB_SEMESTER])
     db.execute(
-        '''UPDATE club_course_catalog
-           SET capacity = ?, updated_at = CURRENT_TIMESTAMP
-           WHERE id = ? AND semester = ? AND is_active = 1''',
-        (capacity, course_id, CLUB_SEMESTER)
+        f'''UPDATE club_course_catalog
+            SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND semester = ? AND is_active = 1''',
+        params
     )
     db.commit()
     course = _club_course_from_db(db, course_id)
@@ -2529,7 +2817,7 @@ def list_club_signup_students(course_id):
     ).fetchone()
     if student_table_exists:
         rows = db.execute(
-            f'''SELECT cs.student_id, cs.created_at,
+            f'''SELECT cs.student_id, cs.created_at, cs.status, cs.confirmed_at,
                        s.name, s.grade_name, s.class_name
                 FROM club_signups cs
                 LEFT JOIN {student_table} s ON s.id_card = cs.student_id
@@ -2539,7 +2827,7 @@ def list_club_signup_students(course_id):
         ).fetchall()
     else:
         rows = db.execute(
-            '''SELECT student_id, created_at,
+            '''SELECT student_id, created_at, status, confirmed_at,
                       NULL AS name, NULL AS grade_name, NULL AS class_name
                FROM club_signups
                WHERE course_id = ? AND semester = ?
@@ -2553,6 +2841,8 @@ def list_club_signup_students(course_id):
         'grade': row['grade_name'] or '',
         'class': row['class_name'] or '',
         'registeredAt': row['created_at'],
+        'status': row['status'],
+        'confirmedAt': row['confirmed_at'],
     } for row in rows]
     return jsonify({
         'course': _club_course_payload(
@@ -2596,7 +2886,7 @@ def list_class_club_signups():
         f'''SELECT s.id_card, s.name,
                    c.id AS course_id, c.name AS course_name,
                    c.teacher AS course_teacher, c.weekday,
-                   c.location, c.campus
+                   c.location, c.campus, cs.status, cs.confirmed_at
             FROM {student_table} s
             LEFT JOIN club_signups cs
               ON cs.student_id = s.id_card AND cs.semester = ?
@@ -2627,6 +2917,8 @@ def list_class_club_signups():
                 'weekday': row['weekday'],
                 'location': row['location'],
                 'campus': row['campus'],
+                'status': row['status'],
+                'confirmedAt': row['confirmed_at'],
             })
 
     return jsonify({
@@ -2636,6 +2928,10 @@ def list_class_club_signups():
         'students': students,
         'totalStudents': len(students),
         'signedStudents': sum(bool(student['clubs']) for student in students),
+        'confirmedStudents': sum(
+            any(club.get('status') == 'confirmed' for club in student['clubs'])
+            for student in students
+        ),
     })
 
 
@@ -2648,7 +2944,7 @@ def club_signups():
     _ensure_club_signups_table()
     db = get_db()
     rows = db.execute(
-        '''SELECT course_id, created_at
+        '''SELECT course_id, created_at, status, confirmed_at
            FROM club_signups
            WHERE student_id = ? AND semester = ?
            ORDER BY created_at, id''',
@@ -2658,7 +2954,19 @@ def club_signups():
     for row in rows:
         course = _club_course_from_db(db, row['course_id'], include_inactive=True)
         if course:
-            signups.append({**course, 'created_at': row['created_at']})
+            grade = _club_user_grade(user, db)
+            window = _club_window(db, grade)
+            published = bool(window and window.get('published_at'))
+            result_status = 'confirmed' if published and row['status'] == 'confirmed' else 'pending'
+            signups.append({
+                **_club_course_payload(
+                    course,
+                    phase=_club_phase(course, grade, window),
+                ),
+                'created_at': row['created_at'],
+                'status': result_status,
+                'confirmedAt': row['confirmed_at'] if result_status == 'confirmed' else None,
+            })
     return jsonify({
         'signups': signups,
         'semester': CLUB_SEMESTER,
@@ -2682,6 +2990,24 @@ def create_club_signup():
         if not course:
             db.rollback()
             return jsonify({'success': False, 'error': '课程不存在或已下架'}), 404
+        grade = _club_user_grade(user, db)
+        if not grade:
+            db.rollback()
+            return jsonify({'success': False, 'error': '学生年级信息缺失，暂时无法提交'}), 409
+        if course.get('selection_mode') != 'selectable':
+            db.rollback()
+            return jsonify({'success': False, 'error': '该社团仅展示信息，不开放选课'}), 409
+        if grade not in _club_grades(course):
+            db.rollback()
+            return jsonify({'success': False, 'error': '该社团不面向当前学生年级'}), 403
+        phase = _club_phase(course, grade, _club_window(db, grade))
+        if phase != 'open':
+            db.rollback()
+            return jsonify({
+                'success': False,
+                'error': _club_phase_message(phase) or '当前不在开放抢课时间',
+                'code': 'CLUB_NOT_OPEN',
+            }), 409
         exists = db.execute(
             '''SELECT 1 FROM club_signups
                WHERE student_id = ? AND course_id = ? AND semester = ?''',
@@ -2689,7 +3015,7 @@ def create_club_signup():
         ).fetchone()
         if exists:
             db.rollback()
-            return jsonify({'success': False, 'error': '该学生已报名这门课程'}), 409
+            return jsonify({'success': False, 'error': '该学生已提交过社团申请'}), 409
 
         conflict = db.execute(
             '''SELECT c.name
@@ -2697,7 +3023,7 @@ def create_club_signup():
                JOIN club_course_catalog c
                  ON c.id = cs.course_id AND c.semester = cs.semester
                WHERE cs.student_id = ? AND cs.semester = ?
-                 AND c.weekday = ?
+                 AND cs.status != 'rejected' AND c.weekday = ?
                LIMIT 1''',
             (user['bound_id_card'], CLUB_SEMESTER, course['weekday'])
         ).fetchone()
@@ -2711,7 +3037,7 @@ def create_club_signup():
 
         student_signup_count = db.execute(
             '''SELECT COUNT(*) AS count FROM club_signups
-               WHERE student_id = ? AND semester = ?''',
+               WHERE student_id = ? AND semester = ? AND status != 'rejected' ''',
             (user['bound_id_card'], CLUB_SEMESTER)
         ).fetchone()['count']
         if student_signup_count >= CLUB_MAX_SIGNUPS_PER_STUDENT:
@@ -2723,7 +3049,8 @@ def create_club_signup():
             }), 409
 
         count = db.execute(
-            'SELECT COUNT(*) AS count FROM club_signups WHERE course_id = ? AND semester = ?',
+            '''SELECT COUNT(*) AS count FROM club_signups
+               WHERE course_id = ? AND semester = ? AND status != 'rejected' ''',
             (course_id, CLUB_SEMESTER)
         ).fetchone()['count']
         if count >= course['capacity']:
@@ -2731,8 +3058,9 @@ def create_club_signup():
             return jsonify({'success': False, 'error': '课程名额已满'}), 409
 
         db.execute(
-            '''INSERT INTO club_signups(student_id, course_id, semester, registered_by)
-               VALUES(?, ?, ?, ?)''',
+            '''INSERT INTO club_signups(
+                   student_id, course_id, semester, registered_by, status
+               ) VALUES(?, ?, ?, ?, 'pending')''',
             (user['bound_id_card'], course_id, CLUB_SEMESTER, user['identity'])
         )
         db.commit()
@@ -2743,8 +3071,8 @@ def create_club_signup():
 
     return jsonify({
         'success': True,
-        'message': '报名成功',
-        'course': _club_course_payload(course, count + 1),
+        'message': '申请已提交，等待学校确认',
+        'status': 'pending',
     }), 201
 
 
@@ -2756,17 +3084,23 @@ def delete_club_signup(course_id):
         return error
     _ensure_club_signups_table()
     db = get_db()
-    if not _club_course_from_db(db, course_id, include_inactive=True):
+    course = _club_course_from_db(db, course_id, include_inactive=True)
+    if not course:
         return jsonify({'success': False, 'error': '课程不存在'}), 404
+    grade = _club_user_grade(user, db)
+    phase = _club_phase(course, grade, _club_window(db, grade))
+    if phase != 'open':
+        return jsonify({'success': False, 'error': '只能在开放抢课期间撤回申请'}), 409
     cursor = db.execute(
         '''DELETE FROM club_signups
-           WHERE student_id = ? AND course_id = ? AND semester = ?''',
+           WHERE student_id = ? AND course_id = ? AND semester = ?
+             AND status = 'pending' ''',
         (user['bound_id_card'], course_id, CLUB_SEMESTER)
     )
     db.commit()
     if cursor.rowcount == 0:
         return jsonify({'success': False, 'error': '没有找到该课程的报名记录'}), 404
-    return jsonify({'success': True, 'message': '已取消报名'})
+    return jsonify({'success': True, 'message': '已撤回申请'})
 
 # ==================== 证书奖项（带扫描件） ====================
 
@@ -4673,6 +5007,52 @@ def _xlsx_simple_table(title, headers, rows):
             ws.cell(row=r_idx, column=c_idx, value=val)
     _auto_width(ws)
     return wb
+
+@app.route('/api/export/class-club.xlsx', methods=['GET'])
+def export_class_club():
+    """班主任：本班学生当前学期社团申请与确认结果。"""
+    user = _current_user()
+    if user['role'] != 'teacher' or user.get('sub_role') != 'class':
+        return jsonify({'error': '仅班主任可下载本班社团名单'}), 403
+    grade = user.get('bound_grade')
+    klass = user.get('bound_class')
+    if not grade or not klass:
+        return jsonify({'error': '班主任账号尚未绑定年级和班级'}), 403
+
+    _ensure_club_signups_table()
+    db = get_db()
+    student_table = _students_table(_resolve_campus())
+    if not db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,),
+    ).fetchone():
+        rows = []
+    else:
+        records = db.execute(
+            f'''SELECT s.id_card, s.name, cs.status,
+                       c.name AS course_name, c.weekday, c.location,
+                       c.teacher AS course_teacher
+                FROM {student_table} s
+                LEFT JOIN club_signups cs
+                  ON cs.student_id = s.id_card AND cs.semester = ?
+                 AND cs.status != 'rejected'
+                LEFT JOIN club_course_catalog c
+                  ON c.id = cs.course_id AND c.semester = cs.semester
+                WHERE s.grade_name = ? AND s.class_name = ?
+                ORDER BY s.name, s.id_card, c.name''',
+            (CLUB_SEMESTER, grade, klass),
+        ).fetchall()
+        status_text = {'pending': '待确认', 'confirmed': '已确认'}
+        rows = [[
+            row['id_card'], row['name'], grade, klass,
+            status_text.get(row['status'], '未提交'),
+            row['course_name'] or '', row['weekday'] or '',
+            row['location'] or '', row['course_teacher'] or '',
+        ] for row in records]
+
+    headers = ['学籍号', '姓名', '年级', '班级', '状态', '社团', '上课时间', '地点', '负责老师']
+    wb = _xlsx_simple_table(f'{grade}{klass}社团', headers, rows)
+    return _xlsx_response(wb, f'{grade}{klass}_{CLUB_SEMESTER}_社团名单.xlsx')
 
 @app.route('/api/export/class-vision.xlsx', methods=['GET'])
 def export_class_vision():
