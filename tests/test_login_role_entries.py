@@ -64,6 +64,21 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertIn("login.html?campus=' + encodeURIComponent(campus)", user_auth)
 
 
+class StudentHomepageIslandVisibilityTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.html = (
+            Path(__file__).resolve().parents[1] / "island-homepage.html"
+        ).read_text(encoding="utf-8")
+
+    def test_student_parent_homepage_exposes_all_six_islands(self):
+        island_keys = ("growth", "interest", "art", "health", "literacy", "labor")
+        for key in island_keys:
+            self.assertIn(f"onclick=\"enterIsland('{key}'", self.html)
+        self.assertEqual(self.html.count('class="hotspot"'), 6)
+        self.assertNotIn('class="hotspot" data-hide-for="parent"', self.html)
+
+
 class DingTalkSourceSafetyTests(unittest.TestCase):
     def test_auth_code_material_is_not_written_to_logs(self):
         source = (
@@ -128,6 +143,15 @@ class DingTalkSourceSafetyTests(unittest.TestCase):
         self.assertNotIn("data.role || 'teacher'", user_auth)
         self.assertIn("!NUTRITION_SESSION_TOKEN", nutrition_common)
         self.assertIn("sessionStorage.getItem('bs_role')", nutrition_common)
+
+    def test_parent_student_requests_reuse_password_session(self):
+        root = Path(__file__).resolve().parents[1]
+        user_auth = (root / "assets" / "user-auth.js").read_text(encoding="utf-8")
+        health = (root / "island-health.html").read_text(encoding="utf-8")
+        self.assertIn("headers: _sessionHeaders()", user_auth)
+        self.assertIn("authHeaders(includeJson){ return _sessionHeaders(includeJson); }", user_auth)
+        self.assertIn("fetch(url, {headers})", health)
+        self.assertNotIn("?role=parent&kid=", health)
 
 
 class IndependentPasswordAuthTests(unittest.TestCase):
