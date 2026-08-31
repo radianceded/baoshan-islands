@@ -81,6 +81,7 @@ class StudentHomepageIslandVisibilityTests(unittest.TestCase):
             self.assertIn(f"onclick=\"enterIsland('{key}'", self.html)
         self.assertEqual(self.html.count('class="hotspot"'), 6)
         self.assertNotIn('class="hotspot" data-hide-for="parent"', self.html)
+        self.assertNotIn("location.replace(`/dingtalk-health?campus=", self.html)
 
 
 class DingTalkSourceSafetyTests(unittest.TestCase):
