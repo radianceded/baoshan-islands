@@ -175,14 +175,7 @@ function hydrateSession(token, user){
 }
 
 function goToApplication(user){
-  if(user.role === 'parent'){
-    const childCode = sessionStorage.getItem('bs_bound_id_card') || user.bound_id_card || user.boundIdCard || '';
-    const params = new URLSearchParams({role:'parent', campus:user.campus || CAMPUS_ID});
-    if(childCode) params.set('childCode', childCode);
-    location.replace(`/nutrition/recommendations.html?${params.toString()}#parentSelection`);
-  } else {
-    location.replace(`island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`);
-  }
+  location.replace(`island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`);
 }
 
 async function restoreSavedLogin(){

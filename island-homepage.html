@@ -759,17 +759,8 @@ function confirmRealKid(){
   applyStudent(StudentRoster.getCurrentIdx(), true);
 })();
 
-// 家长端当前只开放选餐：身份确认后直接进入健康岛选餐页。
 if(window.UserAuth && UserAuth.ready){
-  UserAuth.ready(()=>{
-    syncRoleSwitchButton();
-    if(!(UserAuth.isParent && UserAuth.isParent())) return;
-    const injectedCampus = window.BS_CAMPUS_ID || '';
-    const campus = sessionStorage.getItem('bs_campus')
-      || (injectedCampus.startsWith('__') ? '' : injectedCampus)
-      || 'benbu';
-    location.replace(`/dingtalk-health?campus=${encodeURIComponent(campus)}`);
-  });
+  UserAuth.ready(syncRoleSwitchButton);
 }
 </script>
 

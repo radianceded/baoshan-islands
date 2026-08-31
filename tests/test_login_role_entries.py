@@ -53,7 +53,11 @@ class LoginPageEntryTests(unittest.TestCase):
         self.assertIn("bs_persistent_session_${CAMPUS_ID}", self.html)
         self.assertIn("restoreSavedLogin();", self.html)
         self.assertIn("user.campus !== CAMPUS_ID", self.html)
-        self.assertIn("/nutrition/recommendations.html?${params.toString()}#parentSelection", self.html)
+        self.assertIn(
+            "location.replace(`island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`)",
+            self.html,
+        )
+        self.assertNotIn("/nutrition/recommendations.html?${params.toString()}#parentSelection", self.html)
         self.assertIn("user.campus || CAMPUS_ID", self.html)
 
     def test_logout_clears_persistent_session_for_current_campus(self):
@@ -77,6 +81,7 @@ class StudentHomepageIslandVisibilityTests(unittest.TestCase):
             self.assertIn(f"onclick=\"enterIsland('{key}'", self.html)
         self.assertEqual(self.html.count('class="hotspot"'), 6)
         self.assertNotIn('class="hotspot" data-hide-for="parent"', self.html)
+        self.assertNotIn("location.replace(`/dingtalk-health?campus=", self.html)
 
 
 class DingTalkSourceSafetyTests(unittest.TestCase):
