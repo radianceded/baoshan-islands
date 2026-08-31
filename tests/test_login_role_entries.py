@@ -83,6 +83,14 @@ class StudentHomepageIslandVisibilityTests(unittest.TestCase):
         self.assertNotIn('class="hotspot" data-hide-for="parent"', self.html)
         self.assertNotIn("location.replace(`/dingtalk-health?campus=", self.html)
 
+    def test_cached_login_student_keeps_grade_and_class(self):
+        user_auth = (
+            Path(__file__).resolve().parents[1] / "assets" / "user-auth.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("stu.grade_name || stu.grade", user_auth)
+        self.assertIn("stu.class_name || stu.class", user_auth)
+        self.assertIn("stu.id_card || stu.idCard", user_auth)
+
 
 class DingTalkSourceSafetyTests(unittest.TestCase):
     def test_auth_code_material_is_not_written_to_logs(self):
