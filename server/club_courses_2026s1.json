@@ -69,7 +69,7 @@
     "weekday": "周一",
     "location": "东校区劳动教室",
     "capacity": 5,
-    "note": "材料费835自费，动手能力强，能积极参加比赛活动，且二年级未参加过电子社团的学生",
+    "note": "制作材料需要自费，动手能力强，能积极参加比赛活动，且二年级未参加电子社团的学生",
     "selection_mode": "selectable",
     "eligible_grades": [
       "三年级"
@@ -929,7 +929,7 @@
     "weekday": "周三",
     "location": "西校阶梯教室",
     "capacity": 8,
-    "note": "材料费820元（自费），动手能力较强，能积极参与比赛与活动",
+    "note": "材料需要自费，动手能力较强，能积极参与比赛与活动",
     "selection_mode": "selectable",
     "eligible_grades": [
       "二年级"
