@@ -632,7 +632,9 @@ function showClubDetail(i){
   const pct = canSeeCounts ? Math.round(c.count/c.max*100) : 0;
   const signedCourse = signedCourses.find(item => item.id === c.id);
   const signedLabel = signedCourse && signedCourse.status === 'confirmed' ? '已录取' : '已提交，等待学校确认';
-  const TIPS = [c.note, c.selectionMode === 'info_only' ? '该社团只展示信息，无需选课' : '提交申请后，学校确认并发布最终结果'].filter(Boolean);
+  // 报名须知只展示总务维护的真实内容（note）；info_only 课程额外说明不可选课。
+  // 没有须知内容时整个板块不渲染（提交流程提示在报名成功 toast 与“我的社团申请”中已有）。
+  const TIPS = [c.note, c.selectionMode === 'info_only' ? '该社团只展示信息，无需选课' : ''].filter(Boolean);
   const ACT = ['月初汇报演出','期中联谊活动','参加校外比赛','作品参展','期末展示日'];
   let veil = document.getElementById('clubVeil');
   if(!veil){
@@ -673,12 +675,12 @@ function showClubDetail(i){
         <div style="padding:12px;text-align:center;color:#7BB8DA;font-size:12px;font-weight:700">正在加载报名名单...</div>
       </div>
     </div>` : ''}
-    <div style="margin-top:16px">
+    ${TIPS.length ? `<div style="margin-top:16px">
       <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📌 报名须知</div>
       <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
         ${TIPS.slice(0,3).map(t=>`<li style="background:#FFF6E5;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#7A4F1B;font-weight:600">· ${escapeClubText(t)}</li>`).join('')}
       </ul>
-    </div>
+    </div>` : ''}
     <div style="margin-top:16px">
       <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📅 本学期重要活动</div>
       <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
