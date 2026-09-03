@@ -275,19 +275,24 @@ class CampusDatabaseIsolationTests(unittest.TestCase):
         self.old_paths = (
             server_app.DB_PATH, server_app.AUTH_DB_PATH,
             server_app.BAOLIN_DB_PATH, server_app.BAOLIN_AUTH_DB_PATH,
+            server_app.LUOJING_DB_PATH, server_app.LUOJING_AUTH_DB_PATH,
         )
         server_app.DB_PATH = str(root / 'benbu-students.db')
         server_app.AUTH_DB_PATH = str(root / 'benbu-auth.db')
         server_app.BAOLIN_DB_PATH = str(root / 'baolin-students.db')
         server_app.BAOLIN_AUTH_DB_PATH = str(root / 'baolin-auth.db')
+        server_app.LUOJING_DB_PATH = str(root / 'luojing-students.db')
+        server_app.LUOJING_AUTH_DB_PATH = str(root / 'luojing-auth.db')
         self._seed_campus('benbu', '本部学生')
         self._seed_campus('baolin', '宝林学生')
+        self._seed_campus('luojing', '罗泾学生')
         self.client = server_app.app.test_client()
 
     def tearDown(self):
         (
             server_app.DB_PATH, server_app.AUTH_DB_PATH,
             server_app.BAOLIN_DB_PATH, server_app.BAOLIN_AUTH_DB_PATH,
+            server_app.LUOJING_DB_PATH, server_app.LUOJING_AUTH_DB_PATH,
         ) = self.old_paths
         self.temp_dir.cleanup()
 
@@ -344,6 +349,33 @@ class CampusDatabaseIsolationTests(unittest.TestCase):
         )
         self.assertEqual(me.status_code, 200)
         self.assertEqual(me.get_json()['boundStudent']['displayName'], '宝林学生')
+
+    def test_luojing_token_selects_luojing_auth_and_business_databases(self):
+        response = self.client.post('/api/login', json={
+            'username': 'SHARED-USER', 'password': 'Pass-123',
+            'entry': 'parent', 'campus': 'luojing',
+        })
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['user']['displayName'], '罗泾学生')
+        token_data = json.loads(base64.urlsafe_b64decode(
+            payload['sessionToken'].split('.')[0]
+        ).decode())
+        self.assertEqual(token_data['campus'], 'luojing')
+
+        me = self.client.get(
+            '/api/auth/me?campus=benbu',
+            headers={'Authorization': f"Bearer {payload['sessionToken']}"},
+        )
+        self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.get_json()['boundStudent']['displayName'], '罗泾学生')
+
+        clubs = self.client.get(
+            '/api/clubs',
+            headers={'Authorization': f"Bearer {payload['sessionToken']}"},
+        )
+        self.assertEqual(clubs.status_code, 200)
+        self.assertEqual(clubs.get_json()['clubs'], [])
 
     def test_login_rejects_missing_or_unknown_campus(self):
         base = {'username': 'SHARED-USER', 'password': 'Pass-123', 'entry': 'parent'}

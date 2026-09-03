@@ -222,6 +222,9 @@ AUTH_DB_PATH = os.environ.get('AUTH_DB_PATH') or os.path.join(BASE_DIR, 'auth_ac
 BAOLIN_DATA_DIR = os.environ.get('BAOLIN_DATA_DIR') or os.path.join(BASE_DIR, 'campus_data', 'baolin')
 BAOLIN_DB_PATH = os.environ.get('BAOLIN_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'student_data.db')
 BAOLIN_AUTH_DB_PATH = os.environ.get('BAOLIN_AUTH_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'auth_accounts.db')
+LUOJING_DATA_DIR = os.environ.get('LUOJING_DATA_DIR') or os.path.join(BASE_DIR, 'campus_data', 'luojing')
+LUOJING_DB_PATH = os.environ.get('LUOJING_DB_PATH') or os.path.join(LUOJING_DATA_DIR, 'student_data.db')
+LUOJING_AUTH_DB_PATH = os.environ.get('LUOJING_AUTH_DB_PATH') or os.path.join(LUOJING_DATA_DIR, 'auth_accounts.db')
 ACCOUNT_SESSION_TTL = int(os.environ.get('ACCOUNT_SESSION_TTL', str(90 * 24 * 60 * 60)))
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
 app.config['NUTRITION_ALLOW_DEMO_HEADERS'] = not DISABLE_DEMO
@@ -474,6 +477,8 @@ def _campus_db_path(campus_id, auth=False):
     campus = _valid_campus(campus_id, 'benbu')
     if campus == 'baolin':
         return BAOLIN_AUTH_DB_PATH if auth else BAOLIN_DB_PATH
+    if campus == 'luojing':
+        return LUOJING_AUTH_DB_PATH if auth else LUOJING_DB_PATH
     return AUTH_DB_PATH if auth else DB_PATH
 
 
@@ -2300,7 +2305,10 @@ def _ensure_club_signups_table():
     )''')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_course ON club_signups(course_id, semester)')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_student ON club_signups(student_id, semester)')
-    for sort_order, course in enumerate(COURSES):
+    # The bundled catalog contains the headquarters east/west clubs. Other
+    # campuses start empty and let their general-affairs teacher add courses.
+    seed_courses = COURSES if _resolve_campus() == 'benbu' else ()
+    for sort_order, course in enumerate(seed_courses):
         db.execute(
             '''INSERT OR IGNORE INTO club_course_catalog(
                    id, semester, campus, name, teacher, weekday, location,
