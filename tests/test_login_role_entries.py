@@ -631,6 +631,10 @@ class NutritionRoleViewTests(unittest.TestCase):
     def test_meal_views_use_published_service_days_instead_of_forcing_fourteen(self):
         self.assertIn("let _pmRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]}", self.health_html)
         self.assertIn("_pmRequiredDays[parity].map", self.health_html)
+        self.assertIn(
+            "fetch(`/api/menus?week=${wk}`, {headers: mealChoiceAuthHeaders()})",
+            self.health_html,
+        )
         self.assertIn("data.requiredDays?.odd", self.health_html)
         self.assertIn("let ctRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]}", self.recommendations_html)
         self.assertIn("data.requiredDays?.odd", self.recommendations_html)

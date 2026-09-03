@@ -1822,7 +1822,7 @@ async function fetchMenuImages(wkOdd, wkEven){
   _pmRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
   for(const [parity, wk, bg] of [['odd',wkOdd,'#FFD86A'],['even',wkEven,'#7BC8E8']]){
     try {
-      const r = await fetch(`/api/menus?week=${wk}`);
+      const r = await fetch(`/api/menus?week=${wk}`, {headers: mealChoiceAuthHeaders()});
       const data = await r.json();
       const m = (data.menus || []).find(x => x.parity === parity);
       const hasPublishedDays = Boolean(m && Array.isArray(m.service_days) && m.service_days.length);
