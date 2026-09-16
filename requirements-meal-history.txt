@@ -1,0 +1,2 @@
+# Image validation, EXIF orientation cleanup and preview generation.
+Pillow==12.3.0

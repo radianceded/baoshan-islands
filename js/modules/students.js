@@ -109,12 +109,12 @@ const StudentModule = (function() {
     const AI_CONFIG = {
         provider: 'baidu',
         baidu: {
-            apiKey: '',  // key 已移至服务端，不再硬编码
+            apiKey: ''  // key 已移至服务端，不再硬编码,
             baseUrl: 'https://qianfan.baidubce.com/v2',
             model: 'ernie-5.0-thinking-preview-8k'
         },
         siliconflow: {
-            apiKey: '',
+            apiKey: 'YOUR_API_KEY_HERE',
             baseUrl: 'https://api.siliconflow.cn/v1',
             model: 'Qwen/Qwen2.5-7B-Instruct'
         },

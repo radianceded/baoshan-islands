@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-宝山学习群岛 · 证书扫描件批量导入
+宝小学生画像 · 证书扫描件批量导入
 
 把 *年级.zip 处理成 assets/award-certs 下的图片 + assets/cert_awards.json 数据集。
 

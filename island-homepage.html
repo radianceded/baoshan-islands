@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>上海市宝山区实验小学教育集团 · 学习群岛</title>
+<title>上海市宝山区实验小学教育集团 · 宝小学生画像</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased}
@@ -364,7 +364,7 @@
 <!-- ════════ 身份选择 overlay（无 sessionStorage 角色时显示） ════════ -->
 <div class="role-veil" id="roleVeil">
   <div class="role-modal">
-    <h1>🌊 快乐学习群岛</h1>
+    <h1>🌊 宝小学生画像</h1>
     <div class="sub">请选择你的身份继续</div>
 
     <!-- 步骤 1：老师 vs 家长 -->
@@ -456,7 +456,7 @@
 </div>
 
 <div class="stage">
-  <img class="islands-bg" src="assets/islands-homepage-v2.png?v=20260804" alt="学习群岛">
+  <img class="islands-bg" src="assets/islands-homepage-v2.png?v=20260804" alt="宝小学生画像">
 
   <!-- 招牌点击区（上排：档案、活动；下排：健康、阅读、成就） -->
   <div class="hotspot" style="left:22%; top:33%;" onclick="enterIsland('growth', '成长岛', '🩷')">
@@ -618,13 +618,15 @@ function spawnVeilStars(){
   }
 }
 function doLogout(){
-  if(!confirm('退出登录后需要重新输入账号密码，确认退出吗？')) return;
-  if(window.UserAuth && UserAuth.signOut){
-    UserAuth.signOut();   // 清 session + 跳 login.html
+  if(window.UserAuth && UserAuth.logout){
+    UserAuth.logout();    // 带确认（钉钉内直接退，webview 会吞 confirm）+ 清 session + 跳 login.html
   } else {
     // 兜底：手动清
+    const requestedCampus = sessionStorage.getItem('bs_campus') || window.BS_CAMPUS_ID || new URLSearchParams(location.search).get('campus') || 'benbu';
+    const campus = ['benbu','baolin','luojing'].includes(requestedCampus) ? requestedCampus : 'benbu';
+    ['benbu','baolin','luojing'].forEach(c => localStorage.removeItem('bs_persistent_session_' + c));
     ['bs_role','bs_sub_role','bs_bound_idx','bs_bound_grade','bs_bound_class','bs_kid_name','bs_session_token','bs_user_nick','bs_user_avatar'].forEach(k => sessionStorage.removeItem(k));
-    location.href = 'login.html';
+    location.href = 'login.html?campus=' + encodeURIComponent(campus) + '&manual=1';
   }
 }
 

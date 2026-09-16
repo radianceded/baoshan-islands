@@ -14,6 +14,7 @@ import base64
 import ssl
 import hashlib
 import secrets
+import threading
 from datetime import datetime, timedelta
 from functools import wraps
 from urllib.parse import quote
@@ -21,7 +22,7 @@ from urllib.request import Request, urlopen
 from urllib import error as urllib_error
 from flask import Flask, jsonify, request, g, make_response, send_from_directory, session, redirect, has_request_context
 from flask_cors import CORS
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 try:
     from .club_courses import COURSES, SEMESTER as CLUB_SEMESTER
@@ -182,6 +183,10 @@ def _get_campus_dt(campus_id):
         'corpId': corp_id,
         'school_name': school_name,
         'name': campus.get('name', campus_id),
+        # 工作通知必需；此前未透出该字段导致 campus_config.json 配了也取不到
+        'agentId': campus.get('agentId') or os.environ.get('DINGTALK_AGENT_ID', ''),
+        # 抢课事件通知的总务钉钉 userId 列表（可选覆盖，默认用内置名单）
+        'clubNotifyUserIds': campus.get('clubNotifyUserIds') or [],
     }
 
 
@@ -222,6 +227,9 @@ AUTH_DB_PATH = os.environ.get('AUTH_DB_PATH') or os.path.join(BASE_DIR, 'auth_ac
 BAOLIN_DATA_DIR = os.environ.get('BAOLIN_DATA_DIR') or os.path.join(BASE_DIR, 'campus_data', 'baolin')
 BAOLIN_DB_PATH = os.environ.get('BAOLIN_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'student_data.db')
 BAOLIN_AUTH_DB_PATH = os.environ.get('BAOLIN_AUTH_DB_PATH') or os.path.join(BAOLIN_DATA_DIR, 'auth_accounts.db')
+LUOJING_DATA_DIR = os.environ.get('LUOJING_DATA_DIR') or os.path.join(BASE_DIR, 'campus_data', 'luojing')
+LUOJING_DB_PATH = os.environ.get('LUOJING_DB_PATH') or os.path.join(LUOJING_DATA_DIR, 'student_data.db')
+LUOJING_AUTH_DB_PATH = os.environ.get('LUOJING_AUTH_DB_PATH') or os.path.join(LUOJING_DATA_DIR, 'auth_accounts.db')
 ACCOUNT_SESSION_TTL = int(os.environ.get('ACCOUNT_SESSION_TTL', str(90 * 24 * 60 * 60)))
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
 app.config['NUTRITION_ALLOW_DEMO_HEADERS'] = not DISABLE_DEMO
@@ -474,6 +482,8 @@ def _campus_db_path(campus_id, auth=False):
     campus = _valid_campus(campus_id, 'benbu')
     if campus == 'baolin':
         return BAOLIN_AUTH_DB_PATH if auth else BAOLIN_DB_PATH
+    if campus == 'luojing':
+        return LUOJING_AUTH_DB_PATH if auth else LUOJING_DB_PATH
     return AUTH_DB_PATH if auth else DB_PATH
 
 
@@ -953,7 +963,8 @@ def _env_userid_set(name):
 # 真实教师 UserID 只在部署环境配置，不进入公开仓库。
 GENERAL_TEACHER_BY_USERID = _env_userid_set('GENERAL_TEACHER_USERIDS')
 
-# 本部班主任/家长双身份切换白名单。
+# 本部班主任/家长双身份切换白名单。只使用钉钉教师 userId 精确匹配，
+# 不使用姓名推断，避免同名教师获得错误权限。
 BENBU_DUAL_ROLE_TEACHER_USERIDS = _env_userid_set('BENBU_DUAL_ROLE_TEACHER_USERIDS')
 
 # 班主任识别：class_teachers_* 表。
@@ -966,6 +977,44 @@ def _class_teachers_table(campus_id=None):
     if campus_id == 'baolin':
         return 'class_teachers_baolin'
     return 'class_teachers_benbu'
+
+def _locate_auth_account(username, campus):
+    """宽容定位账号：先在请求校区精确匹配，再忽略大小写；仍未命中则跨校区找
+    唯一命中。手机键盘自动首字母大写和家长点错校区链接是账密登录失败的两大
+    高频原因，这里兜底后家长无需再找管理员。歧义（同库大小写重名、多校区
+    同名）一律不猜，维持原"账号或密码错误"。
+    返回 (row, campus, db)；定位失败时 row=None，campus/db 为请求校区的。"""
+    db = get_auth_db(campus)
+    row = db.execute(
+        'SELECT * FROM auth_accounts WHERE username=? AND campus_id=?',
+        (username, campus),
+    ).fetchone()
+    if row:
+        return row, campus, db
+    rows = db.execute(
+        'SELECT * FROM auth_accounts WHERE username=? COLLATE NOCASE AND campus_id=?',
+        (username, campus),
+    ).fetchall()
+    if len(rows) == 1:
+        return rows[0], campus, db
+    if not rows:
+        hits = []
+        for other in sorted(ALLOWED_CAMPUSES - {campus}):
+            try:
+                odb = get_auth_db(other)
+            except sqlite3.Error:
+                continue
+            orows = odb.execute(
+                'SELECT * FROM auth_accounts WHERE username=? COLLATE NOCASE AND campus_id=?',
+                (username, other),
+            ).fetchall()
+            if orows:
+                hits.append((orows, other, odb))
+        if len(hits) == 1 and len(hits[0][0]) == 1:
+            app.logger.info('[登录] 跨校区定位: %s -> %s', username, hits[0][1])
+            return hits[0][0][0], hits[0][1], hits[0][2]
+    return None, campus, db
+
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -982,11 +1031,7 @@ def login():
     if entry and entry not in LOGIN_ENTRY_ROLES:
         return jsonify({'success': False, 'error': '登录身份入口无效'}), 400
     try:
-        db = get_auth_db(campus)
-        row = db.execute(
-            'SELECT * FROM auth_accounts WHERE username=? AND campus_id=?',
-            (username, campus),
-        ).fetchone()
+        row, campus, db = _locate_auth_account(username, campus)
     except sqlite3.Error:
         app.logger.exception('独立认证库不可用')
         return jsonify({'success': False, 'error': '登录服务暂不可用'}), 503
@@ -1026,6 +1071,7 @@ def login():
         'displayName':  row['display_name'],
         'bound_student_userid': row['bound_student_userid'],
         'campus': campus,
+        'mustChangePassword': bool(row['must_change_password']) if 'must_change_password' in row.keys() else False,
     }
     db.execute(
         'UPDATE auth_accounts SET failed_attempts=0, locked_until=NULL, last_login_at=CURRENT_TIMESTAMP WHERE id=?',
@@ -1043,6 +1089,705 @@ def login():
         'sessionToken': session_token,
         'user': user,
     })
+
+
+# ==================== 账密 ↔ 钉钉 id 绑定免登 ====================
+# 家长用账密登录（含首登改密）后，把当前钉钉 userId 绑到账号；
+# 之后在任何设备的钉钉里打开页面都自动登录，无需再输账密。
+
+def _ensure_dingtalk_userid_column(adb):
+    try:
+        cols = {r[1] for r in adb.execute('PRAGMA table_info(auth_accounts)').fetchall()}
+        if cols and 'dingtalk_userid' not in cols:
+            adb.execute('ALTER TABLE auth_accounts ADD COLUMN dingtalk_userid TEXT')
+            adb.commit()
+    except sqlite3.Error:
+        pass
+
+
+def _account_session_response(row, campus, db):
+    """按 /api/login 成功分支的同一结构签发会话（复用于钉钉绑定免登）。"""
+    user = {
+        'role':         row['role'],
+        'sub_role':     row['sub_role'],
+        'bound_id_card': row['bound_id_card'],
+        'bound_grade':  row['bound_grade'],
+        'bound_class':  row['bound_class'],
+        'kid_name':     row['display_name'] if row['role'] == 'parent' else None,
+        'demo_idx':     None,
+        'displayName':  row['display_name'],
+        'bound_student_userid': row['bound_student_userid'],
+        'campus': campus,
+        'mustChangePassword': bool(row['must_change_password']) if 'must_change_password' in row.keys() else False,
+    }
+    db.execute(
+        'UPDATE auth_accounts SET failed_attempts=0, locked_until=NULL, last_login_at=CURRENT_TIMESTAMP WHERE id=?',
+        (row['id'],),
+    )
+    db.commit()
+    session_token = _sign_session({
+        'accountId': row['id'],
+        'authVersion': row['auth_version'],
+        'campus': campus,
+        'exp': int(time.time()) + ACCOUNT_SESSION_TTL,
+    })
+    return jsonify({'success': True, 'sessionToken': session_token, 'user': user})
+
+
+@app.route('/api/auth/dingtalk-bind-config', methods=['GET'])
+def dingtalk_bind_config():
+    """前端探测：该校区钉钉免登是否可用 + JSAPI 所需 corpId。"""
+    campus = _valid_campus(request.args.get('campus'), 'benbu')
+    dt = _get_campus_dt(campus)
+    enabled = bool(dt.get('appKey') and dt.get('appSecret') and dt.get('corpId'))
+    return jsonify({'enabled': enabled, 'corpId': dt.get('corpId') if enabled else ''})
+
+
+@app.route('/api/auth/dingtalk-bind', methods=['POST'])
+def dingtalk_bind_account():
+    """登录态下把当前钉钉身份绑到账号：此后该钉钉用户任何设备免输账密。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'success': False, 'error': '登录已失效'}), 401
+    auth_code = ((request.get_json() or {}).get('authCode') or '').strip()
+    if not auth_code:
+        return jsonify({'success': False, 'error': 'authCode required'}), 400
+    dt = _get_campus_dt(campus)
+    if not (dt.get('appKey') and dt.get('appSecret')):
+        return jsonify({'success': False, 'error': '该校区未配置钉钉'}), 503
+    info = _exchange_auth_code_via_accesstoken(dt['appKey'], dt['appSecret'], auth_code)
+    if not info or not info.get('userId'):
+        return jsonify({'success': False, 'error': '钉钉身份校验失败'}), 502
+    _ensure_dingtalk_userid_column(db)
+    db.execute('UPDATE auth_accounts SET dingtalk_userid=? WHERE id=?',
+               (info['userId'], row['id']))
+    db.commit()
+    app.logger.info('[钉钉绑定] account=%s campus=%s userId=%s', row['id'], campus, info['userId'])
+    return jsonify({'success': True, 'nick': info.get('nick', '')})
+
+
+@app.route('/api/auth/dingtalk-token-login', methods=['POST'])
+def dingtalk_token_login():
+    """钉钉内免登：authCode → userId → 已绑定账号直接发会话。
+       仅放行已用账密绑定过的账号（区别于被 PASSWORD_LOGIN_ONLY 关闭的旧通道）。"""
+    data = request.get_json() or {}
+    auth_code = (data.get('authCode') or '').strip()
+    campus = _valid_campus(data.get('campus'), 'benbu')
+    if not auth_code:
+        return jsonify({'success': False, 'error': 'authCode required'}), 400
+    dt = _get_campus_dt(campus)
+    if not (dt.get('appKey') and dt.get('appSecret')):
+        return jsonify({'success': False, 'error': '该校区未配置钉钉'}), 503
+    info = _exchange_auth_code_via_accesstoken(dt['appKey'], dt['appSecret'], auth_code)
+    if not info or not info.get('userId'):
+        return jsonify({'success': False, 'error': '钉钉身份校验失败'}), 502
+    try:
+        db = get_auth_db(campus)
+    except sqlite3.Error:
+        return jsonify({'success': False, 'error': '登录服务暂不可用'}), 503
+    _ensure_dingtalk_userid_column(db)
+    rows = db.execute(
+        'SELECT * FROM auth_accounts WHERE dingtalk_userid=? AND campus_id=? AND is_active=1 '
+        'ORDER BY (last_login_at IS NULL), last_login_at DESC, id DESC',
+        (info['userId'], campus)).fetchall()
+    if not rows:
+        return jsonify({'success': False, 'error': '该钉钉账号尚未绑定，请先用账号密码登录一次'}), 404
+    row = rows[0]
+    app.logger.info('[钉钉免登] account=%s campus=%s userId=%s (绑定账号数=%d)',
+                    row['id'], campus, info['userId'], len(rows))
+    return _account_session_response(row, campus, db)
+
+
+@app.route('/api/auth/my-accounts', methods=['GET'])
+def auth_my_accounts():
+    """多孩家庭：列出与当前账号绑定同一钉钉身份的全部账号（含自己）。
+       未绑定钉钉的账号只看到自己——先在钉钉里登录一次即可完成绑定。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'error': '登录已失效'}), 401
+    _ensure_dingtalk_userid_column(db)
+    keys = row.keys()
+    dt_uid = row['dingtalk_userid'] if 'dingtalk_userid' in keys else None
+    if dt_uid:
+        rows = db.execute(
+            'SELECT * FROM auth_accounts WHERE dingtalk_userid=? AND campus_id=? AND is_active=1 '
+            'ORDER BY bound_grade, bound_class, display_name',
+            (dt_uid, campus)).fetchall()
+    else:
+        rows = [row]
+    return jsonify({'accounts': [{
+        'accountId': r['id'],
+        'displayName': r['display_name'],
+        'role': r['role'],
+        'subRole': r['sub_role'],
+        'grade': r['bound_grade'],
+        'className': r['bound_class'],
+        'current': r['id'] == row['id'],
+    } for r in rows]})
+
+
+@app.route('/api/auth/switch-account', methods=['POST'])
+def auth_switch_account():
+    """多孩家庭：切到同一钉钉身份绑定的另一个账号（免密，发放新会话）。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'error': '登录已失效'}), 401
+    target_id = (request.get_json() or {}).get('accountId')
+    if not target_id:
+        return jsonify({'error': 'accountId required'}), 400
+    _ensure_dingtalk_userid_column(db)
+    keys = row.keys()
+    dt_uid = row['dingtalk_userid'] if 'dingtalk_userid' in keys else None
+    if not dt_uid:
+        return jsonify({'error': '当前账号未绑定钉钉，请先在钉钉里登录一次再切换'}), 403
+    target = db.execute(
+        'SELECT * FROM auth_accounts WHERE id=? AND campus_id=? AND is_active=1',
+        (target_id, campus)).fetchone()
+    if not target or (target['dingtalk_userid'] if 'dingtalk_userid' in target.keys() else None) != dt_uid:
+        return jsonify({'error': '目标账号不可切换（不属于同一位家长）'}), 403
+    app.logger.info('[切换账号] %s → %s (钉钉 %s)', row['username'], target['username'], dt_uid)
+    return _account_session_response(target, campus, db)
+
+
+# ==================== 账号自助管理（退出 / 改密码 / 改账号名） ====================
+
+PASSWORD_MIN_LEN = 8
+USERNAME_RE = re.compile(r'^[A-Za-z0-9_一-龥]{3,32}$')
+
+
+def _current_account():
+    """从 Bearer 令牌解析出账号密码体系的账户行。
+    返回 (row, campus, db)；非账号会话、令牌过期或 auth_version 不匹配时返回 (None, None, None)。"""
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return None, None, None
+    info = _verify_session(auth[7:])
+    if not info or not info.get('accountId'):
+        return None, None, None
+    campus = _valid_campus(info.get('campus'), 'benbu')
+    try:
+        db = get_auth_db(campus)
+        row = db.execute(
+            'SELECT * FROM auth_accounts WHERE id=? AND campus_id=? AND is_active=1',
+            (info['accountId'], campus),
+        ).fetchone()
+    except sqlite3.Error:
+        app.logger.exception('独立认证库不可用')
+        return None, None, None
+    if not row or int(info.get('authVersion') or 0) != int(row['auth_version'] or 0):
+        return None, None, None
+    return row, campus, db
+
+
+def _password_policy_error(pwd, username=''):
+    """返回密码强度问题描述；合规返回 None。面向小学家长，只强制长度 + 字母数字混合。"""
+    if len(pwd) < PASSWORD_MIN_LEN:
+        return f'新密码至少 {PASSWORD_MIN_LEN} 位'
+    if not re.search(r'[A-Za-z]', pwd) or not re.search(r'\d', pwd):
+        return '新密码需同时包含字母和数字'
+    if username and pwd == username:
+        return '新密码不能与账号名相同'
+    return None
+
+
+def _bump_login_failure(db, row, now):
+    """密码验证失败时累计失败次数，连续 5 次锁定 15 分钟。"""
+    failures = int(row['failed_attempts'] or 0) + 1
+    locked_until = now + 15 * 60 if failures >= 5 else None
+    db.execute(
+        'UPDATE auth_accounts SET failed_attempts=?, locked_until=? WHERE id=?',
+        (0 if locked_until else failures, locked_until, row['id']),
+    )
+    db.commit()
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """退出登录：auth_version+1 作废该账户已签发的所有令牌。幂等，无有效会话也返回成功。"""
+    row, campus, db = _current_account()
+    if row:
+        db.execute(
+            'UPDATE auth_accounts SET auth_version = COALESCE(auth_version, 0) + 1 WHERE id=?',
+            (row['id'],),
+        )
+        db.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/api/auth/change-password', methods=['POST'])
+def auth_change_password():
+    """自助修改密码：验旧密 + 强度校验；成功后 auth_version+1 并签发新令牌（其他设备全部下线）。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'success': False, 'error': '登录已失效，请重新登录'}), 401
+    data = request.get_json() or {}
+    old_pwd = (data.get('oldPassword') or '').strip()
+    new_pwd = (data.get('newPassword') or '').strip()
+    if not old_pwd or not new_pwd:
+        return jsonify({'success': False, 'error': '请输入原密码和新密码'}), 400
+    now = int(time.time())
+    if row['locked_until'] and int(row['locked_until']) > now:
+        return jsonify({'success': False, 'error': '尝试次数过多，请15分钟后再试'}), 429
+    if not check_password_hash(row['password_hash'], old_pwd):
+        _bump_login_failure(db, row, now)
+        return jsonify({'success': False, 'error': '原密码不正确'}), 401
+    err = _password_policy_error(new_pwd, row['username'])
+    if err:
+        return jsonify({'success': False, 'error': err}), 400
+    if old_pwd == new_pwd:
+        return jsonify({'success': False, 'error': '新密码不能与原密码相同'}), 400
+    new_version = int(row['auth_version'] or 0) + 1
+    has_flag_col = 'must_change_password' in row.keys()
+    if has_flag_col:
+        db.execute(
+            '''UPDATE auth_accounts SET password_hash=?, auth_version=?, must_change_password=0,
+               failed_attempts=0, locked_until=NULL WHERE id=?''',
+            (generate_password_hash(new_pwd), new_version, row['id']),
+        )
+    else:
+        db.execute(
+            '''UPDATE auth_accounts SET password_hash=?, auth_version=?,
+               failed_attempts=0, locked_until=NULL WHERE id=?''',
+            (generate_password_hash(new_pwd), new_version, row['id']),
+        )
+    db.commit()
+    session_token = _sign_session({
+        'accountId': row['id'],
+        'authVersion': new_version,
+        'campus': campus,
+        'exp': now + ACCOUNT_SESSION_TTL,
+    })
+    app.logger.info('[账号自助] account=%s campus=%s 修改密码成功', row['id'], campus)
+    return jsonify({'success': True, 'sessionToken': session_token})
+
+
+@app.route('/api/auth/skip-password-change', methods=['POST'])
+def auth_skip_password_change():
+    """首登面板「暂不修改」：清除强改密标志，密码保持不变（选择跳过后不再反复提醒）。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'success': False, 'error': '登录已失效，请重新登录'}), 401
+    if 'must_change_password' in row.keys():
+        db.execute('UPDATE auth_accounts SET must_change_password=0 WHERE id=?', (row['id'],))
+        db.commit()
+    app.logger.info('[账号自助] account=%s campus=%s 跳过首登改密', row['id'], campus)
+    return jsonify({'success': True})
+
+
+def _ensure_initial_password_column(adb):
+    """认证库迁移：补 initial_password_hash 列（发放单初始密码，永不被家长自改覆盖）。
+       首次补列时把当前密码回填为初始密码——未改过密的账号即发放密码。"""
+    try:
+        cols = {r[1] for r in adb.execute('PRAGMA table_info(auth_accounts)').fetchall()}
+        if cols and 'initial_password_hash' not in cols:
+            adb.execute('ALTER TABLE auth_accounts ADD COLUMN initial_password_hash TEXT')
+            adb.execute('UPDATE auth_accounts SET initial_password_hash = password_hash '
+                        'WHERE initial_password_hash IS NULL')
+            adb.commit()
+    except sqlite3.Error:
+        pass
+
+
+@app.route('/api/auth/recover-by-initial', methods=['POST'])
+def auth_recover_by_initial():
+    """忘记密码：凭发放单上的初始密码验证身份后重设密码（无需登录态）。
+       改密后初始密码仍然有效于找回，发放单永远是最后的钥匙。"""
+    data = request.get_json() or {}
+    username = (data.get('username') or '').replace('​', '').strip()
+    initial_pwd = (data.get('initialPassword') or '').strip()
+    new_pwd = (data.get('newPassword') or '').strip()
+    campus = _valid_campus(data.get('campus'))
+    if not username or not initial_pwd or not new_pwd:
+        return jsonify({'success': False, 'error': '请填写账号、初始密码和新密码'}), 400
+    if not campus:
+        return jsonify({'success': False, 'error': '校区无效'}), 400
+    try:
+        row, campus, adb = _locate_auth_account(username, campus)
+    except sqlite3.Error:
+        return jsonify({'success': False, 'error': '服务暂不可用'}), 503
+    _ensure_initial_password_column(adb)
+    if row is not None:
+        # 定位可能发生在 ensure 之前，按 id 重取保证行携带 initial_password_hash 列
+        row = adb.execute('SELECT * FROM auth_accounts WHERE id=?', (row['id'],)).fetchone()
+    now = int(time.time())
+    if not row or not row['is_active']:
+        return jsonify({'success': False, 'error': '账号或初始密码错误'}), 401
+    if row['locked_until'] and int(row['locked_until']) > now:
+        return jsonify({'success': False, 'error': '尝试次数过多，请15分钟后再试'}), 429
+    if not check_password_hash(row['initial_password_hash'] or '', initial_pwd):
+        _bump_login_failure(adb, row, now)
+        return jsonify({'success': False, 'error': '账号或初始密码错误'}), 401
+    err = _password_policy_error(new_pwd, row['username'])
+    if err:
+        return jsonify({'success': False, 'error': err}), 400
+    adb.execute('UPDATE auth_accounts SET password_hash=?, must_change_password=0, '
+                'auth_version=?, failed_attempts=0, locked_until=NULL WHERE id=?',
+                (generate_password_hash(new_pwd), int(row['auth_version'] or 0) + 1, row['id']))
+    adb.commit()
+    app.logger.info('[找回密码] account=%s campus=%s 凭初始密码重置成功', row['id'], campus)
+    return jsonify({'success': True, 'message': '密码已重置，请用新密码登录'})
+
+
+# ==================== 总务 · 学生与选餐账号管理 ====================
+
+_PWD_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'   # 去易混淆字符
+
+
+def _gen_temp_password(n=8):
+    return ''.join(secrets.choice(_PWD_ALPHABET) for _ in range(n))
+
+
+def _require_general_teacher():
+    """返回 (user, campus)；非总务/管理员返回 (None, None)"""
+    u = _current_user()
+    ok = u['role'] == 'admin' or (u['role'] == 'teacher' and u.get('sub_role') == 'general')
+    if not ok:
+        return None, None
+    campus = _valid_campus(u.get('campus'), 'benbu') if isinstance(u, dict) else 'benbu'
+    return u, campus
+
+
+def _roster_operator():
+    """学生账号管理的操作人：返回 (user, campus, scope)。
+       总务/管理员 scope=None（全校）；班主任 scope=(本班年级, 本班班级)；其余 (None, None, None)。"""
+    u = _current_user()
+    campus = _valid_campus(u.get('campus'), 'benbu') if isinstance(u, dict) else 'benbu'
+    if u['role'] == 'admin' or (u['role'] == 'teacher' and u.get('sub_role') == 'general'):
+        return u, campus, None
+    if (u['role'] == 'teacher' and u.get('sub_role') == 'class'
+            and u.get('bound_grade') and u.get('bound_class')):
+        return u, campus, (u['bound_grade'], u['bound_class'])
+    return None, None, None
+
+
+def _roster_scope_allows(scope, grade, class_name):
+    return scope is None or (scope[0] == grade and scope[1] == class_name)
+
+
+def _roster_student_in_scope(campus, student_uid, scope):
+    """目标学生是否属于班主任 scope 的班级"""
+    if scope is None:
+        return True
+    db = get_db(campus)
+    table = _students_table(campus)
+    cols = _table_columns(db, table)
+    if 'dingtalk_userid' in cols and 'id_card' in cols:
+        row = db.execute('SELECT grade_name, class_name FROM %s '
+                         'WHERE dingtalk_userid=? OR id_card=?' % table,
+                         (student_uid, student_uid)).fetchone()
+    else:
+        id_col = 'dingtalk_userid' if 'dingtalk_userid' in cols else 'id_card'
+        row = db.execute('SELECT grade_name, class_name FROM %s WHERE %s=?' % (table, id_col),
+                         (student_uid,)).fetchone()
+    return bool(row and row['grade_name'] == scope[0] and row['class_name'] == scope[1])
+
+
+def _ensure_roster_log(db):
+    db.execute('''CREATE TABLE IF NOT EXISTS roster_ops_log(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campus TEXT, op TEXT NOT NULL, detail TEXT,
+        operator TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+
+
+def _roster_log(db, campus, op, detail, operator):
+    _ensure_roster_log(db)
+    db.execute('INSERT INTO roster_ops_log(campus, op, detail, operator) VALUES(?,?,?,?)',
+               (campus, op, detail, operator))
+
+
+@app.route('/api/roster/students', methods=['GET'])
+def roster_students():
+    """总务（全校）/ 班主任（限本班）：按年级/班级列出学生及其家长选餐账号状态"""
+    u, campus, scope = _roster_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    grade = (request.args.get('grade') or '').strip()
+    class_name = (request.args.get('className') or '').strip()
+    if scope:
+        grade, class_name = scope          # 班主任强制本班，忽略传参
+    db = get_db(campus)
+    table = _students_table(campus)
+    cols = _table_columns(db, table)
+    # 个别历史行 dingtalk_userid 为空（早期转入的临时学生），行级兜底到 id_card
+    if 'dingtalk_userid' in cols and 'id_card' in cols:
+        id_col = "COALESCE(dingtalk_userid, id_card)"
+    elif 'dingtalk_userid' in cols:
+        id_col = 'dingtalk_userid'
+    else:
+        id_col = 'id_card'
+    sql = 'SELECT %s AS student_uid, name, grade_name, class_name FROM %s' % (id_col, table)
+    cond, args = [], []
+    if grade:
+        cond.append('grade_name=?'); args.append(grade)
+    if class_name:
+        cond.append('class_name=?'); args.append(class_name)
+    if cond:
+        sql += ' WHERE ' + ' AND '.join(cond)
+    sql += ' ORDER BY grade_name, class_name, name LIMIT 500'
+    rows = db.execute(sql, args).fetchall()
+    adb = get_auth_db(campus)
+    accounts = {}
+    ids = [r['student_uid'] for r in rows]
+    if ids:
+        marks = ','.join('?' * len(ids))
+        for a in adb.execute(
+                'SELECT bound_student_userid, bound_id_card, username, is_active, last_login_at, '
+                'must_change_password FROM auth_accounts '
+                'WHERE role=? AND (bound_student_userid IN (%s) OR bound_id_card IN (%s))'
+                % (marks, marks),
+                ['parent'] + ids + ids).fetchall():
+            key = a['bound_student_userid'] if a['bound_student_userid'] in ids else a['bound_id_card']
+            accounts[key] = {
+                'username': a['username'],
+                'isActive': bool(a['is_active']),
+                'lastLoginAt': a['last_login_at'],
+                'mustChangePassword': bool(a['must_change_password'] or 0),
+            }
+    return jsonify({'students': [{
+        'studentUserId': r['student_uid'],
+        'name': r['name'],
+        'grade': r['grade_name'],
+        'className': r['class_name'],
+        'account': accounts.get(r['student_uid']),
+    } for r in rows]})
+
+
+@app.route('/api/roster/transfer-in', methods=['POST'])
+def roster_transfer_in():
+    """总务（全校）/ 班主任（限本班）：转入新生 → 建学生(临时ID) + 家长选餐账号，返回账密"""
+    u, campus, scope = _roster_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    grade = (data.get('grade') or '').strip()
+    class_name = (data.get('className') or '').strip()
+    username = (data.get('username') or '').replace('​', '').strip().lower()
+    if not all((name, grade, class_name, username)):
+        return jsonify({'error': '姓名、年级、班级、登录账号都要填写'}), 400
+    if not _roster_scope_allows(scope, grade, class_name):
+        return jsonify({'error': '班主任只能转入自己班级的学生'}), 403
+    if not USERNAME_RE.match(username):
+        return jsonify({'error': '账号需为 3-32 位字母、数字、下划线或中文'}), 400
+    db = get_db(campus)
+    table = _students_table(campus)
+    dup_stu = db.execute(
+        'SELECT 1 FROM %s WHERE name=? AND grade_name=? AND class_name=?' % table,
+        (name, grade, class_name)).fetchone()
+    if dup_stu:
+        return jsonify({'error': '该班级已有同名学生，如需补建账号请联系管理员'}), 409
+    adb = get_auth_db(campus)
+    if adb.execute('SELECT 1 FROM auth_accounts WHERE username=? COLLATE NOCASE',
+                   (username,)).fetchone():
+        n = 2
+        while adb.execute('SELECT 1 FROM auth_accounts WHERE username=? COLLATE NOCASE',
+                          ('%s%d' % (username, n),)).fetchone():
+            n += 1
+        return jsonify({'error': '登录账号已被占用', 'suggest': '%s%d' % (username, n)}), 409
+    stu_id = 'TRF_' + username
+    temp_pwd = _gen_temp_password()
+    pwd_hash = generate_password_hash(temp_pwd)
+    db.execute('INSERT INTO %s (dingtalk_userid, id_card, name, grade_name, class_name) '
+               'VALUES (?,?,?,?,?)' % table, (stu_id, stu_id, name, grade, class_name))
+    _ensure_initial_password_column(adb)
+    adb.execute(
+        'INSERT INTO auth_accounts(username, password_hash, role, sub_role, campus_id, '
+        'display_name, bound_student_userid, bound_grade, bound_class, is_active, '
+        "auth_version, failed_attempts, must_change_password, initial_password_hash) "
+        "VALUES (?,?,'parent',NULL,?,?,?,?,?,1,1,0,1,?)",
+        (username, pwd_hash, campus, name, stu_id, grade, class_name, pwd_hash))
+    _roster_log(db, campus, 'transfer-in', '%s%s %s → %s' % (grade, class_name, name, username),
+                u['identity'])
+    db.commit()
+    adb.commit()
+    app.logger.info('[名单管理] %s 转入 %s%s %s 账号=%s', u['identity'], grade, class_name, name, username)
+    return jsonify({'success': True, 'username': username, 'tempPassword': temp_pwd,
+                    'studentUserId': stu_id})
+
+
+@app.route('/api/roster/transfer-out', methods=['POST'])
+def roster_transfer_out():
+    """总务：转出学生 → 删家长账号+学生记录（需输入学生姓名确认）"""
+    u, campus, scope = _roster_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    data = request.get_json() or {}
+    stu_id = (data.get('studentUserId') or '').strip()
+    if scope and not _roster_student_in_scope(campus, stu_id, scope):
+        return jsonify({'error': '班主任只能操作自己班级的学生'}), 403
+    confirm = (data.get('confirmName') or '').strip()
+    if not stu_id:
+        return jsonify({'error': 'studentUserId required'}), 400
+    db = get_db(campus)
+    table = _students_table(campus)
+    id_cond = ('(dingtalk_userid=? OR id_card=?)'
+               if 'id_card' in _table_columns(db, table) else 'dingtalk_userid=?')
+    id_args = (stu_id, stu_id) if '?' in id_cond[10:] else (stu_id,)
+    row = db.execute('SELECT name, grade_name, class_name FROM %s WHERE %s'
+                     % (table, id_cond), id_args).fetchone()
+    if not row:
+        return jsonify({'error': '学生不存在或已删除'}), 404
+    if confirm != row['name']:
+        return jsonify({'error': '确认姓名不一致，请输入学生姓名「%s」确认转出' % row['name']}), 400
+    adb = get_auth_db(campus)
+    n_acc = adb.execute("DELETE FROM auth_accounts WHERE (bound_student_userid=? OR bound_id_card=?) "
+                        "AND role='parent'", (stu_id, stu_id)).rowcount
+    db.execute('DELETE FROM %s WHERE %s' % (table, id_cond), id_args)
+    _roster_log(db, campus, 'transfer-out',
+                '%s%s %s (账号x%d)' % (row['grade_name'], row['class_name'], row['name'], n_acc),
+                u['identity'])
+    db.commit()
+    adb.commit()
+    app.logger.info('[名单管理] %s 转出 %s (%s)', u['identity'], row['name'], stu_id)
+    return jsonify({'success': True, 'removedAccounts': n_acc})
+
+
+@app.route('/api/roster/pause', methods=['POST'])
+def roster_pause():
+    """总务：暂停/恢复用餐（家长账号停用/启用，学生保留）"""
+    u, campus, scope = _roster_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    data = request.get_json() or {}
+    stu_id = (data.get('studentUserId') or '').strip()
+    if scope and not _roster_student_in_scope(campus, stu_id, scope):
+        return jsonify({'error': '班主任只能操作自己班级的学生'}), 403
+    active = 1 if data.get('active') else 0
+    if not stu_id:
+        return jsonify({'error': 'studentUserId required'}), 400
+    adb = get_auth_db(campus)
+    n = adb.execute("UPDATE auth_accounts SET is_active=? WHERE (bound_student_userid=? OR bound_id_card=?) "
+                    "AND role='parent'", (active, stu_id, stu_id)).rowcount
+    if not n:
+        return jsonify({'error': '该学生没有家长选餐账号'}), 404
+    db = get_db(campus)
+    _roster_log(db, campus, 'pause', '%s active=%d' % (stu_id, active), u['identity'])
+    db.commit()
+    adb.commit()
+    return jsonify({'success': True, 'active': bool(active)})
+
+
+@app.route('/api/roster/reset-password', methods=['POST'])
+def roster_reset_password():
+    """总务：重置家长选餐账号密码 → 随机临时密码 + 强制首登改密 + 踢掉旧会话"""
+    u, campus, scope = _roster_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    data = request.get_json() or {}
+    stu_id = (data.get('studentUserId') or '').strip()
+    if scope and not _roster_student_in_scope(campus, stu_id, scope):
+        return jsonify({'error': '班主任只能操作自己班级的学生'}), 403
+    if not stu_id:
+        return jsonify({'error': 'studentUserId required'}), 400
+    adb = get_auth_db(campus)
+    row = adb.execute("SELECT id, username, auth_version FROM auth_accounts "
+                      "WHERE (bound_student_userid=? OR bound_id_card=?) AND role='parent'",
+                      (stu_id, stu_id)).fetchone()
+    if not row:
+        return jsonify({'error': '该学生没有家长选餐账号'}), 404
+    temp_pwd = _gen_temp_password()
+    pwd_hash = generate_password_hash(temp_pwd)
+    _ensure_initial_password_column(adb)
+    # 总务重置发出的新临时密码即新的"发放单密码"，同步更新初始密码
+    adb.execute('UPDATE auth_accounts SET password_hash=?, initial_password_hash=?, '
+                'must_change_password=1, auth_version=?, failed_attempts=0, '
+                'locked_until=NULL WHERE id=?',
+                (pwd_hash, pwd_hash, int(row['auth_version'] or 0) + 1, row['id']))
+    db = get_db(campus)
+    _roster_log(db, campus, 'reset-password', '%s (%s)' % (row['username'], stu_id), u['identity'])
+    db.commit()
+    adb.commit()
+    app.logger.info('[名单管理] %s 重置密码 %s', u['identity'], row['username'])
+    return jsonify({'success': True, 'username': row['username'], 'tempPassword': temp_pwd})
+
+
+@app.route('/api/roster/teachers', methods=['GET'])
+def roster_teachers():
+    """总务专属：列出本校区班主任账号（供重置密码）"""
+    u, campus = _require_general_teacher()
+    if not u:
+        return jsonify({'error': '仅总务老师/管理员可用'}), 403
+    adb = get_auth_db(campus)
+    rows = adb.execute(
+        "SELECT id, username, display_name, bound_grade, bound_class, is_active, last_login_at "
+        "FROM auth_accounts WHERE campus_id=? AND role='teacher' AND sub_role='class' "
+        "ORDER BY bound_grade, bound_class", (campus,)).fetchall()
+    return jsonify({'teachers': [{
+        'id': r['id'], 'username': r['username'], 'displayName': r['display_name'],
+        'grade': r['bound_grade'], 'className': r['bound_class'],
+        'isActive': bool(r['is_active']), 'lastLoginAt': r['last_login_at'],
+    } for r in rows]})
+
+
+@app.route('/api/roster/reset-teacher-password', methods=['POST'])
+def roster_reset_teacher_password():
+    """总务专属：重置班主任账号密码（随机临时密码，同步为新初始密码，不弹首登面板）"""
+    u, campus = _require_general_teacher()
+    if not u:
+        return jsonify({'error': '仅总务老师/管理员可用'}), 403
+    account_id = (request.get_json() or {}).get('accountId')
+    if not account_id:
+        return jsonify({'error': 'accountId required'}), 400
+    adb = get_auth_db(campus)
+    _ensure_initial_password_column(adb)
+    row = adb.execute(
+        "SELECT * FROM auth_accounts WHERE id=? AND campus_id=? AND role='teacher' "
+        "AND sub_role='class'", (account_id, campus)).fetchone()
+    if not row:
+        return jsonify({'error': '未找到该班主任账号'}), 404
+    temp_pwd = _gen_temp_password()
+    pwd_hash = generate_password_hash(temp_pwd)
+    adb.execute('UPDATE auth_accounts SET password_hash=?, initial_password_hash=?, '
+                'must_change_password=0, auth_version=?, failed_attempts=0, '
+                'locked_until=NULL WHERE id=?',
+                (pwd_hash, pwd_hash, int(row['auth_version'] or 0) + 1, row['id']))
+    adb.commit()
+    db = get_db(campus)
+    _roster_log(db, campus, 'reset-teacher-password', row['username'], u['identity'])
+    db.commit()
+    app.logger.info('[名单管理] %s 重置班主任密码 %s', u['identity'], row['username'])
+    return jsonify({'success': True, 'username': row['username'], 'tempPassword': temp_pwd,
+                    'displayName': row['display_name']})
+
+
+@app.route('/api/auth/change-username', methods=['POST'])
+def auth_change_username():
+    """自助修改账号名：需当前密码确认；同校区唯一性校验。令牌按 accountId 签发，改名不影响已登录状态。"""
+    row, campus, db = _current_account()
+    if not row:
+        return jsonify({'success': False, 'error': '登录已失效，请重新登录'}), 401
+    data = request.get_json() or {}
+    new_username = (data.get('newUsername') or '').replace('\u200b', '').strip()
+    password = (data.get('password') or '').strip()
+    if not new_username or not password:
+        return jsonify({'success': False, 'error': '请输入新账号名和当前密码'}), 400
+    now = int(time.time())
+    if row['locked_until'] and int(row['locked_until']) > now:
+        return jsonify({'success': False, 'error': '尝试次数过多，请15分钟后再试'}), 429
+    if not check_password_hash(row['password_hash'], password):
+        _bump_login_failure(db, row, now)
+        return jsonify({'success': False, 'error': '密码不正确'}), 401
+    if new_username == row['username']:
+        return jsonify({'success': False, 'error': '新账号名与当前账号名相同'}), 400
+    if not USERNAME_RE.match(new_username):
+        return jsonify({'success': False, 'error': '账号名需为 3-32 位字母、数字、下划线或中文'}), 400
+    dup = db.execute(
+        'SELECT id FROM auth_accounts WHERE username=? AND campus_id=? AND id<>?',
+        (new_username, campus, row['id']),
+    ).fetchone()
+    if dup:
+        return jsonify({'success': False, 'error': '该账号名已被使用，请换一个'}), 409
+    try:
+        db.execute(
+            'UPDATE auth_accounts SET username=?, failed_attempts=0, locked_until=NULL WHERE id=?',
+            (new_username, row['id']),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({'success': False, 'error': '该账号名已被使用，请换一个'}), 409
+    app.logger.info('[账号自助] account=%s campus=%s 修改账号名成功', row['id'], campus)
+    return jsonify({'success': True, 'username': new_username})
+
 
 # ==================== 角色 & 用户绑定 ====================
 # user_bindings: 把钉钉 unionId 映射到角色 + 绑定的学生
@@ -1097,6 +1842,7 @@ def _ensure_meal_tables():
     for column, column_type in (
         ('import_batch_id', 'INTEGER'),
         ('service_days_json', "TEXT DEFAULT '[]'"),
+        ('default_a_finalized_at', 'TEXT'),
     ):
         if column not in menu_cols:
             db.execute(f'ALTER TABLE weekly_menus ADD COLUMN {column} {column_type}')
@@ -1523,6 +2269,7 @@ def _current_user():
                 'bound_class': row['bound_class'],
                 'campus': account_campus,
                 'identity': f"account:{row['id']}",
+                'must_change_password': bool(row['must_change_password']) if 'must_change_password' in row.keys() else False,
             }
         if info and info.get('unionId'):
             uid = info['unionId']
@@ -1634,6 +2381,7 @@ def auth_me():
         'boundGrade': u['bound_grade'],
         'boundClass': u['bound_class'],
         'owner': u['identity'],
+        'mustChangePassword': bool(u.get('must_change_password')),
     }
     if u.get('bound_student_userid') or u['bound_id_card']:
         db = get_db()
@@ -2267,6 +3015,8 @@ def _ensure_club_signups_table():
         ('selection_mode', "TEXT NOT NULL DEFAULT 'selectable'"),
         ('eligible_grades', "TEXT NOT NULL DEFAULT '[]'"),
         ('source_number', 'INTEGER'),
+        # 分年级名额：JSON dict 如 {"三年级":10,"四年级":10}；空串 = 各年级共享总 capacity（旧行为）
+        ('grade_quotas', "TEXT NOT NULL DEFAULT ''"),
     ):
         if name not in course_columns:
             db.execute(f'ALTER TABLE club_course_catalog ADD COLUMN {name} {definition}')
@@ -2284,9 +3034,22 @@ def _ensure_club_signups_table():
         ('status', "TEXT NOT NULL DEFAULT 'pending'"),
         ('confirmed_by', 'TEXT'),
         ('confirmed_at', 'TEXT'),
+        # 报名时学生所在年级快照，分年级名额统计用（避免每次 JOIN 学生表）
+        ('grade', 'TEXT'),
     ):
         if name not in signup_columns:
             db.execute(f'ALTER TABLE club_signups ADD COLUMN {name} {definition}')
+    # 抢课事件通知去重：同学期同校区同事件只发一次
+    db.execute('''CREATE TABLE IF NOT EXISTS club_notify_log(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        semester TEXT NOT NULL,
+        campus TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        ref TEXT NOT NULL,
+        sent_to TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(semester, campus, kind, ref)
+    )''')
     db.execute('''CREATE TABLE IF NOT EXISTS club_admission_windows(
         semester TEXT NOT NULL,
         grade TEXT NOT NULL,
@@ -2300,7 +3063,10 @@ def _ensure_club_signups_table():
     )''')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_course ON club_signups(course_id, semester)')
     db.execute('CREATE INDEX IF NOT EXISTS idx_club_signups_student ON club_signups(student_id, semester)')
-    for sort_order, course in enumerate(COURSES):
+    # The bundled catalog contains the headquarters east/west clubs. Other
+    # campuses start empty and let their general-affairs teacher add courses.
+    seed_courses = COURSES if _resolve_campus() == 'benbu' else ()
+    for sort_order, course in enumerate(seed_courses):
         db.execute(
             '''INSERT OR IGNORE INTO club_course_catalog(
                    id, semester, campus, name, teacher, weekday, location,
@@ -2324,7 +3090,7 @@ def _club_courses_from_db(db, include_inactive=False):
     rows = db.execute(
         f'''SELECT id, semester, campus, name, teacher, weekday, location,
                    capacity, note, is_active, selection_mode,
-                   eligible_grades, source_number
+                   eligible_grades, source_number, grade_quotas
             FROM club_course_catalog
             WHERE semester = ? {where}
             ORDER BY sort_order, created_at, id''',
@@ -2338,7 +3104,7 @@ def _club_course_from_db(db, course_id, include_inactive=False):
     row = db.execute(
         f'''SELECT id, semester, campus, name, teacher, weekday, location,
                    capacity, note, is_active, selection_mode,
-                   eligible_grades, source_number
+                   eligible_grades, source_number, grade_quotas
             FROM club_course_catalog
             WHERE id = ? AND semester = ? {active_clause}''',
         (course_id, CLUB_SEMESTER)
@@ -2370,6 +3136,116 @@ def _club_grades(course):
         except (TypeError, json.JSONDecodeError):
             values = re.split(r'[,，、\s]+', str(raw))
     return [grade for grade in CLUB_GRADES if grade in values]
+
+
+def _club_grade_quotas(course):
+    """解析课程的分年级名额配置；空/非法返回 {}（即各年级共享总 capacity 的旧模式）。"""
+    raw = course.get('grade_quotas') or ''
+    if isinstance(raw, dict):
+        data = raw
+    else:
+        try:
+            data = json.loads(raw) if raw else {}
+        except (TypeError, json.JSONDecodeError):
+            data = {}
+    quotas = {}
+    for grade, value in (data or {}).items():
+        if grade in CLUB_GRADES:
+            try:
+                quotas[grade] = max(0, int(value))
+            except (TypeError, ValueError):
+                continue
+    return quotas
+
+
+def _club_grade_counts(db, course_id):
+    """某课程按年级统计有效报名数（依赖 club_signups.grade 快照列）。"""
+    rows = db.execute(
+        '''SELECT COALESCE(grade, '') AS grade, COUNT(*) AS count FROM club_signups
+           WHERE course_id = ? AND semester = ? AND status != 'rejected'
+           GROUP BY COALESCE(grade, '')''',
+        (course_id, CLUB_SEMESTER)
+    ).fetchall()
+    return {row['grade']: row['count'] for row in rows if row['grade']}
+
+
+# 抢课事件（课满 / 截止）通知的总务钉钉 userId，按校区。
+# campus_config.json 中的 clubNotifyUserIds 可覆盖此默认名单。
+CLUB_NOTIFY_GENERAL_USERIDS = {
+    'benbu': [],
+    'baolin': [],
+    'luojing': [],
+}
+
+
+def _club_notify_userids(campus_id):
+    dt_cfg = _get_campus_dt(campus_id)
+    ids = dt_cfg.get('clubNotifyUserIds') or CLUB_NOTIFY_GENERAL_USERIDS.get(campus_id, [])
+    return [str(u).strip() for u in ids if str(u).strip()]
+
+
+def _club_notify_general(db, campus_id, kind, ref, title, text):
+    """给对应校区总务发钉钉工作通知。club_notify_log 去重：同学期同事件只发一次。
+    实际发送放后台线程，不阻塞抢课请求。"""
+    userids = _club_notify_userids(campus_id)
+    if not userids:
+        app.logger.warning(f'[社团通知] campus={campus_id} 未配置总务 userId，跳过 {kind}:{ref}')
+        return False
+    try:
+        cur = db.execute(
+            '''INSERT OR IGNORE INTO club_notify_log(semester, campus, kind, ref, sent_to)
+               VALUES(?, ?, ?, ?, ?)''',
+            (CLUB_SEMESTER, campus_id, kind, ref, ','.join(userids)),
+        )
+        db.commit()
+    except sqlite3.Error:
+        app.logger.exception('[社团通知] 写入去重记录失败')
+        return False
+    if cur.rowcount == 0:
+        return False  # 已通知过
+    uid_list = ','.join(userids)
+
+    def _send():
+        ok = _send_dt_work_notification(uid_list, title, text, campus_id)
+        if not ok:
+            app.logger.warning(
+                f'[社团通知] 发送失败 campus={campus_id} {kind}:{ref}（多因未配置 agentId；去重记录已写入）'
+            )
+
+    threading.Thread(target=_send, daemon=True).start()
+    return True
+
+
+def _club_check_course_full_notify(db, course, campus_id):
+    """报名成功后检查课程是否已全部报满；满则通知总务过目确认。"""
+    if course.get('selection_mode') != 'selectable':
+        return
+    quotas = _club_grade_quotas(course)
+    counts = _club_grade_counts(db, course['id'])
+    total = db.execute(
+        '''SELECT COUNT(*) AS count FROM club_signups
+           WHERE course_id = ? AND semester = ? AND status != 'rejected' ''',
+        (course['id'], CLUB_SEMESTER)
+    ).fetchone()['count']
+    if quotas:
+        grades = _club_grades(course)
+        full = bool(grades) and all(counts.get(g, 0) >= int(quotas.get(g, 0)) for g in grades)
+        detail = '；'.join(f"{g} {counts.get(g, 0)}/{quotas.get(g, 0)} 人" for g in grades)
+    else:
+        full = total >= int(course['capacity'] or 0)
+        detail = f"共 {total}/{course['capacity']} 人"
+    if not full:
+        return
+    title = f"社团已满员：{course['name']}"
+    text = (
+        f"### 🎯 社团满员提醒\n\n"
+        f"**{course['name']}**（{course.get('campus', '')} · {course.get('weekday', '')} · "
+        f"{course.get('teacher', '')}）名额已全部报满。\n\n"
+        f"- 报名情况：{detail}\n"
+        f"- 学期：{CLUB_SEMESTER}\n\n"
+        f"请进入「活动岛 → 社团抢课」管理页过目确认。"
+    )
+    _club_notify_general(db, campus_id, 'course_full', course['id'], title, text)
 
 
 def _club_window(db, grade):
@@ -2430,23 +3306,36 @@ def _club_phase_message(phase):
     }.get(phase, '')
 
 
-def _club_course_payload(course, count=0, include_counts=False, phase=None):
+def _club_course_payload(course, count=0, include_counts=False, phase=None,
+                         grade_counts=None, viewer_grade=None):
     cat = _club_category(course['name'])
     capacity = course['capacity']
+    quotas = _club_grade_quotas(course)
+    gcounts = grade_counts or {}
     payload = {
         key: value for key, value in course.items()
-        if key not in ('capacity', 'is_active', 'eligible_grades', 'selection_mode')
+        if key not in ('capacity', 'is_active', 'eligible_grades', 'selection_mode', 'grade_quotas')
     }
     mode = course.get('selection_mode') or 'selectable'
     phase = phase or ('draft' if mode == 'draft' else 'unscheduled')
+    # 分年级名额课程：剩余/满员按查看者（学生）所在年级的配额计算
+    if quotas and viewer_grade and viewer_grade in quotas:
+        grade_cap = quotas[viewer_grade]
+        grade_cnt = gcounts.get(viewer_grade, 0)
+        remaining = max(0, grade_cap - grade_cnt)
+        is_full = mode == 'selectable' and grade_cnt >= grade_cap
+    else:
+        remaining = max(0, capacity - count)
+        is_full = mode == 'selectable' and count >= capacity
     payload.update({
-        'remaining': max(0, capacity - count),
-        'full': mode == 'selectable' and count >= capacity,
+        'remaining': remaining,
+        'full': is_full,
         'cat': cat,
         'ic': _club_emoji(course['name'], cat),
         'time': course['weekday'],
         'selectionMode': mode,
         'eligibleGrades': _club_grades(course),
+        'gradeQuotas': quotas or None,
         'phase': phase,
         'phaseMessage': _club_phase_message(phase),
         'canApply': mode == 'selectable' and phase == 'open',
@@ -2457,6 +3346,8 @@ def _club_course_payload(course, count=0, include_counts=False, phase=None):
             'count': count,
             'max': capacity,
         })
+        if quotas:
+            payload['gradeCounts'] = {g: gcounts.get(g, 0) for g in _club_grades(course)}
     else:
         payload.pop('remaining')
     return payload
@@ -2604,16 +3495,18 @@ def list_clubs():
         user['role'] == 'admin'
         or (user['role'] == 'teacher' and user.get('sub_role') == 'general')
     )
-    counts = {
-        row['course_id']: row['count']
-        for row in db.execute(
-            '''SELECT course_id, COUNT(*) AS count
-               FROM club_signups
-               WHERE semester = ? AND status != 'rejected'
-               GROUP BY course_id''',
-            (CLUB_SEMESTER,)
-        ).fetchall()
-    }
+    counts = {}
+    grade_counts = {}
+    for row in db.execute(
+        '''SELECT course_id, COALESCE(grade, '') AS grade, COUNT(*) AS count
+           FROM club_signups
+           WHERE semester = ? AND status != 'rejected'
+           GROUP BY course_id, COALESCE(grade, '')''',
+        (CLUB_SEMESTER,)
+    ).fetchall():
+        counts[row['course_id']] = counts.get(row['course_id'], 0) + row['count']
+        if row['grade']:
+            grade_counts.setdefault(row['course_id'], {})[row['grade']] = row['count']
     items = []
     campus = (request.args.get('campus') or '').strip()
     viewer_grade = _club_user_grade(user, db)
@@ -2631,6 +3524,8 @@ def list_clubs():
             counts.get(course['id'], 0),
             include_counts=include_counts,
             phase=phase,
+            grade_counts=grade_counts.get(course['id']),
+            viewer_grade=viewer_grade,
         ))
     return jsonify({
         'clubs': items,
@@ -2665,12 +3560,32 @@ def create_club():
     ]
     if not eligible_grades:
         return jsonify({'error': '至少选择一个适用年级'}), 400
-    try:
-        capacity = int(data.get('capacity') or 1)
-    except (TypeError, ValueError):
-        return jsonify({'error': '人数上限必须是正整数'}), 400
-    if capacity < 1 or capacity > 500:
-        return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
+    # 分年级名额（默认路径）：抢课按年级分批开放，名额也按年级独立配置（如三/四/五年级各 10）。
+    # 未传 gradeQuotas 时保留旧行为：各年级共享总 capacity。
+    raw_quotas = data.get('gradeQuotas')
+    grade_quotas = {}
+    if raw_quotas:
+        if not isinstance(raw_quotas, dict):
+            return jsonify({'error': '分年级名额格式无效'}), 400
+        for grade in eligible_grades:
+            try:
+                value = int(raw_quotas.get(grade))
+            except (TypeError, ValueError):
+                return jsonify({'error': f'请为{grade}填写名额（1 到 500 的整数）'}), 400
+            if value < 1 or value > 500:
+                return jsonify({'error': f'{grade}名额须在 1 到 500 之间'}), 400
+            grade_quotas[grade] = value
+        unknown = set(raw_quotas) - set(eligible_grades)
+        if unknown:
+            return jsonify({'error': '分年级名额包含未勾选的年级'}), 400
+        capacity = sum(grade_quotas.values())
+    else:
+        try:
+            capacity = int(data.get('capacity') or 1)
+        except (TypeError, ValueError):
+            return jsonify({'error': '人数上限必须是正整数'}), 400
+        if capacity < 1 or capacity > 500:
+            return jsonify({'error': '人数上限须在 1 到 500 之间'}), 400
     note = str(data.get('note') or '').strip()
     if len(note) > 500:
         return jsonify({'error': '备注不能超过 500 个字符'}), 400
@@ -2687,13 +3602,14 @@ def create_club():
         '''INSERT INTO club_course_catalog(
                id, semester, campus, name, teacher, weekday, location,
                capacity, note, is_active, sort_order, selection_mode,
-               eligible_grades
-           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)''',
+               eligible_grades, grade_quotas
+           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)''',
         (
             course_id, CLUB_SEMESTER, fields['campus'], fields['name'],
             fields['teacher'], fields['weekday'], fields['location'],
             capacity, note, sort_order, selection_mode,
             json.dumps(eligible_grades, ensure_ascii=False),
+            json.dumps(grade_quotas, ensure_ascii=False) if grade_quotas else '',
         )
     )
     db.commit()
@@ -2724,7 +3640,37 @@ def update_club_capacity(course_id):
     ).fetchone()['count']
     updates = []
     params = []
-    if 'capacity' in data:
+    # 分年级名额更新优先于单一 capacity；capacity 自动同步为各年级名额之和
+    if 'gradeQuotas' in data:
+        raw_quotas = data.get('gradeQuotas')
+        if raw_quotas in (None, {}, ''):
+            updates.append("grade_quotas = ''")
+        else:
+            if not isinstance(raw_quotas, dict):
+                return jsonify({'error': '分年级名额格式无效'}), 400
+            target_grades = [
+                g for g in data.get('eligibleGrades', []) if g in CLUB_GRADES
+            ] or _club_grades(course)
+            if not target_grades:
+                return jsonify({'error': '课程缺少适用年级，无法设置分年级名额'}), 400
+            grade_counts = _club_grade_counts(db, course_id)
+            quotas = {}
+            for grade in target_grades:
+                try:
+                    value = int(raw_quotas.get(grade))
+                except (TypeError, ValueError):
+                    return jsonify({'error': f'请为{grade}填写名额（1 到 500 的整数）'}), 400
+                if value < 1 or value > 500:
+                    return jsonify({'error': f'{grade}名额须在 1 到 500 之间'}), 400
+                already = grade_counts.get(grade, 0)
+                if value < already:
+                    return jsonify({'error': f'{grade}名额不能低于该年级已报名人数（{already} 人）'}), 409
+                quotas[grade] = value
+            updates.append('grade_quotas = ?')
+            params.append(json.dumps(quotas, ensure_ascii=False))
+            updates.append('capacity = ?')
+            params.append(sum(quotas.values()))
+    elif 'capacity' in data:
         try:
             capacity = int(data.get('capacity'))
         except (TypeError, ValueError):
@@ -2774,7 +3720,10 @@ def update_club_capacity(course_id):
     return jsonify({
         'success': True,
         'message': '人数上限已更新',
-        'course': _club_course_payload(course, count, include_counts=True),
+        'course': _club_course_payload(
+            course, count, include_counts=True,
+            grade_counts=_club_grade_counts(db, course_id),
+        ),
     })
 
 
@@ -2822,6 +3771,7 @@ def list_club_signup_students(course_id):
                 FROM club_signups cs
                 LEFT JOIN {student_table} s ON s.id_card = cs.student_id
                 WHERE cs.course_id = ? AND cs.semester = ?
+                  AND cs.status IN ('pending', 'confirmed')
                 ORDER BY {_grade_sort_sql('s.grade_name')}, s.class_name, s.name, cs.student_id''',
             (course_id, CLUB_SEMESTER)
         ).fetchall()
@@ -2852,6 +3802,111 @@ def list_club_signup_students(course_id):
         'total': len(students),
         'semester': CLUB_SEMESTER,
     })
+
+
+@app.route('/api/clubs/<course_id>/roster/remove', methods=['POST'])
+def club_roster_remove(course_id):
+    """总务：发布确认前把待确认学生移出社团名单（置为已取消，腾出名额）。"""
+    user, error = _club_general_teacher()
+    if error:
+        return error
+    student_id = ((request.get_json() or {}).get('studentId') or '').strip()
+    if not student_id:
+        return jsonify({'error': 'studentId required'}), 400
+    _ensure_club_signups_table()
+    db = get_db()
+    row = db.execute(
+        'SELECT id, status FROM club_signups WHERE course_id=? AND semester=? AND student_id=?',
+        (course_id, CLUB_SEMESTER, student_id)).fetchone()
+    if not row:
+        return jsonify({'error': '该学生不在此社团名单中'}), 404
+    if row['status'] == 'confirmed':
+        return jsonify({'error': '该学生已确认录取，不能直接移出'}), 409
+    if row['status'] != 'pending':
+        return jsonify({'error': '该报名已是取消状态'}), 409
+    db.execute("UPDATE club_signups SET status='cancelled' WHERE id=?", (row['id'],))
+    db.commit()
+    app.logger.info('[社团名单] %s 移出 %s ← %s', user['identity'], student_id, course_id)
+    return jsonify({'success': True})
+
+
+@app.route('/api/clubs/<course_id>/roster/add', methods=['POST'])
+def club_roster_add(course_id):
+    """总务：发布确认前补录学生进社团（状态为待确认，随发布一并确认）。"""
+    user, error = _club_general_teacher()
+    if error:
+        return error
+    student_id = ((request.get_json() or {}).get('studentId') or '').strip()
+    if not student_id:
+        return jsonify({'error': 'studentId required'}), 400
+    _ensure_club_signups_table()
+    db = get_db()
+    course = db.execute(
+        'SELECT * FROM club_course_catalog WHERE id=? AND semester=?',
+        (course_id, CLUB_SEMESTER)).fetchone()
+    if not course:
+        return jsonify({'error': '社团不存在'}), 404
+    student_table = _students_table(_resolve_campus())
+    id_col = 'dingtalk_userid' if 'dingtalk_userid' in _table_columns(db, student_table) else 'id_card'
+    stu = db.execute(
+        'SELECT id_card, name, grade_name, class_name FROM %s WHERE %s=? OR id_card=?'
+        % (student_table, id_col), (student_id, student_id)).fetchone()
+    if not stu:
+        return jsonify({'error': '学生不在本校区名册中'}), 404
+    eligible = (course['eligible_grades'] or '').strip()
+    if eligible and stu['grade_name'] not in eligible:
+        return jsonify({'error': '该社团不面向 %s' % (stu['grade_name'] or '该年级')}), 409
+    dup = db.execute(
+        "SELECT 1 FROM club_signups WHERE course_id=? AND semester=? AND student_id=? "
+        "AND status IN ('pending','confirmed')",
+        (course_id, CLUB_SEMESTER, stu['id_card'])).fetchone()
+    if dup:
+        return jsonify({'error': '该学生已在此社团名单中'}), 409
+    other = db.execute(
+        "SELECT COUNT(*) FROM club_signups WHERE semester=? AND student_id=? "
+        "AND status IN ('pending','confirmed')",
+        (CLUB_SEMESTER, stu['id_card'])).fetchone()[0]
+    if other >= CLUB_MAX_SIGNUPS_PER_STUDENT:
+        return jsonify({'error': '%s 已报名其他社团（每人限报 %d 门），请先移出原社团'
+                        % (stu['name'], CLUB_MAX_SIGNUPS_PER_STUDENT)}), 409
+    taken = db.execute(
+        "SELECT COUNT(*) FROM club_signups WHERE course_id=? AND semester=? "
+        "AND status IN ('pending','confirmed')",
+        (course_id, CLUB_SEMESTER)).fetchone()[0]
+    if course['capacity'] and taken >= course['capacity']:
+        return jsonify({'error': '名额已满（%d/%s），请先移出学生再补录'
+                        % (taken, course['capacity'])}), 409
+    db.execute(
+        'INSERT INTO club_signups(student_id, course_id, semester, registered_by, status, grade) '
+        "VALUES(?,?,?,?, 'pending', ?)",
+        (stu['id_card'], course_id, CLUB_SEMESTER, 'admin:%s' % user['identity'],
+         stu['grade_name']))
+    db.commit()
+    app.logger.info('[社团名单] %s 补录 %s(%s) → %s', user['identity'],
+                    stu['name'], stu['id_card'], course_id)
+    return jsonify({'success': True, 'student': {
+        'studentId': stu['id_card'], 'name': stu['name'],
+        'grade': stu['grade_name'], 'class': stu['class_name']}})
+
+
+@app.route('/api/clubs/roster/student-search', methods=['GET'])
+def club_roster_student_search():
+    """总务：补录时按姓名搜本校区学生。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+    q = (request.args.get('q') or '').strip()
+    if len(q) < 1:
+        return jsonify({'students': []})
+    db = get_db()
+    student_table = _students_table(_resolve_campus())
+    rows = db.execute(
+        'SELECT id_card, name, grade_name, class_name FROM %s WHERE name LIKE ? '
+        'ORDER BY grade_name, class_name, name LIMIT 20' % student_table,
+        ('%' + q + '%',)).fetchall()
+    return jsonify({'students': [{
+        'studentId': r['id_card'], 'name': r['name'],
+        'grade': r['grade_name'], 'class': r['class_name']} for r in rows]})
 
 
 @app.route('/api/clubs/class-signups', methods=['GET'])
@@ -2947,6 +4002,7 @@ def club_signups():
         '''SELECT course_id, created_at, status, confirmed_at
            FROM club_signups
            WHERE student_id = ? AND semester = ?
+             AND status IN ('pending', 'confirmed')
            ORDER BY created_at, id''',
         (user['bound_id_card'], CLUB_SEMESTER)
     ).fetchall()
@@ -3037,7 +4093,8 @@ def create_club_signup():
 
         student_signup_count = db.execute(
             '''SELECT COUNT(*) AS count FROM club_signups
-               WHERE student_id = ? AND semester = ? AND status != 'rejected' ''',
+               WHERE student_id = ? AND semester = ?
+                 AND status IN ('pending', 'confirmed')''',
             (user['bound_id_card'], CLUB_SEMESTER)
         ).fetchone()['count']
         if student_signup_count >= CLUB_MAX_SIGNUPS_PER_STUDENT:
@@ -3047,6 +4104,20 @@ def create_club_signup():
                 'error': f'每名学生最多报名 {CLUB_MAX_SIGNUPS_PER_STUDENT} 门社团',
                 'code': 'CLUB_LIMIT_REACHED',
             }), 409
+
+        # 分年级名额：先按学生所在年级的独立配额校验（抢课分批开放，各年级名额互不挤占）
+        quotas = _club_grade_quotas(course)
+        if quotas:
+            grade_quota = int(quotas.get(grade, 0))
+            grade_count = db.execute(
+                '''SELECT COUNT(*) AS count FROM club_signups
+                   WHERE course_id = ? AND semester = ? AND status != 'rejected'
+                     AND grade = ?''',
+                (course_id, CLUB_SEMESTER, grade)
+            ).fetchone()['count']
+            if grade_count >= grade_quota:
+                db.rollback()
+                return jsonify({'success': False, 'error': f'{grade}名额已满'}), 409
 
         count = db.execute(
             '''SELECT COUNT(*) AS count FROM club_signups
@@ -3059,15 +4130,21 @@ def create_club_signup():
 
         db.execute(
             '''INSERT INTO club_signups(
-                   student_id, course_id, semester, registered_by, status
-               ) VALUES(?, ?, ?, ?, 'pending')''',
-            (user['bound_id_card'], course_id, CLUB_SEMESTER, user['identity'])
+                   student_id, course_id, semester, registered_by, status, grade
+               ) VALUES(?, ?, ?, ?, 'pending', ?)''',
+            (user['bound_id_card'], course_id, CLUB_SEMESTER, user['identity'], grade)
         )
         db.commit()
     except sqlite3.Error:
         db.rollback()
         app.logger.exception('club signup failed')
         return jsonify({'success': False, 'error': '抢课繁忙，请稍后重试'}), 503
+
+    # 报名成功后检查是否已全部报满，满员则钉钉通知对应校区总务过目确认（异步、去重，失败不影响报名）
+    try:
+        _club_check_course_full_notify(db, course, _resolve_campus())
+    except Exception:
+        app.logger.exception('[社团通知] 满员检查异常')
 
     return jsonify({
         'success': True,
@@ -3833,6 +4910,112 @@ def _required_menu_days(row):
     }
 
 
+def _meal_stats_days(db, *week_numbers):
+    """Return the actual service weekdays for the selected menu weeks."""
+    weeks = [int(week) for week in week_numbers if week]
+    if not weeks:
+        return [1, 2, 3, 4, 5]
+    placeholders = ','.join('?' for _ in weeks)
+    rows = db.execute(
+        f'''SELECT service_days_json FROM weekly_menus
+            WHERE week_number IN ({placeholders})''',
+        weeks,
+    ).fetchall()
+    days = set()
+    for row in rows:
+        days.update(_required_menu_days(row))
+    return sorted(days or {1, 2, 3, 4, 5})
+
+
+def _finalize_expired_meal_choices(db, campus_id, now=None):
+    """截止后为权威名册中缺失的供餐日补 A 餐。
+
+    同一学生/周次/日期使用现有唯一约束去重，不覆盖家长已选 A/B；
+    每个菜单在同一事务内补齐并标记，可安全重复调用。
+    """
+    campus = _valid_campus(campus_id)
+    if not campus:
+        raise ValueError('校区无效')
+    student_table = _students_table(campus)
+    if not db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+        (student_table,),
+    ).fetchone():
+        raise sqlite3.OperationalError(f'{campus} student roster is not provisioned')
+
+    menu_columns = {row[1] for row in db.execute('PRAGMA table_info(weekly_menus)')}
+    if 'default_a_finalized_at' not in menu_columns:
+        db.execute('ALTER TABLE weekly_menus ADD COLUMN default_a_finalized_at TEXT')
+        db.commit()
+
+    current = now or datetime.now()
+    menus = db.execute(
+        '''SELECT *
+           FROM weekly_menus
+           WHERE selection_deadline IS NOT NULL
+             AND TRIM(selection_deadline) != ''
+             AND default_a_finalized_at IS NULL
+           ORDER BY week_number, parity'''
+    ).fetchall()
+    finalized = []
+    try:
+        db.execute('SAVEPOINT finalize_default_a')
+        for menu in menus:
+            try:
+                deadline = datetime.fromisoformat(
+                    menu['selection_deadline'].strip().replace('Z', '+00:00')
+                )
+            except (AttributeError, ValueError):
+                continue
+            compare_now = (
+                datetime.now(deadline.tzinfo)
+                if now is None and deadline.tzinfo
+                else current
+            )
+            if deadline.tzinfo and compare_now.tzinfo is None:
+                compare_now = compare_now.replace(tzinfo=deadline.tzinfo)
+            elif not deadline.tzinfo and compare_now.tzinfo:
+                compare_now = compare_now.replace(tzinfo=None)
+            if compare_now < deadline:
+                continue
+            required_days = sorted(_required_menu_days(menu))
+            if not required_days:
+                continue
+
+            before = db.total_changes
+            for weekday in required_days:
+                db.execute(
+                    f'''INSERT OR IGNORE INTO meal_choices
+                        (id_card, name, grade_name, class_name, week_number,
+                         parity, weekday, choice, chosen_by)
+                        SELECT id_card, name, grade_name, class_name, ?, ?, ?,
+                               'A', 'system:deadline-default-a'
+                        FROM {student_table}
+                        WHERE id_card IS NOT NULL AND TRIM(id_card) != '' ''',
+                    (menu['week_number'], menu['parity'], weekday),
+                )
+            added = db.total_changes - before
+            db.execute(
+                '''UPDATE weekly_menus
+                   SET default_a_finalized_at=CURRENT_TIMESTAMP
+                   WHERE id=? AND default_a_finalized_at IS NULL''',
+                (menu['id'],),
+            )
+            meal_history.snapshot(db, campus, menu)
+            finalized.append({
+                'week': menu['week_number'],
+                'parity': menu['parity'],
+                'days': required_days,
+                'added': added,
+            })
+        db.execute('RELEASE SAVEPOINT finalize_default_a')
+    except Exception:
+        db.execute('ROLLBACK TO SAVEPOINT finalize_default_a')
+        db.execute('RELEASE SAVEPOINT finalize_default_a')
+        raise
+    return {'campus': campus, 'finalized': finalized}
+
+
 def _menu_edit_number(value):
     if value in (None, ''):
         return None
@@ -3987,6 +5170,7 @@ def list_menus():
     """所有人可见：列出最近的周菜单（家长选餐时看，老师管理时看）"""
     _ensure_meal_tables()
     db = get_db()
+    _finalize_expired_meal_choices(db, _resolve_campus())
     week = request.args.get('week', type=int)
     if week:
         cur = db.execute('SELECT * FROM weekly_menus WHERE week_number = ? ORDER BY parity', (week,))
@@ -4005,10 +5189,10 @@ def upload_menu():
         return jsonify({'error': f'上传过于频繁(>{UPLOAD_RATE_PER_MIN} 次/分钟),请稍后重试'}), 429
     _ensure_meal_tables()
     # 兼容 form-data 与 json
-    if request.files.get('image'):
-        f = request.files['image']
-        ext = os.path.splitext(f.filename or '')[1].lower()
-        if ext not in ALLOWED_IMAGE_EXTS:
+    if request.mimetype == 'multipart/form-data':
+        f = request.files.get('image')
+        ext = os.path.splitext(f.filename or '')[1].lower() if f else ''
+        if f and ext not in ALLOWED_IMAGE_EXTS:
             return jsonify({'error': '仅支持图片：'+','.join(ALLOWED_IMAGE_EXTS)}), 400
         week = request.form.get('week', type=int)
         parity = request.form.get('parity')
@@ -4079,14 +5263,16 @@ def upload_menu():
 
         stamp = int(time.time() * 1000)
         digest = hashlib.sha256(excel_bytes).hexdigest()[:10]
-        image_name = f'menu_w{week}_{parity}_{stamp}{ext}'
         excel_name = f'menu_w{week}_{parity}_{stamp}_{digest}.xlsx'
-        image_full_path = os.path.join(UPLOAD_DIR, image_name)
         excel_full_path = os.path.join(UPLOAD_DIR, excel_name)
-        f.save(image_full_path)
+        if f:
+            image_name = f'menu_w{week}_{parity}_{stamp}{ext}'
+            f.save(os.path.join(UPLOAD_DIR, image_name))
+            image_path = f'assets/menu-uploads/{image_name}'
+        else:
+            image_path = ''
         with open(excel_full_path, 'wb') as output:
             output.write(excel_bytes)
-        image_path = f'assets/menu-uploads/{image_name}'
         excel_path = f'assets/menu-uploads/{excel_name}'
         parsed['issues'] = issues
 
@@ -4110,6 +5296,13 @@ def upload_menu():
             'message':'Excel解析完成，请核对后确认发布',
         })
 
+    current_semester = meal_history.configured(get_db())
+    if current_semester:
+        try:
+            if meal_history.semester_for(date_start) != current_semester:
+                return jsonify(error='菜单日期不属于当前学期，请先由管理员核对学期切换'), 409
+        except (TypeError, ValueError):
+            return jsonify(error='请填写有效的菜单开始日期'), 400
     if f:
         safe_name = f'menu_w{week}_{parity}_{int(time.time())}{ext}'
         full_path = os.path.join(UPLOAD_DIR, safe_name)
@@ -4125,7 +5318,8 @@ def upload_menu():
         if not image_path: image_path = old['image_path']
         db.execute('''UPDATE weekly_menus
                       SET date_start=?, date_end=?, selection_deadline=?,
-                          image_path=?, notes=?, uploaded_by=?
+                          image_path=?, notes=?, uploaded_by=?,
+                          default_a_finalized_at=NULL
                       WHERE id=?''',
                    (date_start, date_end, selection_deadline, image_path,
                     notes, u['identity'], old['id']))
@@ -4225,6 +5419,9 @@ def publish_menu_import(batch_id):
     if blocking:
         return jsonify({'error':'菜单草稿仍有必须修正的异常，暂不能发布', 'issues':blocking}), 409
     service_days = _menu_service_days(parsed)
+    current_semester = meal_history.configured(db)
+    if current_semester and meal_history.semester_for(batch['date_start']) != current_semester:
+        return jsonify({'error':'菜单日期不属于当前学期，请先完成学期切换核对'}), 409
     if not any(day.get('service_status') == 'normal' for day in service_days):
         return jsonify({'error':'Excel中没有可发布的正常供餐日'}), 409
 
@@ -4238,7 +5435,8 @@ def publish_menu_import(batch_id):
             db.execute(
                 '''UPDATE weekly_menus
                    SET date_start=?, date_end=?, selection_deadline=?, image_path=?,
-                       notes=?, uploaded_by=?, import_batch_id=?, service_days_json=?
+                       notes=?, uploaded_by=?, import_batch_id=?, service_days_json=?,
+                       default_a_finalized_at=NULL
                    WHERE id=?''',
                 (batch['date_start'], batch['date_end'], batch['selection_deadline'],
                  batch['image_path'], parsed.get('title', ''), u['identity'], batch_id,
@@ -4730,6 +5928,8 @@ def stats_class_summary():
     week = request.args.get('week', type=int)
     parity = request.args.get('parity')   # 'odd' | 'even'
     source = _authoritative_meal_choice_source(db)
+    weekdays = _meal_stats_days(db, week)
+    weekday_placeholders = ','.join('?' for _ in weekdays)
     base_sql = f'''SELECT {source['grade']} AS grade_name,
                           {source['class']} AS class_name,
                           {source['week']} AS week_number,
@@ -4737,8 +5937,8 @@ def stats_class_summary():
                           {source['weekday']} AS weekday,
                           {source['choice']} AS choice,
                           COUNT(DISTINCT {source['id_card']}) AS cnt
-                   {source['from']} WHERE {source['weekday']} BETWEEN 1 AND 5'''
-    params = []
+                   {source['from']} WHERE {source['weekday']} IN ({weekday_placeholders})'''
+    params = list(weekdays)
     if grade:
         base_sql += f" AND {source['grade']} = ?"
         params.append(grade)
@@ -4758,11 +5958,11 @@ def stats_class_summary():
         out[key][f"{r['weekday']}{r['choice']}"] = r['cnt']
     rows = [{'grade': k[0], 'class': k[1], 'week': k[2], 'parity': k[3], **v}
             for k, v in out.items()]
-    return jsonify({'rows': rows})
+    return jsonify({'rows': rows, 'weekdays': weekdays})
 
 @app.route('/api/meal-stats/grade', methods=['GET'])
 def stats_grade():
-    """总务老师：全校、年级、班级的周一至周五 A/B 人数。"""
+    """总务老师：全校、年级、班级各实际供餐日的 A/B 人数。"""
     u = _current_user()
     if u['role'] not in ('teacher','admin') or (u['role'] == 'teacher' and u['sub_role'] != 'general'):
         return jsonify({'error':'仅总务老师可查看年级选餐统计'}), 403
@@ -4770,10 +5970,13 @@ def stats_grade():
     db = get_db()
     source = _authoritative_meal_choice_source(db)
     week = request.args.get('week', type=int)
-    where = f"WHERE {source['weekday']} BETWEEN 1 AND 5"
+    weekdays = _meal_stats_days(db, week)
+    weekday_placeholders = ','.join('?' for _ in weekdays)
+    where = f"WHERE {source['weekday']} IN ({weekday_placeholders})"
+    params = list(weekdays)
     if week:
         where += f" AND {source['week']} = ?"
-    params = (week,) if week else ()
+        params.append(week)
     detail_rows = db.execute(f'''
         SELECT {source['grade']} AS grade_name,
                {source['class']} AS class_name,
@@ -4828,7 +6031,167 @@ def stats_grade():
         'rows': grade_rows,
         'classes': class_rows,
         'participantCount': participant_count,
+        'weekdays': weekdays,
     })
+
+def _meal_required_info(db, week_odd, week_even):
+    """两周实际供餐日集合（parity_weekday keys）+ 应选天数 + 截止时间"""
+    menu_rows = db.execute(
+        '''SELECT parity, service_days_json, selection_deadline FROM weekly_menus
+           WHERE (week_number=? AND parity='odd') OR (week_number=? AND parity='even')''',
+        (week_odd, week_even)).fetchall()
+    required_by_parity = {'odd': {1, 2, 3, 4, 5}, 'even': {1, 2, 3, 4, 5}}
+    deadline = None
+    for menu_row in menu_rows:
+        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row)
+        deadline = deadline or menu_row['selection_deadline']
+    required_keys = {'%s_%s' % (parity, weekday)
+                     for parity, weekdays in required_by_parity.items()
+                     for weekday in weekdays}
+    return required_keys, len(required_keys), deadline
+
+
+def _meal_pending_operator():
+    """未订餐视图/催单的操作人：总务/admin 全校，班主任限本班。返回 (u, scope) 或 (None, None)。"""
+    u = _current_user()
+    if u['role'] == 'admin' or (u['role'] == 'teacher' and u.get('sub_role') == 'general'):
+        return u, None
+    if (u['role'] == 'teacher' and u.get('sub_role') == 'class'
+            and u.get('bound_grade') and u.get('bound_class')):
+        return u, (u['bound_grade'], u['bound_class'])
+    return None, None
+
+
+def _meal_pending_students(db, week_odd, week_even, grade=None, class_name=None):
+    """未完成选餐的学生清单 + 班级汇总。返回 (per_class, pending_students, required_count)。"""
+    required_keys, required_count, deadline = _meal_required_info(db, week_odd, week_even)
+    student_table = _meal_student_source(db)
+    sql = 'SELECT id_card, name, grade_name, class_name FROM %s' % student_table
+    cond, params = [], []
+    if grade:
+        cond.append('grade_name=?'); params.append(grade)
+    if class_name:
+        cond.append('class_name=?'); params.append(class_name)
+    if cond:
+        sql += ' WHERE ' + ' AND '.join(cond)
+    students = db.execute(sql, params).fetchall()
+
+    source = _authoritative_meal_choice_source(db)
+    csql = '''SELECT {id_card} AS id_card, {parity} AS parity, {weekday} AS weekday
+              {frm} WHERE (({parity}='odd' AND {week}=?) OR ({parity}='even' AND {week}=?))'''.format(
+        id_card=source['id_card'], parity=source['parity'], weekday=source['weekday'],
+        week=source['week'], frm=source['from'])
+    picked = {}
+    for r in db.execute(csql, (week_odd, week_even)).fetchall():
+        key = '%s_%s' % (r['parity'], r['weekday'])
+        if key in required_keys:
+            picked.setdefault(r['id_card'], set()).add(key)
+
+    per_class = {}
+    pending_students = []
+    for s in students:
+        got = len(picked.get(s['id_card'], ()))
+        bucket = per_class.setdefault((s['grade_name'], s['class_name']),
+                                      {'total': 0, 'incomplete': 0, 'unstarted': 0})
+        bucket['total'] += 1
+        if got < required_count:
+            bucket['incomplete'] += 1
+            if got == 0:
+                bucket['unstarted'] += 1
+            pending_students.append({'idCard': s['id_card'], 'name': s['name'],
+                                     'grade': s['grade_name'], 'className': s['class_name'],
+                                     'selected': got, 'required': required_count})
+    return per_class, pending_students, required_count, deadline
+
+
+@app.route('/api/meal-stats/pending-overview', methods=['GET'])
+def meal_pending_overview():
+    """未订餐概览：总务看全校各班未完成人数；班主任只看本班。"""
+    u, scope = _meal_pending_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    week_odd = request.args.get('week_odd', type=int)
+    week_even = request.args.get('week_even', type=int)
+    if not week_odd or not week_even:
+        return jsonify({'error': 'week_odd 与 week_even 必填'}), 400
+    _ensure_meal_tables()
+    db = get_db()
+    grade, class_name = (scope if scope else (None, None))
+    per_class, _pending, required_count, deadline = _meal_pending_students(
+        db, week_odd, week_even, grade, class_name)
+    classes = [{'grade': g, 'className': c, **v}
+               for (g, c), v in sorted(per_class.items())]
+    return jsonify({'classes': classes, 'requiredCount': required_count,
+                    'deadline': deadline})
+
+
+@app.route('/api/meal-stats/remind-pending', methods=['POST'])
+def meal_remind_pending():
+    """一键钉钉提醒未订餐家长（按班执行；同一天同学生只提醒一次）。
+       只有绑定过钉钉的家长账号能收到，未绑定的单独计数供老师人工跟进。"""
+    u, scope = _meal_pending_operator()
+    if not u:
+        return jsonify({'error': '仅总务老师/班主任/管理员可用'}), 403
+    data = request.get_json() or {}
+    week_odd = data.get('week_odd')
+    week_even = data.get('week_even')
+    if not week_odd or not week_even:
+        return jsonify({'error': 'week_odd 与 week_even 必填'}), 400
+    grade = (data.get('grade') or '').strip() or None
+    class_name = (data.get('className') or '').strip() or None
+    if scope:
+        grade, class_name = scope          # 班主任强制本班
+    if not grade or not class_name:
+        return jsonify({'error': '请按班级执行提醒（grade 与 className 必填）'}), 400
+    campus = _resolve_campus()
+    _ensure_meal_tables()
+    db = get_db()
+    db.execute('''CREATE TABLE IF NOT EXISTS meal_remind_log(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campus TEXT, week_key TEXT, id_card TEXT, sent_date TEXT,
+        operator TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(campus, week_key, id_card, sent_date))''')
+    _per_class, pending_students, required_count, deadline = _meal_pending_students(
+        db, week_odd, week_even, grade, class_name)
+    adb = get_auth_db(campus)
+    _ensure_dingtalk_userid_column(adb)
+    week_key = '%s-%s' % (week_odd, week_even)
+    today = time.strftime('%Y-%m-%d')
+    deadline_text = (deadline or '').replace('T', ' ')
+    reminded = no_binding = skipped = 0
+    for stu in pending_students:
+        parent = adb.execute(
+            "SELECT dingtalk_userid FROM auth_accounts WHERE role='parent' AND campus_id=? "
+            'AND is_active=1 AND (bound_student_userid=? OR bound_id_card=?) '
+            'AND dingtalk_userid IS NOT NULL LIMIT 1',
+            (campus, stu['idCard'], stu['idCard'])).fetchone()
+        if not parent:
+            no_binding += 1
+            continue
+        cur = db.execute(
+            'INSERT OR IGNORE INTO meal_remind_log(campus, week_key, id_card, sent_date, operator) '
+            'VALUES(?,?,?,?,?)', (campus, week_key, stu['idCard'], today, u['identity']))
+        if cur.rowcount == 0:
+            skipped += 1
+            continue
+        content = ('**%s** 家长您好：\n\n本期（第 %s-%s 周）午餐选餐还未完成'
+                   '（已选 %d / %d 天）。\n\n请在 **%s** 前打开「宝小学生画像 → 健康岛」'
+                   '完成选餐，过期将无法提交。' % (
+                       stu['name'], week_odd, week_even, stu['selected'],
+                       stu['required'], deadline_text or '截止时间'))
+        if _send_dt_work_notification(parent['dingtalk_userid'], '选餐提醒', content, campus):
+            reminded += 1
+        else:
+            db.execute('DELETE FROM meal_remind_log WHERE campus=? AND week_key=? '
+                       'AND id_card=? AND sent_date=?', (campus, week_key, stu['idCard'], today))
+            no_binding += 0   # 发送失败不计绑定缺失，仅回滚去重记录
+    db.commit()
+    app.logger.info('[选餐提醒] %s %s%s: 已提醒 %d, 未绑定 %d, 今日已发跳过 %d',
+                    u['identity'], grade, class_name, reminded, no_binding, skipped)
+    return jsonify({'success': True, 'grade': grade, 'className': class_name,
+                    'reminded': reminded, 'noBinding': no_binding, 'skippedToday': skipped,
+                    'pendingTotal': len(pending_students)})
+
 
 @app.route('/api/meal-stats/class', methods=['GET'])
 def stats_class():
@@ -5054,6 +6417,76 @@ def export_class_club():
     wb = _xlsx_simple_table(f'{grade}{klass}社团', headers, rows)
     return _xlsx_response(wb, f'{grade}{klass}_{CLUB_SEMESTER}_社团名单.xlsx')
 
+@app.route('/api/export/grade-club.xlsx', methods=['GET'])
+def export_grade_club():
+    """总务老师：按年级导出当前学期社团报名结果。"""
+    _, error = _club_general_teacher()
+    if error:
+        return error
+
+    requested = [item.strip() for item in request.args.get('grades', '').split(',') if item.strip()]
+    # 不传 grades 时导出全部年级
+    grades = [grade for grade in CLUB_GRADES if grade in requested] if requested else list(CLUB_GRADES)
+    if not grades:
+        return jsonify({'error': '请选择需要导出的年级'}), 400
+
+    _ensure_club_signups_table()
+    db = get_db()
+    student_table = _students_table(_resolve_campus())
+    table_exists = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (student_table,),
+    ).fetchone()
+    student_join = (
+        f'LEFT JOIN {student_table} s ON s.id_card = cs.student_id'
+        if table_exists else
+        'LEFT JOIN (SELECT NULL AS id_card, NULL AS name, NULL AS grade_name, NULL AS class_name) s ON 0 = 1'
+    )
+    placeholders = ','.join('?' for _ in grades)
+    records = db.execute(
+        f'''SELECT cs.student_id, cs.status, cs.created_at, cs.confirmed_at,
+                   COALESCE(s.name, cs.student_id) AS student_name,
+                   COALESCE(s.grade_name, cs.grade) AS grade_name,
+                   COALESCE(s.class_name, '') AS class_name,
+                   c.name AS course_name, c.campus, c.weekday, c.location,
+                   c.teacher AS course_teacher
+            FROM club_signups cs
+            LEFT JOIN club_course_catalog c
+              ON c.id = cs.course_id AND c.semester = cs.semester
+            {student_join}
+            WHERE cs.semester = ?
+              AND COALESCE(s.grade_name, cs.grade) IN ({placeholders})
+            ORDER BY {_grade_sort_sql('COALESCE(s.grade_name, cs.grade)')},
+                     s.class_name, c.name, s.name, cs.student_id''',
+        (CLUB_SEMESTER, *grades),
+    ).fetchall()
+
+    import openpyxl
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+    headers = ['学籍号', '姓名', '年级', '班级', '报名结果', '社团', '校区',
+               '上课时间', '地点', '负责老师', '报名时间', '确认时间']
+    status_text = {'pending': '待确认', 'confirmed': '已录取', 'rejected': '未录取'}
+    for grade in grades:
+        ws = wb.create_sheet(grade)
+        _styled_header(ws, headers)
+        for record in records:
+            if record['grade_name'] != grade:
+                continue
+            ws.append([
+                record['student_id'], record['student_name'], record['grade_name'],
+                record['class_name'], status_text.get(record['status'], record['status']),
+                record['course_name'] or '', record['campus'] or '', record['weekday'] or '',
+                record['location'] or '', record['course_teacher'] or '',
+                record['created_at'] or '', record['confirmed_at'] or '',
+            ])
+        ws.freeze_panes = 'A2'
+        ws.auto_filter.ref = ws.dimensions
+        _auto_width(ws)
+
+    grade_label = ''.join(grade[0] for grade in grades)
+    return _xlsx_response(wb, f'{grade_label}年级_{CLUB_SEMESTER}_社团报名结果.xlsx')
+
 @app.route('/api/export/class-vision.xlsx', methods=['GET'])
 def export_class_vision():
     """班主任 / 总务：全班屈光分布 → Excel"""
@@ -5156,7 +6589,9 @@ def export_class_meal():
         return jsonify({'error':'需要 grade + class'}), 400
     if not week_odd or not week_even or week_even != week_odd + 1:
         return jsonify({'error':'请选择连续的奇数周和偶数周'}), 400
+    _ensure_meal_tables()
     db = get_db()
+    _finalize_expired_meal_choices(db, _resolve_campus())
     student_table = _meal_student_source(db)
     students = db.execute(
         f'SELECT id_card, name FROM {student_table} WHERE grade_name=? AND class_name=? ORDER BY name',
@@ -5183,7 +6618,7 @@ def export_class_meal():
     ).fetchall()
     required_by_parity = {'odd': {1,2,3,4,5}, 'even': {1,2,3,4,5}}
     for menu_row in menu_rows:
-        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row) & {1,2,3,4,5}
+        required_by_parity[menu_row['parity']] = _required_menu_days(menu_row)
     required_keys = {
         f'{parity}_{weekday}'
         for parity, weekdays in required_by_parity.items()
@@ -5213,9 +6648,10 @@ def export_class_meal():
     wb = _xlsx_simple_table('学生选餐明细', headers, data)
     wb.active.title = '学生选餐明细'
     summary = wb.create_sheet('每日汇总', 0)
+    summary_days = sorted(required_by_parity['odd'] | required_by_parity['even'])
     summary_headers = ['周次', '周类型'] + [
         f'{day_labels[day]}{choice}餐'
-        for day in range(1, 6)
+        for day in summary_days
         for choice in ('A', 'B')
     ] + ['A餐合计', 'B餐合计']
     _styled_header(summary, summary_headers)
@@ -5226,7 +6662,7 @@ def export_class_meal():
         daily_counts = []
         total_a = 0
         total_b = 0
-        for day in range(1, 6):
+        for day in summary_days:
             a_count = sum(
                 1 for student_picks in by_stu.values()
                 if student_picks.get(f'{parity}_{day}') == 'A'
@@ -5248,7 +6684,7 @@ def export_class_meal():
 
 @app.route('/api/export/school-meal.xlsx', methods=['GET'])
 def export_school_meal():
-    """总务：两周全校、年级、班级工作日 A/B 人数汇总。"""
+    """总务：两周全校、年级、班级实际供餐日 A/B 人数汇总。"""
     u = _current_user()
     if u['role'] != 'teacher' or u['sub_role'] != 'general':
         if u['role'] != 'admin':
@@ -5257,10 +6693,15 @@ def export_school_meal():
     week_even = request.args.get('week_even', type=int)
     if not week_odd or not week_even or week_even != week_odd + 1:
         return jsonify({'error':'请选择连续的奇数周和偶数周'}), 400
+    _ensure_meal_tables()
     db = get_db()
+    _finalize_expired_meal_choices(db, _resolve_campus())
     import openpyxl
     wb = openpyxl.Workbook(); first_sheet = wb.active; wb.remove(first_sheet)
-    DAY = ['周一','周二','周三','周四','周五']
+    day_labels = {1:'周一', 2:'周二', 3:'周三', 4:'周四', 5:'周五', 6:'周六', 7:'周日'}
+    weekdays = _meal_stats_days(db, week_odd, week_even)
+    DAY = [day_labels[day] for day in weekdays]
+    weekday_placeholders = ','.join('?' for _ in weekdays)
     source = _authoritative_meal_choice_source(db)
     rows = db.execute(f'''
         SELECT {source['grade']} AS grade_name,
@@ -5271,13 +6712,13 @@ def export_school_meal():
                {source['choice']} AS choice,
                COUNT(DISTINCT {source['id_card']}) AS cnt
         {source['from']}
-        WHERE {source['weekday']} BETWEEN 1 AND 5
+        WHERE {source['weekday']} IN ({weekday_placeholders})
           AND (({source['week']}=? AND {source['parity']}='odd')
             OR ({source['week']}=? AND {source['parity']}='even'))
         GROUP BY 1, 2, 3, 4, 5, 6
         ORDER BY {_grade_sort_sql(source['grade'])}, {source['class']},
                  {source['week']}, {source['weekday']}
-    ''', (week_odd, week_even)).fetchall()
+    ''', (*weekdays, week_odd, week_even)).fetchall()
 
     def add_summary_sheet(name, key_builder, label_headers):
         ws = wb.create_sheet(name)
@@ -5295,9 +6736,9 @@ def export_school_meal():
             offset = len(labels)
             ws.cell(row=row_idx, column=offset + 1, value=key[-2])
             ws.cell(row=row_idx, column=offset + 2, value='奇数周' if key[-1] == 'odd' else '偶数周')
-            for day in range(1, 6):
-                ws.cell(row=row_idx, column=offset + 1 + day * 2, value=values.get(f'{day}A', 0))
-                ws.cell(row=row_idx, column=offset + 2 + day * 2, value=values.get(f'{day}B', 0))
+            for position, day in enumerate(weekdays, 1):
+                ws.cell(row=row_idx, column=offset + 1 + position * 2, value=values.get(f'{day}A', 0))
+                ws.cell(row=row_idx, column=offset + 2 + position * 2, value=values.get(f'{day}B', 0))
         ws.freeze_panes = 'A2'
         _auto_width(ws)
 
@@ -6643,13 +8084,17 @@ def teacher_awards_summary():
 # ─────────────────────────────────────────────
 import subprocess as _sp, glob as _glob, threading as _thr
 
-_ZIP_DROP_DIR = '/srv/baoshan/zip-drop'
+_ZIP_DROP_DIR = os.environ.get('ZIP_DROP_DIR', '/srv/baoshan/zip-drop')
 _ZIP_UPLOAD_DIR = os.path.join(_ZIP_DROP_DIR, 'uploads')
 _ZIP_JOBS_DIR = os.path.join(_ZIP_DROP_DIR, 'jobs')
 _PROCESSOR_SCRIPT = os.path.join(_ZIP_DROP_DIR, 'process_zip.py')
 
-os.makedirs(_ZIP_UPLOAD_DIR, exist_ok=True)
-os.makedirs(_ZIP_JOBS_DIR, exist_ok=True)
+try:
+    os.makedirs(_ZIP_UPLOAD_DIR, exist_ok=True)
+    os.makedirs(_ZIP_JOBS_DIR, exist_ok=True)
+except OSError as _zip_dir_err:
+    # 本地开发机上 /srv 不可写；ZIP 投放站仅在生产使用
+    print(f'[警告] ZIP 投放站目录不可用: {_zip_dir_err}', flush=True)
 
 
 @app.route('/zip-drop/')
@@ -8124,13 +9569,21 @@ def portrait_school():
     })
 
 
+try:
+    from . import meal_history
+except ImportError:
+    import meal_history
+meal_history.register(sys.modules[__name__])
+app.config['MEAL_PHOTO_X_ACCEL'] = os.environ.get('MEAL_PHOTO_X_ACCEL') == '1'
+
+
 if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         print(f"警告: 数据库文件不存在 {DB_PATH}")
         print("请先运行 database_builder.py 构建数据库")
 
     PORT = int(os.environ.get('PORT', 5050))
-    print("================ 宝山学习群岛 API ================")
+    print("================ 宝小学生画像 API ================")
     print(f" 数据库:    {DB_PATH}")
     print(f" AI:        {'✓ 已配置 ('+AI_PROVIDER+'/'+AI_MODEL+')' if AI_API_KEY else '✗ 未配置 AI API Key'}")
     print(f" 钉钉 SSO:  {'✓ 已配置' if (DINGTALK_APP_KEY and DINGTALK_APP_SECRET) else '✗ 未配置'}")

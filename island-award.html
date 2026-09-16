@@ -100,12 +100,12 @@
 <div class="topbar">
   <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
   <div class="crumbs">
-    <span>快乐学习群岛</span><span class="arrow">›</span><span>🏆 成就岛</span>
+    <span>宝小学生画像</span><span class="arrow">›</span><span>🏆 成就岛</span>
   </div>
   <div class="topbar-right">
     <div class="student-pill">
       <div class="stu-avatar">林</div>
-    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+    <button onclick="window.UserAuth && UserAuth.logout()" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
       <div class="stu-info">
         <div class="name">林**</div>
         <div class="meta">小学 · 五年级 1 班</div>
@@ -354,7 +354,7 @@ function mockAwards(){
   const artPrizes = ['一等奖','金奖','最佳表演奖','优秀作品奖','银奖'];
   const techComps = ['机器人挑战赛','创客大赛','少儿编程比赛','科创大赛','科技小制作'];
   const techPrizes = ['一等奖','二等奖','创新奖','三等奖','金奖'];
-  const teachers = ['教师03','示例教师B','示例教师C','示例教师D','示例教师E','示例教师F','示例教师G','示例教师H'];
+  const teachers = ['张天晟','李美华','王琼','陈鹏','刘强','赵晓','孙慧','马刚'];
 
   for(let i=0;i<60;i++){
     const subj = subjs[i%4];

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>登录 · 宝山学习群岛</title>
+<title>登录 · 宝小学生画像</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%;font-family:'PingFang SC','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;color:#1F3A4D}
@@ -73,7 +73,27 @@
   .example-fill:active{transform:translateY(1px)}
   .example-fill:focus-visible{outline:3px solid rgba(91,200,232,.35);outline-offset:2px}
   #loginForm[hidden]{display:none}
+  #firstLoginForm[hidden]{display:none}
+  .first-login-tip{
+    margin:0 0 16px;padding:11px 14px;border-radius:12px;background:#FFF6E3;
+    color:#8A5A16;font-size:12.5px;font-weight:700;line-height:1.65;
+  }
+  .link-row{margin-top:12px;text-align:right}
+  .link-row a{display:inline-block;padding:8px 2px;font-size:12px;color:#0E5E80;font-weight:800;cursor:pointer;text-decoration:none}
+  .link-row a:hover{text-decoration:underline}
+  .back-row{margin-top:14px;text-align:center}
+  .back-row a{display:inline-block;padding:8px 10px;font-size:12px;color:#5C7A8C;font-weight:700;cursor:pointer;text-decoration:none}
+  #recoverView[hidden]{display:none}
+  .skip-row{text-align:right;margin:-4px 0 4px}
+  .skip-row a{
+    display:inline-block;padding:10px 4px;color:#7BB8DA;font-size:12px;
+    font-weight:800;cursor:pointer;text-decoration:none;letter-spacing:.5px;
+  }
+  .skip-row a:hover{color:#0E5E80;text-decoration:underline}
+  .form-row input:disabled{background:#EDF3F6;color:#8AA2B0;cursor:not-allowed}
+  .optional-tag{font-weight:700;color:#9AB4C2;font-size:11px;margin-left:6px}
 </style>
+<script src="https://g.alicdn.com/dingding/dingtalk-jsapi/2.13.42/dingtalk.open.js"></script>
 </head>
 <body>
 
@@ -81,8 +101,8 @@
   <div class="logo-row">
     <div class="badge">🏝️</div>
     <div>
-      <div class="title">宝山学习群岛</div>
-      <div class="sub">Baoshan Learning Islands</div>
+      <div class="title">宝小学生画像</div>
+      <div class="sub">Baoxiao Student Profile</div>
     </div>
   </div>
 
@@ -109,7 +129,7 @@
     <input id="loginEntry" type="hidden" name="entry">
     <div class="form-row">
       <label>账号</label>
-      <input id="username" type="text" autocomplete="username" placeholder="请输入账号" required>
+      <input id="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="请输入账号" required>
     </div>
     <div class="form-row">
       <label>密码</label>
@@ -117,7 +137,54 @@
     </div>
     <button class="login-btn" id="submitBtn" type="submit">登 录</button>
     <div class="err" id="errBox"></div>
+    <div class="link-row"><a id="forgotLink" onclick="showRecover()">忘记密码？用发放单找回</a></div>
   </form>
+
+  <form id="recoverView" onsubmit="return doRecover(event)" hidden>
+    <div class="first-login-tip">
+      输入<strong>老师发放单上的初始密码</strong>验证身份后即可设置新密码。<br>
+      找不到发放单的，请联系班主任或总务老师重置。
+    </div>
+    <div class="form-row">
+      <label>登录账号</label>
+      <input id="rcUsername" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="发放单上的账号" required>
+    </div>
+    <div class="form-row">
+      <label>初始密码（发放单上的）</label>
+      <input id="rcInitial" type="password" autocomplete="off" placeholder="••••••" required>
+    </div>
+    <div class="form-row">
+      <label>新密码</label>
+      <input id="rcNew1" type="password" autocomplete="new-password" placeholder="至少 8 位，包含字母和数字" required>
+    </div>
+    <div class="form-row">
+      <label>再输一次新密码</label>
+      <input id="rcNew2" type="password" autocomplete="new-password" placeholder="再次输入确认" required>
+    </div>
+    <button class="login-btn" id="rcBtn" type="submit">重置密码</button>
+    <div class="err" id="rcErr"></div>
+    <div class="back-row"><a onclick="hideRecover()">← 返回登录</a></div>
+  </form>
+
+  <form id="firstLoginForm" onsubmit="return doFirstLoginSetup(event)" hidden>
+    <div class="skip-row"><a id="skipFirstLogin" onclick="return doSkipFirstLogin()">暂不修改，直接进入 ›</a></div>
+    <div class="first-login-tip">
+      首次登录请设置<strong>自己的新密码</strong>（必填，至少 8 位且包含字母和数字）。<br>
+      登录账号保持发放单上的不变，忘记密码时可凭发放单找回。
+    </div>
+    <div class="form-row">
+      <label>新密码</label>
+      <input id="newPassword" type="password" autocomplete="new-password" placeholder="至少 8 位，包含字母和数字" required>
+    </div>
+    <div class="form-row">
+      <label>再输一次新密码</label>
+      <input id="newPassword2" type="password" autocomplete="new-password" placeholder="再次输入确认" required>
+    </div>
+    <button class="login-btn" id="firstLoginBtn" type="submit">完成设置并进入</button>
+    <div class="err" id="firstErrBox"></div>
+  </form>
+  <div style="text-align:center;margin-top:14px"><a href="guides/index.html" style="color:#7BB8DA;font-size:12px;font-weight:800;text-decoration:none">📚 操作手册中心</a></div>
+
 
 
 <script>
@@ -128,7 +195,7 @@ const ENTRY_CONFIG = {
   parent: { label: '学生家长' }
 };
 const CAMPUS_ID = new URLSearchParams(location.search).get('campus') || 'benbu';
-const CAMPUS_NAMES = {benbu:'本部校区', baolin:'宝林校区'};
+const CAMPUS_NAMES = {benbu:'本部校区', baolin:'宝林校区', luojing:'罗泾校区'};
 const LOCAL_API_BASE = (
   location.protocol === 'file:' ||
   (
@@ -138,14 +205,16 @@ const LOCAL_API_BASE = (
 ) ? 'http://127.0.0.1:5051' : '';
 
 const PERSISTENT_SESSION_KEY = `bs_persistent_session_${CAMPUS_ID}`;
+const MANUAL_LOGIN = new URLSearchParams(location.search).get('manual') === '1';
 
 // 页面级身份仍只放 sessionStorage；localStorage 只保存当前校区的签名令牌。
 sessionStorage.clear();
 document.getElementById('campusGreeting').textContent =
   `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 请选择身份入口，再输入对应账号密码`;
 
-function rememberSession(token){
-  if(token) localStorage.setItem(PERSISTENT_SESSION_KEY, token);
+function rememberSession(token, campus){
+  // 按账号真实校区存持久令牌：跨校区识别登录后，下次从正确入口可直接恢复
+  if(token) localStorage.setItem('bs_persistent_session_' + (campus || CAMPUS_ID), token);
 }
 
 function forgetSession(){
@@ -178,6 +247,257 @@ function goToApplication(user){
   location.replace(`island-homepage.html?campus=${encodeURIComponent(user.campus || CAMPUS_ID)}&auth=1`);
 }
 
+let FIRST_LOGIN = null;   // 首次登录强制改密的中间状态
+
+/* ══════════ 钉钉绑定免登 ══════════
+   账密登录成功后把当前钉钉 userId 静默绑到账号；
+   之后任何设备在钉钉里打开本页都自动登录，无需再输账密。 */
+const IN_DINGTALK = /DingTalk/i.test(navigator.userAgent);
+let DT_CONFIG = null;   // {enabled, corpId}
+
+async function dtBindConfig(){
+  if(DT_CONFIG) return DT_CONFIG;
+  try {
+    const r = await fetch(`${LOCAL_API_BASE}/api/auth/dingtalk-bind-config?campus=${encodeURIComponent(CAMPUS_ID)}`);
+    DT_CONFIG = await r.json();
+  } catch(e){ DT_CONFIG = {enabled: false, corpId: ''}; }
+  return DT_CONFIG;
+}
+
+function dtGetAuthCode(corpId, timeoutMs){
+  return new Promise(resolve => {
+    let done = false;
+    const fin = v => { if(!done){ done = true; resolve(v); } };
+    setTimeout(() => fin(null), timeoutMs || 5000);
+    try {
+      if(typeof dd === 'undefined') return fin(null);
+      dd.ready(() => {
+        try {
+          dd.runtime.permission.requestAuthCode({
+            corpId,
+            onSuccess: info => fin(info && info.code || null),
+            onFail: () => fin(null)
+          });
+        } catch(e){ fin(null); }
+      });
+      dd.error(() => fin(null));
+    } catch(e){ fin(null); }
+  });
+}
+
+/** 钉钉内自动免登：仅对已用账密绑定过的钉钉用户放行；任何失败都静默留在登录页 */
+async function tryDingTalkAutoLogin(){
+  if(!IN_DINGTALK) return false;
+  const cfg = await dtBindConfig();
+  if(!cfg.enabled) return false;
+  const code = await dtGetAuthCode(cfg.corpId);
+  if(!code) return false;
+  document.getElementById('campusGreeting').textContent =
+    `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 正在通过钉钉登录...`;
+  try {
+    const r = await fetch(`${LOCAL_API_BASE}/api/auth/dingtalk-token-login`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({authCode: code, campus: CAMPUS_ID})
+    });
+    const d = await r.json();
+    if(r.ok && d.success && !d.user.mustChangePassword){
+      await finishLogin(d.sessionToken, d.user);
+      return true;
+    }
+  } catch(e){ /* 静默回落账密登录 */ }
+  document.getElementById('campusGreeting').textContent =
+    `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 请选择身份入口，再输入对应账号密码`;
+  return false;
+}
+
+/** 登录成功后把钉钉身份静默绑到账号（不阻塞进入，失败无感） */
+async function tryDingTalkBind(token){
+  if(!IN_DINGTALK) return;
+  try {
+    const cfg = await dtBindConfig();
+    if(!cfg.enabled) return;
+    const code = await dtGetAuthCode(cfg.corpId, 4000);
+    if(!code) return;
+    await fetch(`${LOCAL_API_BASE}/api/auth/dingtalk-bind`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + token},
+      body: JSON.stringify({authCode: code})
+    });
+  } catch(e){ /* ignore */ }
+}
+
+/** 登录（或首次设置）完成后的统一收尾：写身份、存持久令牌、绑定钉钉、预拉家长档案、进入应用 */
+async function finishLogin(token, user){
+  hydrateSession(token, user);
+  rememberSession(token, user.campus || CAMPUS_ID);
+  await tryDingTalkBind(token);
+  // 家长：把绑定学生的真实档案预拉一次，缓存到 sessionStorage
+  if(user.role === 'parent'){
+    try {
+      const sr = await fetch(LOCAL_API_BASE + '/api/auth/me', {
+        headers:{'Authorization':'Bearer ' + token}
+      });
+      if(sr.ok){
+        const me = await sr.json();
+        const stu = me.boundStudent;
+        if(stu){
+          sessionStorage.setItem('bs_bound_student_json', JSON.stringify(stu));
+          sessionStorage.setItem('bs_bound_id_card', stu.idCard || '');
+          sessionStorage.setItem('bs_bound_grade', stu.grade || '');
+          sessionStorage.setItem('bs_bound_class', stu.class || '');
+          sessionStorage.setItem('bs_kid_name', stu.displayName || user.kid_name || '');
+        }
+      }
+    } catch(e){ /* 后端不可达时静默跳过，岛屿仍可走 fallback */ }
+  }
+  goToApplication(user);
+}
+
+/** 忘记密码：凭发放单初始密码自助重置 */
+function showRecover(){
+  document.querySelector('.role-entry').style.display = 'none';
+  document.getElementById('entryHint').style.display = 'none';
+  document.getElementById('loginForm').hidden = true;
+  document.getElementById('recoverView').hidden = false;
+  document.getElementById('campusGreeting').textContent =
+    `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 找回密码`;
+  const u = document.getElementById('username').value.trim();
+  if(u) document.getElementById('rcUsername').value = u;
+  document.getElementById('rcUsername').focus();
+}
+
+function hideRecover(){
+  document.getElementById('recoverView').hidden = true;
+  document.querySelector('.role-entry').style.display = '';
+  document.getElementById('entryHint').style.display = '';
+  document.getElementById('loginForm').hidden = false;
+  document.getElementById('campusGreeting').textContent =
+    `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 请选择身份入口，再输入对应账号密码`;
+}
+
+async function doRecover(e){
+  e.preventDefault();
+  const err = document.getElementById('rcErr');
+  const btn = document.getElementById('rcBtn');
+  const u = document.getElementById('rcUsername').value.replace(/​/g, '').trim();
+  const initialPwd = document.getElementById('rcInitial').value;
+  const n1 = document.getElementById('rcNew1').value;
+  const n2 = document.getElementById('rcNew2').value;
+  err.classList.remove('show');
+  if(n1 !== n2){
+    err.textContent = '两次输入的新密码不一致';
+    err.classList.add('show');
+    return false;
+  }
+  if(n1.length < 8 || !/[A-Za-z]/.test(n1) || !/\d/.test(n1)){
+    err.textContent = '新密码至少 8 位，且需同时包含字母和数字';
+    err.classList.add('show');
+    return false;
+  }
+  btn.disabled = true;
+  btn.textContent = '重置中...';
+  try {
+    const r = await fetch(`${LOCAL_API_BASE}/api/auth/recover-by-initial`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, initialPassword: initialPwd,
+                            newPassword: n1, campus: CAMPUS_ID})
+    });
+    const d = await r.json();
+    if(!r.ok || !d.success){
+      err.textContent = d.error || '重置失败，请重试';
+      err.classList.add('show');
+      btn.disabled = false; btn.textContent = '重置密码';
+      return false;
+    }
+    hideRecover();
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = '';
+    document.getElementById('campusGreeting').textContent =
+      '✅ 密码已重置，请选择身份入口后用新密码登录';
+    btn.disabled = false; btn.textContent = '重置密码';
+    return false;
+  } catch(ex){
+    err.textContent = `网络错误：${ex.message}，请重试`;
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = '重置密码';
+    return false;
+  }
+}
+
+/** 首登面板「暂不修改」：清掉强改密标志后直接进入（清除失败也不拦路，下次登录再提示） */
+async function doSkipFirstLogin(){
+  if(!FIRST_LOGIN) return false;
+  const link = document.getElementById('skipFirstLogin');
+  link.style.pointerEvents = 'none';
+  try {
+    await fetch(`${LOCAL_API_BASE}/api/auth/skip-password-change`, {
+      method:'POST',
+      headers:{'Authorization':'Bearer ' + FIRST_LOGIN.token}
+    });
+  } catch(e){ /* ignore */ }
+  await finishLogin(FIRST_LOGIN.token, FIRST_LOGIN.user);
+  return false;
+}
+
+/** 首次登录面板提交：设置新密码。
+    （「顺便改账号名」已下线：家长两次误改账号名导致登不上，改名需求走总务处理） */
+async function doFirstLoginSetup(e){
+  e.preventDefault();
+  if(!FIRST_LOGIN) return false;
+  const err = document.getElementById('firstErrBox');
+  const btn = document.getElementById('firstLoginBtn');
+  const np1 = document.getElementById('newPassword').value;
+  const np2 = document.getElementById('newPassword2').value;
+  err.classList.remove('show');
+
+  // 第一步：修改密码（只做一次）
+  if(!FIRST_LOGIN.passwordChanged){
+    if(np1 !== np2){
+      err.textContent = '两次输入的新密码不一致';
+      err.classList.add('show');
+      return false;
+    }
+    if(np1.length < 8 || !/[A-Za-z]/.test(np1) || !/\d/.test(np1)){
+      err.textContent = '新密码至少 8 位，且需同时包含字母和数字';
+      err.classList.add('show');
+      return false;
+    }
+  }
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  try {
+    if(!FIRST_LOGIN.passwordChanged){
+      const r = await fetch(`${LOCAL_API_BASE}/api/auth/change-password`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + FIRST_LOGIN.token},
+        body: JSON.stringify({oldPassword: FIRST_LOGIN.oldPassword, newPassword: np1})
+      });
+      const data = await r.json();
+      if(!r.ok || !data.success){
+        err.textContent = data.error || '密码修改失败，请重试';
+        err.classList.add('show');
+        btn.disabled = false; btn.textContent = '完成设置并进入';
+        return false;
+      }
+      FIRST_LOGIN.token = data.sessionToken;
+      FIRST_LOGIN.passwordChanged = true;
+      FIRST_LOGIN.newPassword = np1;
+      document.getElementById('newPassword').disabled = true;
+      document.getElementById('newPassword2').disabled = true;
+    }
+
+    await finishLogin(FIRST_LOGIN.token, FIRST_LOGIN.user);
+    return false;
+  } catch(ex){
+    err.textContent = `网络错误：${ex.message}，请重试`;
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = '完成设置并进入';
+    return false;
+  }
+}
+
 async function restoreSavedLogin(){
   const token = localStorage.getItem(PERSISTENT_SESSION_KEY);
   if(!token) return;
@@ -191,14 +511,24 @@ async function restoreSavedLogin(){
     if(!response.ok || user.role === 'none' || user.campus !== CAMPUS_ID || !String(user.owner || '').startsWith('account:')){
       throw new Error('保存的登录状态已失效');
     }
+    if(user.mustChangePassword){
+      // 管理员重置过密码等场景：强制走一次账号密码登录 + 设置新密码
+      forgetSession();
+      sessionStorage.clear();
+      document.getElementById('campusGreeting').textContent =
+        `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 需要设置新密码，请先输入账号密码登录`;
+      return;
+    }
     hydrateSession(token, user);
     goToApplication(user);
+    return true;
   } catch(e){
     forgetSession();
     sessionStorage.clear();
     document.getElementById('campusGreeting').textContent =
       `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 登录已失效，请重新输入账号密码`;
   }
+  return false;
 }
 
 document.querySelectorAll('.role-entry-btn').forEach(button => {
@@ -238,31 +568,23 @@ async function doLogin(e){
       btn.disabled = false; btn.textContent = '登 录';
       return false;
     }
-    // 页面身份写入 sessionStorage，签名令牌按校区持久保存。
     const user = data.user;
-    hydrateSession(data.sessionToken, user);
-    rememberSession(data.sessionToken);
 
-    // 家长：把绑定学生的真实档案预拉一次，缓存到 sessionStorage
-    if(user.role === 'parent'){
-      try {
-        const sr = await fetch(LOCAL_API_BASE + '/api/auth/me', {
-          headers:{'Authorization':'Bearer ' + data.sessionToken}
-        });
-        if(sr.ok){
-          const me = await sr.json();
-          const stu = me.boundStudent;
-          if(stu){
-            sessionStorage.setItem('bs_bound_student_json', JSON.stringify(stu));
-            sessionStorage.setItem('bs_bound_id_card', stu.idCard || '');
-            sessionStorage.setItem('bs_bound_grade', stu.grade || '');
-            sessionStorage.setItem('bs_bound_class', stu.class || '');
-            sessionStorage.setItem('bs_kid_name', stu.displayName || user.kid_name || '');
-          }
-        }
-      } catch(e){ /* 后端不可达时静默跳过，岛屿仍可走 fallback */ }
+    // 首次登录：先强制设置新密码（可顺带改账号名），完成前不落持久令牌。
+    if(user.mustChangePassword){
+      FIRST_LOGIN = { token: data.sessionToken, user, oldPassword: p, username: u, passwordChanged: false, newPassword: '' };
+      document.getElementById('loginForm').hidden = true;
+      document.querySelector('.role-entry').style.display = 'none';
+      document.getElementById('entryHint').style.display = 'none';
+      document.getElementById('campusGreeting').textContent =
+        `${CAMPUS_NAMES[CAMPUS_ID] || CAMPUS_ID} · 首次登录，请先完成安全设置`;
+      document.getElementById('firstLoginForm').hidden = false;
+      document.getElementById('newPassword').focus();
+      btn.disabled = false; btn.textContent = '登 录';
+      return false;
     }
-    goToApplication(user);
+
+    await finishLogin(data.sessionToken, user);
     return false;
   } catch(ex){
     err.textContent = `网络错误：${ex.message}（接口：${LOCAL_API_BASE || location.origin}）`;
@@ -272,7 +594,10 @@ async function doLogin(e){
   }
 }
 
-restoreSavedLogin();
+(async () => {
+  const restored = await restoreSavedLogin();
+  if(!restored && !MANUAL_LOGIN) await tryDingTalkAutoLogin();
+})();
 
 </script>
 </body>

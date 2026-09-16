@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB 餐选餐手册 · 总务版 · 宝小学生画像</title>
+<style>
+  :root{--c1:#5B3E8C;--c2:#9B6FD0;--bg:#F3F0F7;--ink:#2B2333;--line:#E5DFEE;--th:#F3EFF9;--td:#4A3C5C;--sub:#6B5A80}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--ink);line-height:1.8}
+  .wrap{max-width:800px;margin:0 auto;padding:40px 20px}
+  .header{background:linear-gradient(135deg,var(--c1),var(--c2));color:#FFF;border-radius:16px;padding:36px;margin-bottom:28px;text-align:center}
+  .header h1{font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:8px}
+  .header .sub{font-size:13px;opacity:.85;letter-spacing:1px}
+  .card{background:#FFF;border-radius:14px;padding:28px 30px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid var(--line)}
+  .card h2{font-size:17px;color:var(--c1);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--th);display:flex;align-items:center;gap:8px}
+  .card p{margin-bottom:10px;font-size:14px}
+  .card ul{margin:8px 0 8px 20px}
+  .card li{margin-bottom:6px;font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th,td{padding:10px 14px;border:1px solid var(--line);font-size:13.5px;text-align:left}
+  th{background:var(--th);font-weight:700;color:var(--c1);font-size:12px}
+  td{color:var(--td)}
+  .steps{margin:12px 0}
+  .step{display:flex;gap:14px;margin-bottom:14px}
+  .step-num{width:28px;height:28px;border-radius:50%;background:var(--c1);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-body .t{font-weight:700;font-size:14px;margin-bottom:2px}
+  .step-body .d{font-size:13px;color:var(--sub)}
+  .tip{background:#E8F4FD;border-left:4px solid #4A9CE8;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#2A5A8A;margin:12px 0}
+  .warn{background:#FFF0E8;border-left:4px solid #E8844A;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#7A4A2A;margin:12px 0}
+  .footer{text-align:center;font-size:12px;color:#A296B3;margin-top:32px;padding:20px}
+  .footer a{color:var(--c1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <h1>🍱 AB 餐选餐手册 · 总务版</h1>
+  <div class="sub">宝小学生画像 · 健康岛 · 总务老师</div>
+</div>
+
+<div class="card">
+  <h2>📱 一、进入健康岛</h2>
+  <p>以「总务老师」身份登录（登录方法见《登录手册 · 总务版》）→ 首页点「健康岛」，即进入<strong>全校管理视图</strong>（菜单录入 + 全校统计）。</p>
+</div>
+
+<div class="card">
+  <h2>🧑‍🍳 二、每两周的工作流</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">
+      <div class="t">上传每周菜单</div>
+      <div class="d">在「上传菜单」区上传菜单（支持菜单图片 / Excel 周菜单），录入奇数周、偶数周每天的 A/B 餐菜品。家长选餐时会对照查看</div>
+    </div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">
+      <div class="t">跟踪全校选餐进度</div>
+      <div class="d">人数概览按「全校 → 各年级 → 班级」逐层下钻，可查看已选/未选人数；未完成较多的班级请提醒对应班主任催办</div>
+    </div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">
+      <div class="t">截止后导出全校选餐 Excel</div>
+      <div class="d">点「导出」生成“全校选餐”表（如 全校选餐_W1-W2.xlsx），含各班每天 A/B 餐份数汇总，交食堂备餐</div>
+    </div></div>
+  </div>
+  <div class="warn">⚠️ 请在选餐截止后再导出交食堂，避免家长后续提交造成份数不一致。家长提交后选择即锁定，特殊调整按学校流程处理并在导出表上修正。</div>
+</div>
+
+<div class="card">
+  <h2>🥗 三、营养智能推荐（参考）</h2>
+  <ul>
+    <li>「营养配餐」入口可查看<strong>全体学生</strong>的推荐餐别、原因与确认状态</li>
+    <li>推荐由营养规则结合过敏原、忌口、特殊需求和营养评分生成</li>
+    <li>标记「人工复核」的学生需线下确认，系统不自动给出餐别</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>❓ 四、常见问题</h2>
+  <table>
+    <tr><th>问题</th><th>解决方法</th></tr>
+    <tr><td>统计人数与实际不符？</td><td>核对学生名册转入/转出是否更新，联系管理员调整。</td></tr>
+    <tr><td>菜单上传后家长看不到？</td><td>确认上传的是当前周次（奇数/偶数周），刷新页面再核对。</td></tr>
+    <tr><td>导出的份数与最终不一致？</td><td>确认导出时间在选餐截止之后；有线下调整的在表上手工修正。</td></tr>
+    <tr><td>老师/家长不会操作？</td><td>转发对应版本手册（见页脚「全部操作手册」）。</td></tr>
+  </table>
+</div>
+
+<div class="footer">宝山区实验小学 · 宝小学生画像 · <a href="index.html">📚 全部操作手册</a></div>
+
+</div>
+</body>
+</html>

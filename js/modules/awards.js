@@ -74,8 +74,8 @@ const AwardsModule = (function() {
         }
         // 默认数据
         return [
-            { student_name: '示例学生A', competition: '2024年"文新杯"现场作文比赛', subject: '语文', level: '区级', prize: '二等奖', date: '2024.12' },
-            { student_name: '示例学生B', competition: '宝山区少儿书画作品征集活动', subject: '美术', level: '区级', prize: '三等奖', date: '2024.09' }
+            { student_name: '徐雨萱', competition: '2024年"文新杯"现场作文比赛', subject: '语文', level: '区级', prize: '二等奖', date: '2024.12' },
+            { student_name: '高祎晗', competition: '宝山区少儿书画作品征集活动', subject: '美术', level: '区级', prize: '三等奖', date: '2024.09' }
         ];
     }
     

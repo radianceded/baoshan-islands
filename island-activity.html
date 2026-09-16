@@ -91,6 +91,11 @@
   .club-admin-btn{border:none;border-radius:10px;padding:6px 10px;color:#fff;background:#5C42A0;font:800 11px inherit;cursor:pointer}
   .club-admin-btn.danger{background:#C2410C}
   .club-capacity-input{width:62px;border:1.5px solid #CDBFF2;border-radius:9px;padding:5px 6px;color:#1F3A4D;font-size:11px;font-weight:800}
+  .club-grade-quota{width:56px;border:1.5px solid #CDBFF2;border-radius:8px;padding:4px 6px;margin-left:4px;color:#1F3A4D;font-size:11px;font-weight:800}
+  .club-grade-quota[hidden]{display:none}
+  .general-grade-quota-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;font-size:12px;color:#536F7F;font-weight:800}
+  .general-grade-quota-row .club-grade-quota{margin-left:0}
+  #newClubCapacity[readonly]{background:#F3F1F9;color:#6B5A80;cursor:default}
   .club-admin-toggle{margin-left:auto;min-height:40px;padding:9px 15px;border:1.5px solid #684FA8;border-radius:12px;background:#684FA8;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
   .club-admin-toggle:hover{background:#563F93}
   .club-admin-toggle:active{transform:translateY(1px)}
@@ -228,12 +233,12 @@
 <div class="topbar">
   <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
   <div class="crumbs">
-    <span>快乐学习群岛</span><span class="arrow">›</span><span>🎨 活动岛</span>
+    <span>宝小学生画像</span><span class="arrow">›</span><span>🎨 活动岛</span><a class="guide-link" href="guides/club-parent-guide.html" target="_blank" onclick="try{if(window.UserAuth){if(UserAuth.isGeneralTeacher())this.href='guides/club-general-teacher-guide.html';else if(UserAuth.isTeacher())this.href='guides/club-class-teacher-guide.html'}}catch(e){}" style="margin-left:6px;font-size:12px;font-weight:800;color:#13718E;text-decoration:none;border:1.5px solid rgba(19,113,142,.35);border-radius:10px;padding:3px 9px;white-space:nowrap">📖 操作指南</a>
   </div>
   <div class="topbar-right">
     <div class="student-pill">
       <div class="stu-avatar">林</div>
-    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+    <button onclick="window.UserAuth && UserAuth.logout()" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
       <div class="stu-info">
         <div class="name">林**</div>
         <div class="meta">小学 · 五年级 1 班</div>
@@ -280,6 +285,15 @@
           <div class="icon" style="background:#E8DCFF">⚙️</div>
           <h2>社团管理</h2>
           <div class="sub">课程先录入，再按年级设置展示、抢课和发布时间</div>
+          <select class="club-admin-toggle" id="clubExportGrade" aria-label="导出年级" style="cursor:pointer">
+            <option value="">全部年级</option>
+            <option value="一年级">一年级</option>
+            <option value="二年级">二年级</option>
+            <option value="三年级">三年级</option>
+            <option value="四年级">四年级</option>
+            <option value="五年级">五年级</option>
+          </select>
+          <button class="club-admin-toggle" type="button" onclick="downloadGeneralClubExcel()">导出报名表</button>
           <button class="club-admin-toggle" id="clubAdminToggle" type="button" aria-expanded="false" aria-controls="clubAdminForm">新增社团</button>
         </div>
         <form class="club-admin-form" id="clubAdminForm" hidden>
@@ -301,13 +315,13 @@
             <option value="info_only">只展示，不抢课</option>
             <option value="draft">资料待补充</option>
           </select>
-          <input id="newClubCapacity" type="number" min="1" max="500" placeholder="开放人数">
+          <input id="newClubCapacity" type="number" min="1" max="500" placeholder="总名额（按年级自动求和）" readonly title="总名额 = 各勾选年级名额之和">
           <div class="club-grade-options" id="newClubGrades">
-            <label><input type="checkbox" value="一年级">一年级</label>
-            <label><input type="checkbox" value="二年级">二年级</label>
-            <label><input type="checkbox" value="三年级">三年级</label>
-            <label><input type="checkbox" value="四年级">四年级</label>
-            <label><input type="checkbox" value="五年级">五年级</label>
+            <label><input type="checkbox" value="一年级">一年级 <input type="number" class="club-grade-quota" data-quota-grade="一年级" min="1" max="500" value="10" hidden aria-label="一年级名额"></label>
+            <label><input type="checkbox" value="二年级">二年级 <input type="number" class="club-grade-quota" data-quota-grade="二年级" min="1" max="500" value="10" hidden aria-label="二年级名额"></label>
+            <label><input type="checkbox" value="三年级">三年级 <input type="number" class="club-grade-quota" data-quota-grade="三年级" min="1" max="500" value="10" hidden aria-label="三年级名额"></label>
+            <label><input type="checkbox" value="四年级">四年级 <input type="number" class="club-grade-quota" data-quota-grade="四年级" min="1" max="500" value="10" hidden aria-label="四年级名额"></label>
+            <label><input type="checkbox" value="五年级">五年级 <input type="number" class="club-grade-quota" data-quota-grade="五年级" min="1" max="500" value="10" hidden aria-label="五年级名额"></label>
           </div>
           <input id="newClubNote" placeholder="招生要求或备注（选填）" maxlength="500" style="grid-column:span 2">
           <button class="club-admin-btn" id="clubFormSubmit" type="submit" style="min-height:40px">＋ 新增社团</button>
@@ -390,7 +404,7 @@ const CATS = [
   {key:'art', name:'艺术', ic:'🎨'},
   {key:'sport', name:'体育', ic:'⚽'},
   {key:'tech', name:'科技', ic:'🤖'},
-  {key:'subject', name:'学科', ic:'📚'},
+  {key:'subject', name:'益智', ic:'🧩'},
 ];
 
 /* 课程目录来自学校最终汇总表，报名人数与当前学生报名结果来自 API。 */
@@ -501,8 +515,16 @@ function signupBlockReason(course){
   return null;
 }
 
+// 独立校区只有本校社团；东/西校区切换是本部专属 UI。
+const SINGLE_CAMPUS_LABELS = {baolin:'宝林校区', luojing:'罗泾校区'};
+
 function renderCampuses(){
-  const searchableClubs = CLUBS.filter(matchesClubSearch);
+  if(SINGLE_CAMPUS_LABELS[sessionStorage.getItem('bs_campus')]){
+    currentCampus = 'all';
+    document.getElementById('campusTabs').style.display = 'none';
+    return;
+  }
+  const searchableClubs = visibleClubCatalog().filter(matchesClubSearch);
   const campuses = [
     {key:'all', name:'全部校区'},
     {key:'西校区', name:'西校区'},
@@ -518,7 +540,8 @@ function renderCampuses(){
 
 function renderCats(){
   document.getElementById('catTabs').innerHTML = CATS.map(c=>{
-    const campusList = (currentCampus === 'all' ? CLUBS : CLUBS.filter(x=>x.campus===currentCampus))
+    const visibleClubs = visibleClubCatalog();
+    const campusList = (currentCampus === 'all' ? visibleClubs : visibleClubs.filter(x=>x.campus===currentCampus))
       .filter(matchesClubSearch);
     const cnt = c.key==='all' ? campusList.length : campusList.filter(x=>x.cat===c.key).length;
     return `<button class="cat-tab ${c.key===currentCat?'active':''}" onclick="setCat('${c.key}')">
@@ -539,8 +562,14 @@ function setClubSearch(value){
   renderClubs();
 }
 
+function visibleClubCatalog(){
+  return isParentClubUser()
+    ? CLUBS.filter(c => c.selectionMode === 'selectable')
+    : CLUBS;
+}
+
 function renderClubs(){
-  const list = CLUBS.filter(c =>
+  const list = visibleClubCatalog().filter(c =>
     (currentCampus === 'all' || c.campus === currentCampus) &&
     (currentCat === 'all' || c.cat === currentCat) &&
     matchesClubSearch(c)
@@ -580,11 +609,17 @@ function renderClubs(){
                  <span class="general-club-count">已报名 <strong>${c.count}</strong> / ${c.max} 人</span>
                  <span class="general-club-remaining ${remaining === 0 ? 'is-full' : ''}">${remaining === 0 ? '名额已满' : `剩余 ${remaining} 人`}</span>
                </div>
-               <div class="general-club-capacity" onclick="event.stopPropagation()">
+               ${c.gradeQuotas
+                 ? `<div class="general-grade-quota-row" onclick="event.stopPropagation()" data-gquota-course="${escapeClubText(c.id)}">
+                      ${(c.eligibleGrades || []).map(g => `
+                        <span>${escapeClubText(g)} ${(c.gradeCounts && c.gradeCounts[g]) || 0}/<input class="club-grade-quota" data-gquota-for="${escapeClubText(c.id)}" data-gquota-grade="${escapeClubText(g)}" type="number" min="1" max="500" value="${(c.gradeQuotas && c.gradeQuotas[g]) || 1}" aria-label="${escapeClubText(c.name)}${escapeClubText(g)}名额"></span>`).join('')}
+                      <button class="club-admin-btn" type="button" onclick="saveClubCapacity('${c.id}')">保存名额</button>
+                    </div>`
+                 : `<div class="general-club-capacity" onclick="event.stopPropagation()">
                  <label for="capacity-${escapeClubText(c.id)}">人数上限</label>
                  <input id="capacity-${escapeClubText(c.id)}" class="club-capacity-input" data-capacity-for="${escapeClubText(c.id)}" type="number" min="${c.count}" max="500" value="${c.max}" aria-label="${escapeClubText(c.name)}人数上限">
                  <button class="club-admin-btn" type="button" onclick="saveClubCapacity('${c.id}')">保存上限</button>
-               </div>` : `<div class="general-club-status"><span class="general-club-count">${escapeClubText(c.phaseMessage || modeLabel)}</span></div>`}
+               </div>`}` : `<div class="general-club-status"><span class="general-club-count">${escapeClubText(c.phaseMessage || modeLabel)}</span></div>`}
                <div class="general-club-footer">
                  ${c.selectionMode === 'selectable' ? `<button class="club-admin-btn secondary" type="button" onclick="event.stopPropagation();showClubDetail(${realIdx})">查看申请名单</button>` : ''}
                  <button class="club-admin-btn" type="button" onclick="event.stopPropagation();editClub('${c.id}')">编辑</button>
@@ -679,12 +714,13 @@ function showClubDetail(i){
         ${TIPS.slice(0,3).map(t=>`<li style="background:#FFF6E5;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#7A4F1B;font-weight:600">· ${escapeClubText(t)}</li>`).join('')}
       </ul>
     </div>
+    ${window.UserAuth && UserAuth.isParent && UserAuth.isParent() ? '' : `
     <div style="margin-top:16px">
       <div style="font-size:13px;font-weight:800;color:#0E5E80;margin-bottom:8px">📅 本学期重要活动</div>
       <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
         ${ACT.slice(0,3).map((a,k)=>`<li style="background:#F2EBFF;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#5C42A0;font-weight:600">${k+1}. ${a}</li>`).join('')}
       </ul>
-    </div>
+    </div>`}
     <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
       <button onclick="document.getElementById('clubVeil').remove()" style="background:#F4FAFD;color:#5C7A8C;font-weight:800;font-size:13px;padding:10px 18px;border:none;border-radius:14px;cursor:pointer">关闭</button>
       ${!canSignup || canSeeCounts ? '' : isSigned && signedCourse && signedCourse.status !== 'confirmed' && c.canApply
@@ -721,21 +757,100 @@ async function loadClubSignupStudents(courseId){
       box.innerHTML = '<div style="padding:12px;text-align:center;color:#7BB8DA;font-size:12px;font-weight:700">暂无学生报名</div>';
       return;
     }
+    const isAdmin = window.UserAuth && UserAuth.isGeneralTeacher && UserAuth.isGeneralTeacher();
     box.innerHTML = students.map((student, index) => {
       const status = student.status === 'confirmed' ? '已确认' : '待确认';
       const meta = [student.grade, student['class'], student.studentId, status]
         .filter(Boolean).map(escapeClubText).join(' · ');
+      const removeBtn = (isAdmin && student.status !== 'confirmed')
+        ? `<button type="button" onclick="clubRosterRemove(this,'${escapeClubText(courseId)}','${escapeClubText(student.studentId)}','${escapeClubText(student.name)}')" style="margin-left:auto;flex-shrink:0;padding:5px 10px;border:1.5px solid #E7B8B5;border-radius:9px;background:#fff;color:#B3261E;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">移出</button>`
+        : '';
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 8px;${index ? 'border-top:1px solid #DCEBF3' : ''}">
         <span style="width:24px;height:24px;border-radius:8px;background:#E8DCFF;color:#5C42A0;display:grid;place-items:center;font-size:11px;font-weight:900;flex-shrink:0">${index + 1}</span>
         <div style="min-width:0">
           <div style="font-size:13px;font-weight:800;color:#1F3A4D">${escapeClubText(student.name)}</div>
           <div style="font-size:11px;color:#7BB8DA;margin-top:2px">${meta}</div>
         </div>
+        ${removeBtn}
       </div>`;
     }).join('');
+    if(isAdmin){
+      box.innerHTML += `<div style="border-top:1.5px dashed #DCEBF3;padding:10px 8px;display:flex;gap:8px;align-items:center;position:relative">
+        <input id="clubRosterSearch-${escapeClubText(courseId)}" class="clubRosterSearch" placeholder="补录：输入学生姓名搜索"
+          autocomplete="off" oninput="clubRosterSearchInput(this,'${escapeClubText(courseId)}')"
+          style="flex:1;padding:8px 12px;border:1.5px solid #DCEBF3;border-radius:10px;font-size:12px;font-family:inherit;outline:none">
+        <div id="clubRosterHits-${escapeClubText(courseId)}" style="position:absolute;left:8px;right:8px;top:100%;background:#fff;border:1.5px solid #DCEBF3;border-radius:10px;box-shadow:0 10px 24px rgba(0,30,60,.15);z-index:30;display:none;max-height:200px;overflow:auto"></div>
+      </div>`;
+    }
   } catch(e){
     box.innerHTML = `<div style="padding:12px;text-align:center;color:#C2410C;font-size:12px;font-weight:700">${escapeClubText(e.message)}</div>`;
   }
+}
+
+/* ── 社团名单调整（发布确认前）：移出（二次确认防误触）与补录 ── */
+function clubRosterRemove(btn, courseId, studentId, name){
+  if(btn.dataset.armed !== '1'){
+    btn.dataset.armed = '1';
+    btn.textContent = '确认移出?';
+    btn.style.background = '#B3261E';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.dataset.armed = '';
+      btn.textContent = '移出';
+      btn.style.background = '#fff';
+      btn.style.color = '#B3261E';
+    }, 3000);
+    return;
+  }
+  btn.disabled = true;
+  fetch(`/api/clubs/${encodeURIComponent(courseId)}/roster/remove`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', ...authHeaders()},
+    body: JSON.stringify({studentId})
+  }).then(r => r.json().then(d => ({ok: r.ok, d})))
+    .then(({ok, d}) => {
+      if(!ok) throw new Error(d.error || '移出失败');
+      showToast(`已移出 ${name}`);
+      loadClubSignupStudents(courseId);
+      loadClubs();
+    })
+    .catch(e => { showToast(e.message); btn.disabled = false; });
+}
+
+let _clubSearchTimer = null;
+function clubRosterSearchInput(input, courseId){
+  clearTimeout(_clubSearchTimer);
+  const hits = document.getElementById(`clubRosterHits-${courseId}`);
+  const q = input.value.trim();
+  if(!q){ hits.style.display = 'none'; return; }
+  _clubSearchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(`/api/clubs/roster/student-search?q=${encodeURIComponent(q)}`, {headers: authHeaders()});
+      const d = await r.json();
+      const students = (d.students || []);
+      hits.innerHTML = students.length ? students.map(s =>
+        `<div onclick="clubRosterAdd('${escapeClubText(courseId)}','${escapeClubText(s.studentId)}','${escapeClubText(s.name)}')"
+           style="padding:9px 12px;font-size:12.5px;font-weight:700;color:#1F3A4D;cursor:pointer;border-bottom:1px solid #F0F6FA">
+           ${escapeClubText(s.name)} <span style="color:#7BB8DA;font-weight:600">${escapeClubText((s.grade || '') + (s['class'] || ''))}</span></div>`
+      ).join('') : '<div style="padding:10px 12px;font-size:12px;color:#7BB8DA">没有匹配的学生</div>';
+      hits.style.display = 'block';
+    } catch(e){ hits.style.display = 'none'; }
+  }, 250);
+}
+
+async function clubRosterAdd(courseId, studentId, name){
+  try {
+    const r = await fetch(`/api/clubs/${encodeURIComponent(courseId)}/roster/add`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', ...authHeaders()},
+      body: JSON.stringify({studentId})
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || '补录失败');
+    showToast(`已补录 ${name}（待确认）`);
+    loadClubSignupStudents(courseId);
+    loadClubs();
+  } catch(e){ showToast(e.message); }
 }
 
 async function loadClassClubSignups(){
@@ -776,22 +891,39 @@ async function loadClassClubSignups(){
 }
 
 async function saveClubCapacity(courseId){
-  const input = document.querySelector(`[data-capacity-for="${courseId}"]`);
-  const capacity = Number(input && input.value);
-  if(!Number.isInteger(capacity) || capacity < 1 || capacity > 500){
-    showToast('人数上限须为 1 到 500 的整数');
-    return;
+  // 分年级名额课程：收集卡片上各年级输入，PATCH gradeQuotas；共享名额课程沿用单一 capacity
+  const quotaInputs = [...document.querySelectorAll(`[data-gquota-for="${courseId}"]`)];
+  let body;
+  if(quotaInputs.length){
+    const gradeQuotas = {};
+    for(const input of quotaInputs){
+      const value = Number(input.value);
+      if(!Number.isInteger(value) || value < 1 || value > 500){
+        showToast(`${input.dataset.gquotaGrade}名额须为 1 到 500 的整数`);
+        return;
+      }
+      gradeQuotas[input.dataset.gquotaGrade] = value;
+    }
+    body = {gradeQuotas};
+  } else {
+    const input = document.querySelector(`[data-capacity-for="${courseId}"]`);
+    const capacity = Number(input && input.value);
+    if(!Number.isInteger(capacity) || capacity < 1 || capacity > 500){
+      showToast('人数上限须为 1 到 500 的整数');
+      return;
+    }
+    body = {capacity};
   }
   try {
     const r = await fetch(`/api/clubs/${encodeURIComponent(courseId)}`, {
       method:'PATCH',
       headers:authHeaders(true),
-      body:JSON.stringify({capacity}),
+      body:JSON.stringify(body),
     });
     const data = await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(data.error || '人数上限更新失败');
     await refreshClubCatalog();
-    showToast('人数上限已更新');
+    showToast('名额已更新');
   } catch(e){
     showToast(e.message);
   }
@@ -834,21 +966,44 @@ function setClubAdminFormOpen(open){
   toggle.textContent = open ? '收起表单' : '新增社团';
 }
 
+/** 勾选年级 ↔ 名额输入联动：勾选才显示该年级名额输入（默认 10），总名额自动求和 */
+function syncClubQuotaInputs(){
+  let total = 0;
+  document.querySelectorAll('#newClubGrades input[type="checkbox"]').forEach(cb => {
+    const quota = document.querySelector(`.club-grade-quota[data-quota-grade="${cb.value}"]`);
+    if(!quota) return;
+    quota.hidden = !cb.checked;
+    if(cb.checked) total += Number(quota.value) || 0;
+  });
+  document.getElementById('newClubCapacity').value = total || '';
+}
+
+function collectClubGradeQuotas(eligibleGrades){
+  const quotas = {};
+  eligibleGrades.forEach(grade => {
+    const input = document.querySelector(`.club-grade-quota[data-quota-grade="${grade}"]`);
+    quotas[grade] = Number(input && input.value) || 10;
+  });
+  return quotas;
+}
+
 async function createClubFromForm(event){
   event.preventDefault();
   const form = event.currentTarget;
   const wasEditing = Boolean(editingCourseId);
-  const eligibleGrades = [...document.querySelectorAll('#newClubGrades input:checked')].map(input => input.value);
+  const eligibleGrades = [...document.querySelectorAll('#newClubGrades input[type="checkbox"]:checked')].map(input => input.value);
+  const gradeQuotas = collectClubGradeQuotas(eligibleGrades);
   const payload = {
     campus: document.getElementById('newClubCampus').value,
     name: document.getElementById('newClubName').value,
     teacher: document.getElementById('newClubTeacher').value,
     weekday: document.getElementById('newClubWeekday').value,
     location: document.getElementById('newClubLocation').value,
-    capacity: Number(document.getElementById('newClubCapacity').value) || 1,
+    capacity: Object.values(gradeQuotas).reduce((a, b) => a + b, 0) || 1,
     note: document.getElementById('newClubNote').value,
     selectionMode: document.getElementById('newClubMode').value,
     eligibleGrades,
+    gradeQuotas,
   };
   try {
     const r = await fetch(editingCourseId ? `/api/clubs/${encodeURIComponent(editingCourseId)}` : '/api/clubs', {
@@ -936,6 +1091,8 @@ function resetClubForm(){
   const form = document.getElementById('clubAdminForm');
   if(form) form.reset();
   editingCourseId = null;
+  document.querySelectorAll('.club-grade-quota').forEach(input => { input.value = 10; });
+  syncClubQuotaInputs();
   document.getElementById('clubFormSubmit').textContent = '＋ 新增社团';
   document.getElementById('clubFormCancel').style.display = 'none';
 }
@@ -950,11 +1107,20 @@ function editClub(courseId){
   document.getElementById('newClubWeekday').value = course.weekday || '';
   document.getElementById('newClubLocation').value = course.location || '';
   document.getElementById('newClubMode').value = course.selectionMode || 'selectable';
-  document.getElementById('newClubCapacity').value = course.capacity || course.max || '';
   document.getElementById('newClubNote').value = course.note || '';
-  document.querySelectorAll('#newClubGrades input').forEach(input => {
-    input.checked = (course.eligibleGrades || []).includes(input.value);
+  const editGrades = course.eligibleGrades || [];
+  document.querySelectorAll('#newClubGrades input[type="checkbox"]').forEach(input => {
+    input.checked = editGrades.includes(input.value);
   });
+  // 分年级名额回填；旧共享名额课程按年级数平均拆分（保存后即转为分年级模式）
+  const fallback = editGrades.length
+    ? Math.max(1, Math.floor((course.capacity || course.max || 10) / editGrades.length))
+    : 10;
+  document.querySelectorAll('.club-grade-quota').forEach(input => {
+    const grade = input.dataset.quotaGrade;
+    input.value = (course.gradeQuotas && course.gradeQuotas[grade]) || fallback;
+  });
+  syncClubQuotaInputs();
   document.getElementById('clubFormSubmit').textContent = '保存修改';
   document.getElementById('clubFormCancel').style.display = '';
   setClubAdminFormOpen(true);
@@ -1063,6 +1229,28 @@ async function downloadClassClubExcel(){
     const link = document.createElement('a');
     link.href = url;
     link.download = '本班社团结果.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch(e){ showToast(e.message); }
+}
+
+async function downloadGeneralClubExcel(){
+  try {
+    const gradeSel = document.getElementById('clubExportGrade');
+    const grade = gradeSel ? gradeSel.value : '';
+    const qs = grade ? ('?grades=' + encodeURIComponent(grade)) : '';
+    const r = await fetch('/api/export/grade-club.xlsx' + qs, {headers:authHeaders()});
+    if(!r.ok){
+      const data = await r.json().catch(()=>({}));
+      throw new Error(data.error || '下载失败');
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const campus = new URLSearchParams(location.search).get('campus') || 'benbu';
+    const campusName = {benbu:'本部', baolin:'宝林', luojing:'罗泾'}[campus] || campus;
+    link.href = url;
+    link.download = `${campusName}_${grade || '全部年级'}_社团报名结果.xlsx`;
     link.click();
     URL.revokeObjectURL(url);
   } catch(e){ showToast(e.message); }
@@ -1261,6 +1449,12 @@ function renderCalendar(){
 // 启动：等待身份就绪，再加载课程与当前学生报名记录。
 (async()=>{
   if(window.UserAuth) await new Promise(resolve => UserAuth.ready(resolve));
+  const singleCampusLabel = SINGLE_CAMPUS_LABELS[sessionStorage.getItem('bs_campus')];
+  if(singleCampusLabel){
+    const campusSelect = document.getElementById('newClubCampus');
+    campusSelect.innerHTML = `<option value="${singleCampusLabel}" selected>${singleCampusLabel}</option>`;
+    campusSelect.style.display = 'none';
+  }
   const generalMode = isGeneralClubManager();
   const classMode = Boolean(window.UserAuth && UserAuth.isClassTeacher && UserAuth.isClassTeacher());
   document.body.classList.toggle('general-club-mode', generalMode);
@@ -1276,6 +1470,14 @@ function renderCalendar(){
   if(classPanel) classPanel.style.display = classMode ? 'block' : 'none';
   const adminForm = document.getElementById('clubAdminForm');
   if(adminForm) adminForm.addEventListener('submit', createClubFromForm);
+  const gradeBox = document.getElementById('newClubGrades');
+  if(gradeBox){
+    gradeBox.addEventListener('change', syncClubQuotaInputs);
+    gradeBox.addEventListener('input', event => {
+      if(event.target.classList.contains('club-grade-quota')) syncClubQuotaInputs();
+    });
+    syncClubQuotaInputs();
+  }
   const clubFormCancel = document.getElementById('clubFormCancel');
   if(clubFormCancel) clubFormCancel.addEventListener('click', () => { resetClubForm(); setClubAdminFormOpen(false); });
   const windowForm = document.getElementById('clubWindowForm');
@@ -1314,7 +1516,7 @@ function renderCalendar(){
   renderMyList();
   renderCalendar();
   const bc = document.getElementById('bannerClubCount');
-  if(bc) bc.textContent = CLUBS.length;
+  if(bc) bc.textContent = visibleClubCatalog().length;
 })();
 </script>
 </body>

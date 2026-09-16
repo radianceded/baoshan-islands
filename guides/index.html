@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作手册中心 · 宝小学生画像</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#EFF3F6;color:#1F2F3D;line-height:1.7}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 20px}
+  .header{background:linear-gradient(135deg,#0E5E80,#5BC8E8);color:#FFF;border-radius:16px;padding:38px 36px;margin-bottom:26px;text-align:center}
+  .header h1{font-size:25px;font-weight:900;letter-spacing:3px;margin-bottom:8px}
+  .header .sub{font-size:13px;opacity:.85;letter-spacing:1px}
+  .section{margin-bottom:26px}
+  .section h2{font-size:16px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .login h2{color:#0E5E80}.meal h2{color:#1E7A46}.club h2{color:#B05E1A}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{display:block;background:#FFF;border-radius:14px;padding:18px 20px;text-decoration:none;color:inherit;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.05);transition:all .15s}
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1)}
+  .login .card:hover{border-color:#5BC8E8}.meal .card:hover{border-color:#76C342}.club .card:hover{border-color:#FF9F4A}
+  .card .role{font-size:15px;font-weight:900;margin-bottom:4px}
+  .card .desc{font-size:12px;color:#6B8296}
+  .role .badge{display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:14px;margin-right:6px}
+  .b-parent{background:#FFE3E9}.b-class{background:#E3F4E5}.b-general{background:#EDE6F8}
+  .tip{background:#E8F4FD;border-left:4px solid #4A9CE8;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#2A5A8A;margin:6px 0 26px}
+  .footer{text-align:center;font-size:12px;color:#8CA3B3;margin-top:30px;padding:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <h1>📚 操作手册中心</h1>
+  <div class="sub">宝小学生画像 · 按功能与身份选择对应手册</div>
+</div>
+
+<div class="tip">💡 请先阅读「登录」手册完成首次登录（设置自己的新密码），再看对应功能的手册。手册可直接转发到班级群或老师群。</div>
+
+<div class="section login">
+  <h2>🔑 登录与账号</h2>
+  <div class="grid">
+    <a class="card" href="login-parent-guide.html"><div class="role"><span class="badge b-parent">👪</span>家长版</div><div class="desc">首次登录设密码 · 改账号名 · 多娃切换 · 退出</div></a>
+    <a class="card" href="login-class-teacher-guide.html"><div class="role"><span class="badge b-class">🧑‍🏫</span>班主任版</div><div class="desc">登录本班视图 · 辅导家长首次登录</div></a>
+    <a class="card" href="login-general-teacher-guide.html"><div class="role"><span class="badge b-general">🗂️</span>总务版</div><div class="desc">登录管理视图 · 钉钉通知说明</div></a>
+  </div>
+</div>
+
+<div class="section meal">
+  <h2>🍱 AB 餐选餐</h2>
+  <div class="grid">
+    <a class="card" href="meal-parent-guide.html"><div class="role"><span class="badge b-parent">👪</span>家长版</div><div class="desc">两周 10 天选 A/B 餐 · 提交与查看</div></a>
+    <a class="card" href="meal-class-teacher-guide.html"><div class="role"><span class="badge b-class">🧑‍🏫</span>班主任版</div><div class="desc">本班选餐表 · 催办 · 健康统计</div></a>
+    <a class="card" href="meal-general-teacher-guide.html"><div class="role"><span class="badge b-general">🗂️</span>总务版</div><div class="desc">上传菜单 · 全校统计 · 导出交食堂</div></a>
+  </div>
+</div>
+
+<div class="section club">
+  <h2>🎨 社团报名</h2>
+  <div class="grid">
+    <a class="card" href="club-parent-guide.html"><div class="role"><span class="badge b-parent">👪</span>家长版</div><div class="desc">浏览课程 · 抢名额 · 取消与改报</div></a>
+    <a class="card" href="club-class-teacher-guide.html"><div class="role"><span class="badge b-class">🧑‍🏫</span>班主任版</div><div class="desc">本班报名情况 · 家长辅导</div></a>
+    <a class="card" href="club-general-teacher-guide.html"><div class="role"><span class="badge b-general">🗂️</span>总务版</div><div class="desc">分年级名额 · 抢课时间 · 钉钉提醒 · 发布</div></a>
+  </div>
+</div>
+
+<div class="footer">宝山区实验小学 · 宝小学生画像</div>
+
+</div>
+</body>
+</html>

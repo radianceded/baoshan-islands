@@ -117,7 +117,7 @@ class MenuImportApiTests(unittest.TestCase):
         connection.execute(
             "INSERT INTO students VALUES ('BS001', '示例学生', '三年级', '1班')"
         )
-        connection.execute("CREATE TABLE students_benbu AS SELECT * FROM students")
+        connection.execute('CREATE TABLE students_benbu AS SELECT *, id_card AS dingtalk_userid FROM students')
         connection.commit()
         connection.close()
 
@@ -176,6 +176,28 @@ class MenuImportApiTests(unittest.TestCase):
         self.assertEqual(meals[0]["protein_pct"], 24)
         self.assertIsNone(meals[0]["protein_g"])
         self.assertEqual(json.loads(meals[0]["menu_items"]), ["米饭A", "鸡肉时蔬A"])
+
+    def test_excel_without_menu_image_can_publish(self):
+        response = self.client.post('/api/menus/upload',data={
+            'week':'18','parity':'even','selectionDeadline':'2099-12-31T20:00',
+            'excel':(io.BytesIO(build_menu_workbook()),'menu.xlsx'),
+        },content_type='multipart/form-data',headers=self.headers)
+        self.assertEqual(response.status_code,200)
+        draft=response.get_json()
+        self.assertEqual(draft['imagePath'],'')
+        published=self.client.post(f"/api/menu-imports/{draft['draftId']}/publish",headers=self.headers)
+        self.assertEqual(published.status_code,200)
+
+    def test_next_semester_publish_cannot_overwrite_current_week(self):
+        from server.meal_history import migrate
+        connection=sqlite3.connect(server_app.DB_PATH)
+        migrate(connection,'2026s1');connection.close()
+        draft=self._upload(build_menu_workbook()).get_json()
+        response=self.client.post(f"/api/menu-imports/{draft['draftId']}/publish",headers=self.headers)
+        self.assertEqual(response.status_code,409)
+        legacy=self.client.post('/api/menus/upload',json={'week':18,'parity':'even',
+            'dateStart':'2027-09-01','dateEnd':'2027-09-05','selectionDeadline':'2099-01-01T00:00'},headers=self.headers)
+        self.assertEqual(legacy.status_code,409)
 
     def test_teacher_can_fix_blocking_issue_in_draft_without_editing_excel(self):
         upload = self._upload(build_menu_workbook(fat_value=3.57))

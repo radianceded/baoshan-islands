@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>营养配餐管理 - 宝山学习群岛</title>
+<title>营养配餐管理 - 宝小学生画像</title>
 <link rel="stylesheet" href="common.css">
 <style>
   :root{
@@ -460,6 +460,7 @@
 </header>
 
 <div class="app-content">
+  <p><a href="/meal-history.html" onclick="this.href='/meal-history.html?campus='+encodeURIComponent(new URLSearchParams(location.search).get('campus')||sessionStorage.getItem('bs_campus')||'benbu')">餐食历史记录 · 查看往周选餐与实拍</a></p>
   <div id="parentRecommendationView">
     <div class="pr-page">
       <section class="pr-hero" aria-labelledby="parentChildTitle">
@@ -549,6 +550,7 @@
   </div>
 
   <div id="generalTeacherView" class="hidden">
+    <p><a class="btn" href="/meal-history.html#uploadPanel" onclick="this.href='/meal-history.html?campus='+encodeURIComponent(new URLSearchParams(location.search).get('campus')||sessionStorage.getItem('bs_campus')||'benbu')+'#uploadPanel'">餐食实拍上传（按周补传）</a></p>
     <div class="gt-page">
       <div class="gt-intro">
         <div>
@@ -573,7 +575,7 @@
         <section class="gt-panel" aria-labelledby="gtUploadTitle">
           <div class="gt-panel-head">
             <div>
-              <h3 id="gtUploadTitle">菜单图片与Excel</h3>
+              <h3 id="gtUploadTitle">Excel菜单（菜单图可选）</h3>
               <p>先解析核对，确认发布后家长才能看到。</p>
             </div>
           </div>
@@ -606,10 +608,10 @@
               <input id="menuSelectionDeadline" class="form-control" type="datetime-local" required>
             </div>
             <label class="gt-file-box" for="menuImage">
-              <input id="menuImage" type="file" accept="image/*" required>
+              <input id="menuImage" type="file" accept="image/*">
               <span>
-                <span class="gt-file-title">选择餐食图片</span>
-                <span class="gt-file-help">支持 PNG、JPG、WEBP，建议图片包含 A/B 餐信息。</span>
+                <span class="gt-file-title">选择菜单图（可选）</span>
+                <span class="gt-file-help">真实餐食照片请通过「餐食实拍上传」按周发布。</span>
               </span>
             </label>
             <label class="gt-file-box" for="menuExcel">
@@ -620,7 +622,7 @@
               </span>
             </label>
             <div class="gt-menu-preview" id="menuPreview">
-              <img id="menuPreviewImage" alt="待上传的餐食图片预览">
+              <img id="menuPreviewImage" alt="待上传的菜单图预览">
               <span id="menuPreviewLabel">待上传</span>
             </div>
             <div id="menuUploadStatus" class="gt-upload-status" aria-live="polite">尚未选择图片</div>
@@ -658,6 +660,156 @@
             </div>
           </section>
         </div>
+
+        <section class="gt-panel" id="pendingPanel" aria-labelledby="pendingTitle">
+          <div class="gt-panel-head">
+            <div>
+              <h3 id="pendingTitle">未订餐概览</h3>
+              <p>按上方周次统计各班还没完成选餐的孩子人数；点「提醒」给该班未订餐且已绑定钉钉的家长发工作通知（每天每人至多一条）。</p>
+            </div>
+            <button class="btn btn-outline" type="button" onclick="pendingLoad()">刷新未订餐统计</button>
+          </div>
+          <div class="gt-table-wrap">
+            <table class="gt-table roster-table">
+              <thead><tr><th>班级</th><th>学生数</th><th>未完成</th><th>一天未选</th><th>操作</th></tr></thead>
+              <tbody id="pendingOverviewBody"><tr><td colspan="5" style="color:#6b7d72">点「刷新未订餐统计」载入</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="gt-panel" id="rosterPanel" aria-labelledby="rosterTitle">
+          <style>
+            #rosterPanel{margin-top:18px}
+            .roster-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+            .roster-tools select{min-width:110px}
+            .roster-count{font-size:13px;color:#4d6254;font-weight:700}
+            .roster-table td,.roster-table th{padding:9px 10px;white-space:nowrap}
+            .roster-table .r-ops{display:flex;gap:6px;justify-content:center}
+            .r-btn{padding:6px 10px;border-radius:9px;border:1.5px solid #cfe0d4;background:#fff;
+                   font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;color:#365a44}
+            .r-btn:hover{background:#eef7f1}
+            .r-btn.warn{color:#b4541c;border-color:#ecc9ae}
+            .r-btn.warn:hover{background:#fdf3ea}
+            .r-btn.danger{color:#b3261e;border-color:#e7b8b5}
+            .r-btn.danger:hover{background:#fbeeed}
+            .r-tag{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:800}
+            .r-tag.ok{background:#e6f4ea;color:#1d7a3f}
+            .r-tag.paused{background:#fdeee5;color:#b4541c}
+            .r-tag.none{background:#eef1f0;color:#6b7d72}
+            .r-tag.trf{background:#eaf2fd;color:#2b5fa8}
+            .roster-veil{position:fixed;inset:0;z-index:80;background:rgba(18,32,24,.45);
+                         display:flex;align-items:center;justify-content:center;padding:20px}
+            .roster-veil[hidden]{display:none}
+            .roster-modal{background:#fff;border-radius:16px;width:420px;max-width:100%;
+                          padding:22px 22px 18px;box-shadow:0 24px 60px rgba(10,30,18,.35)}
+            .roster-modal h4{margin:0 0 6px;font-size:17px}
+            .roster-modal .r-sub{margin:0 0 14px;font-size:12.5px;color:#6b7d72;line-height:1.6}
+            .roster-modal .form-control{width:100%;margin-bottom:10px}
+            .roster-modal .r-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+            .roster-cred{background:#f0faf4;border:2px solid #bfe8ce;border-radius:12px;
+                         padding:12px 14px;margin:10px 0;text-align:center}
+            .roster-cred .r-line{font-size:12px;color:#22a05b;font-weight:800;margin-bottom:2px}
+            .roster-cred .r-val{font-size:19px;font-weight:900;color:#166b3e;
+                                font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+            .roster-cred .r-hint{margin-top:3px;font-size:11px;color:#b4541c;font-weight:800}
+            .roster-cred .r-hint[hidden]{display:none}
+            .roster-err{display:none;margin-top:8px;padding:8px 12px;border-radius:9px;
+                        background:#fbeeed;color:#b3261e;font-size:12.5px;font-weight:700}
+            .roster-err.show{display:block}
+          </style>
+          <div class="gt-panel-head">
+            <div>
+              <h3 id="rosterTitle">学生与选餐账号</h3>
+              <p>转入新生自动开账号；转出、暂停用餐、重置密码都在这里办，操作全部留痕。</p>
+            </div>
+            <button class="btn btn-primary" type="button" onclick="rosterShowTransferIn()">＋ 转入新生</button>
+          </div>
+          <div class="roster-tools">
+            <select id="rosterGrade" class="form-control">
+              <option value="一年级">一年级</option><option value="二年级">二年级</option>
+              <option value="三年级">三年级</option><option value="四年级">四年级</option>
+              <option value="五年级">五年级</option>
+            </select>
+            <select id="rosterClass" class="form-control">
+              <option value="">全部班级</option>
+            </select>
+            <button class="btn btn-outline" type="button" onclick="rosterLoad()">查询</button>
+            <span class="roster-count" id="rosterCount"></span>
+          </div>
+          <div class="gt-table-wrap">
+            <table class="gt-table roster-table">
+              <thead><tr><th>学生</th><th>班级</th><th>登录账号</th><th>账号状态</th><th>最近登录</th><th>操作</th></tr></thead>
+              <tbody id="rosterBody"><tr><td colspan="6" style="color:#6b7d72">选择年级后点「查询」</td></tr></tbody>
+            </table>
+          </div>
+          <div id="rosterTeacherBlock" style="margin-top:18px;border-top:1.5px dashed #cfe0d4;padding-top:14px">
+            <div class="gt-panel-head" style="margin-bottom:8px">
+              <div>
+                <h3 style="font-size:16px;margin:0 0 4px">班主任账号</h3>
+                <p style="margin:0">班主任忘记密码在这里重置，新密码立即显示，请转告本人。</p>
+              </div>
+              <button class="btn btn-outline" type="button" onclick="rosterLoadTeachers()">载入班主任列表</button>
+            </div>
+            <div class="gt-table-wrap" id="rosterTeacherWrap" hidden>
+              <table class="gt-table roster-table">
+                <thead><tr><th>班级</th><th>老师</th><th>登录账号</th><th>最近登录</th><th>操作</th></tr></thead>
+                <tbody id="rosterTeacherBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="roster-veil" id="rosterFormVeil" hidden>
+    <div class="roster-modal">
+      <h4>转入新生</h4>
+      <p class="r-sub">保存后自动建立学生记录和家长选餐账号，账号密码马上显示，请抄给家长。</p>
+      <input id="rtName" class="form-control" placeholder="学生姓名" autocomplete="off">
+      <div style="display:flex;gap:10px">
+        <select id="rtGrade" class="form-control">
+          <option value="一年级">一年级</option><option value="二年级">二年级</option>
+          <option value="三年级">三年级</option><option value="四年级">四年级</option>
+          <option value="五年级">五年级</option>
+        </select>
+        <select id="rtClass" class="form-control"></select>
+      </div>
+      <input id="rtUsername" class="form-control" placeholder="登录账号（建议学生姓名拼音，如 zhangsan）"
+             autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <div class="roster-err" id="rtErr"></div>
+      <div class="r-actions">
+        <button class="r-btn" type="button" onclick="rosterHideVeils()">取消</button>
+        <button class="btn btn-primary" type="button" id="rtSubmit" onclick="rosterSubmitTransferIn()">建立账号</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="roster-veil" id="rosterConfirmVeil" hidden>
+    <div class="roster-modal">
+      <h4 id="rcvTitle">确认操作</h4>
+      <p class="r-sub" id="rcvText"></p>
+      <input id="rcvInput" class="form-control" hidden autocomplete="off">
+      <div class="roster-err" id="rcvErr"></div>
+      <div class="r-actions">
+        <button class="r-btn" type="button" onclick="rosterHideVeils()">取消</button>
+        <button class="btn btn-primary" type="button" id="rcvOk">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="roster-veil" id="rosterCredVeil" hidden>
+    <div class="roster-modal">
+      <h4 id="credTitle">账号已建立</h4>
+      <p class="r-sub">请把下面的账号密码抄送给家长（截图或拍照）。家长首次登录会设置自己的新密码，忘记时可凭这份初始密码自助找回。</p>
+      <div class="roster-cred">
+        <div class="r-line">登录账号</div><div class="r-val" id="credUser">—</div>
+        <div class="r-hint" id="credUserHint" hidden></div>
+        <div class="r-line" style="margin-top:8px">初始密码</div><div class="r-val" id="credPwd">—</div>
+        <div class="r-hint" id="credPwdHint" hidden></div>
+      </div>
+      <div class="r-actions">
+        <button class="btn btn-primary" type="button" onclick="rosterHideVeils()">我已抄好，关闭</button>
       </div>
     </div>
   </div>
@@ -703,6 +855,9 @@
         <div class="ct-metric"><strong id="ctStudentCount">0</strong><span>班级学生</span></div>
         <div class="ct-metric"><strong id="ctCompleteCount">0</strong><span id="ctCompleteLabel">已完成 10 天</span></div>
         <div class="ct-metric"><strong id="ctIncompleteCount">0</strong><span>尚未完成</span></div>
+        <div class="ct-metric" style="display:flex;align-items:center">
+          <button class="btn btn-primary" type="button" style="white-space:nowrap" onclick="ctRemindPending()">📢 钉钉提醒未订餐家长</button>
+        </div>
         <div class="ct-metric is-a"><strong id="ctACount">0</strong><span>A 餐选择人次</span></div>
         <div class="ct-metric is-b"><strong id="ctBCount">0</strong><span>B 餐选择人次</span></div>
       </section>
@@ -1143,8 +1298,8 @@
           </div>
           <div class="pr-week-menu-image">
             ${menu.image_path
-              ? `<img src="${escHtml(menuImageUrl(menu.image_path))}" alt="第 ${menu.week_number} 周餐食图片" onclick="window.open(this.src,'_blank')">`
-              : '<div>总务老师尚未发布本周餐食图片</div>'}
+              ? `<img src="${escHtml(menuImageUrl(menu.image_path))}" alt="第 ${menu.week_number} 周菜单图" onclick="window.open(this.src,'_blank')">`
+              : '<div>本周未附菜单图；餐食实拍请在历史记录中查看</div>'}
           </div>
           <div class="pr-day-grid">
             ${days.map(day => renderParentPlanDay(day)).join('')}
@@ -1428,7 +1583,7 @@
     const image = document.getElementById('menuImage').files[0];
     const excel = document.getElementById('menuExcel').files[0];
     const selected = [image?.name, excel?.name].filter(Boolean);
-    setMenuUploadStatus(selected.length ? `已选择：${selected.join(' + ')}` : '请选择菜单图片和原始Excel');
+    setMenuUploadStatus(selected.length ? `已选择：${selected.join(' + ')}` : '请选择原始Excel，菜单图片可选');
   }
 
   function clearMenuDraft() {
@@ -1656,10 +1811,10 @@
         NUTRITION_PLATFORM_BASE + '/' + menu.image_path.replace(/^\/+/, ''),
         `已发布：第 ${week} 周`
       );
-      setMenuUploadStatus(`当前已发布${parity === 'odd' ? '奇数周' : '偶数周'}餐食图片`, 'success');
+      setMenuUploadStatus(`当前已发布${parity === 'odd' ? '奇数周' : '偶数周'}菜单图；餐食实拍请通过独立入口上传`, 'success');
     } else {
       document.getElementById('menuPreview').classList.remove('is-visible');
-      setMenuUploadStatus(`第 ${week} 周${parity === 'odd' ? '奇数周' : '偶数周'}尚未上传图片`);
+      setMenuUploadStatus(menu ? `第 ${week} 周菜单已发布（未附菜单图）；实拍请通过餐食实拍上传入口补传` : `第 ${week} 周尚未发布菜单`);
     }
   }
 
@@ -1669,12 +1824,12 @@
     syncMenuParityFromWeek(false);
     const file = document.getElementById('menuImage').files[0];
     const excel = document.getElementById('menuExcel').files[0];
-    if (!file || !excel) {
-      setMenuUploadStatus('请同时选择菜单图片和原始Excel', 'error');
+    if (!excel) {
+      setMenuUploadStatus('请选择原始菜单Excel；菜单图可不上传', 'error');
       return;
     }
     const form = new FormData();
-    form.append('image', file);
+    if (file) form.append('image', file);
     form.append('excel', excel);
     form.append('week', document.getElementById('menuWeek').value);
     form.append('parity', document.getElementById('menuParity').value);
@@ -1772,10 +1927,12 @@
     document.getElementById('gtStatsScope').textContent = `第 ${odd}—${even} 周，${scopeLabel}`;
     const gradeCount = new Set(rows.map(row => row.gradeName).filter(Boolean)).size;
     const classCount = new Set(classRows.map(row => `${row.grade}\u0000${row.class}`)).size;
+    // 供餐日以 API 返回为准（第3周起含调休周日），不能只算工作日
+    const dayNums = [...new Set(payloads.flatMap(p => p.weekdays || [1, 2, 3, 4, 5]))].sort((a, b) => a - b);
     const aCount = schoolRows.reduce((total, row) =>
-      total + [1,2,3,4,5].reduce((sum, day) => sum + Number(row[day + 'A'] || 0), 0), 0);
+      total + dayNums.reduce((sum, day) => sum + Number(row[day + 'A'] || 0), 0), 0);
     const bCount = schoolRows.reduce((total, row) =>
-      total + [1,2,3,4,5].reduce((sum, day) => sum + Number(row[day + 'B'] || 0), 0), 0);
+      total + dayNums.reduce((sum, day) => sum + Number(row[day + 'B'] || 0), 0), 0);
     document.getElementById('gtTotalCount').textContent = aCount;
     document.getElementById('gtACount').textContent = bCount;
     document.getElementById('gtBCount').textContent = gradeCount;
@@ -1787,7 +1944,8 @@
         </div>`;
       return;
     }
-    const days = ['周一','周二','周三','周四','周五'];
+    const DAY_NAMES = ['周一','周二','周三','周四','周五','周六','周日'];
+    const days = dayNums.map(day => DAY_NAMES[day - 1]);
     const renderTable = (title, tableRows, labelHeaders, labelCells) => tableRows.length ? `
       <h4 style="margin:24px 16px 10px;color:#173f56">${title}</h4>
       <table class="gt-table">
@@ -1799,7 +1957,7 @@
           <tr>
             ${labelCells(row).map(value => `<td><strong>${escHtml(value || '-')}</strong></td>`).join('')}
             <td>第 ${row.week} 周 · ${row.parity === 'odd' ? '奇数周' : '偶数周'}</td>
-            ${[1,2,3,4,5].map(day => `<td class="gt-a">${row[day + 'A'] || 0}</td><td class="gt-b">${row[day + 'B'] || 0}</td>`).join('')}
+            ${dayNums.map(day => `<td class="gt-a">${row[day + 'A'] || 0}</td><td class="gt-b">${row[day + 'B'] || 0}</td>`).join('')}
           </tr>
         `).join('')}</tbody>
       </table>` : '';
@@ -1957,8 +2115,8 @@
       <article class="shared-menu-card">
         <div class="shared-menu-image">
           ${menu.image_path
-            ? `<img src="${escHtml(menuImageUrl(menu.image_path))}" alt="第 ${week} 周餐食图片" onclick="window.open(this.src,'_blank')">`
-            : '本周餐食图片待发布'}
+            ? `<img src="${escHtml(menuImageUrl(menu.image_path))}" alt="第 ${week} 周菜单图" onclick="window.open(this.src,'_blank')">`
+            : '本周未附菜单图；餐食实拍请在历史记录中查看'}
         </div>
         <div class="shared-menu-copy">
           <h4>第 ${week} 周 · ${label}</h4>
@@ -2073,6 +2231,344 @@
     });
     return result;
   }
+</script>
+
+<script>
+/* ═══════ 总务 · 学生与选餐账号管理 ═══════ */
+(function(){
+  const CLASS_OPTIONS = ['', ...Array.from({length: 12}, (_, i) => (i + 1) + '班')];
+  const gradeSel = document.getElementById('rosterGrade');
+  if(!gradeSel) return;
+  for(const sel of [document.getElementById('rosterClass'), document.getElementById('rtClass')]){
+    if(!sel) continue;
+    sel.innerHTML = CLASS_OPTIONS.map(c =>
+      c ? `<option value="${c}">${c}</option>` : '<option value="">全部班级</option>').join('');
+  }
+  document.getElementById('rtClass').value = '1班';
+})();
+
+function rosterHideVeils(){
+  for(const id of ['rosterFormVeil', 'rosterConfirmVeil', 'rosterCredVeil']){
+    document.getElementById(id).hidden = true;
+  }
+}
+
+async function rosterFetch(path, options = {}){
+  return fetch(NUTRITION_PLATFORM_BASE + path, {
+    ...options,
+    headers: {'Content-Type': 'application/json', ...nutritionAuthHeaders(), ...(options.headers || {})},
+  });
+}
+
+function rosterEsc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let ROSTER_ROWS = [];
+
+async function rosterLoad(){
+  const grade = document.getElementById('rosterGrade').value;
+  const klass = document.getElementById('rosterClass').value;
+  const body = document.getElementById('rosterBody');
+  body.innerHTML = '<tr><td colspan="6" style="color:#6b7d72">加载中…</td></tr>';
+  try {
+    const qs = new URLSearchParams({grade});
+    if(klass) qs.set('className', klass);
+    const r = await rosterFetch('/api/roster/students?' + qs.toString());
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    ROSTER_ROWS = data.students || [];
+    document.getElementById('rosterCount').textContent = '共 ' + ROSTER_ROWS.length + ' 人';
+    if(!ROSTER_ROWS.length){
+      body.innerHTML = '<tr><td colspan="6" style="color:#6b7d72">该范围没有学生</td></tr>';
+      return;
+    }
+    body.innerHTML = ROSTER_ROWS.map((s, i) => {
+      const acc = s.account;
+      const state = !acc ? '<span class="r-tag none">无账号</span>'
+        : acc.isActive ? '<span class="r-tag ok">正常</span>'
+        : '<span class="r-tag paused">已暂停</span>';
+      const trf = String(s.studentUserId || '').startsWith('TRF_')
+        ? ' <span class="r-tag trf">转入</span>' : '';
+      const last = acc && acc.lastLoginAt ? rosterEsc(acc.lastLoginAt).slice(0, 16) : '—';
+      const ops = [];
+      if(acc){
+        ops.push(acc.isActive
+          ? `<button class="r-btn warn" onclick="rosterPause(${i}, 0)">暂停用餐</button>`
+          : `<button class="r-btn" onclick="rosterPause(${i}, 1)">恢复用餐</button>`);
+        ops.push(`<button class="r-btn" onclick="rosterReset(${i})">重置密码</button>`);
+      }
+      ops.push(`<button class="r-btn danger" onclick="rosterOut(${i})">转出</button>`);
+      return `<tr><td>${rosterEsc(s.name)}${trf}</td><td>${rosterEsc(s.grade)}${rosterEsc(s.className)}</td>` +
+             `<td>${acc ? rosterEsc(acc.username) : '—'}</td><td>${state}</td><td>${last}</td>` +
+             `<td><div class="r-ops">${ops.join('')}</div></td></tr>`;
+    }).join('');
+  } catch(e){
+    body.innerHTML = '<tr><td colspan="6" style="color:#b3261e">加载失败：' + rosterEsc(e.message) + '</td></tr>';
+  }
+}
+
+function rosterConfirm({title, text, needInput, placeholder, onOk}){
+  document.getElementById('rcvTitle').textContent = title;
+  document.getElementById('rcvText').innerHTML = text;
+  const input = document.getElementById('rcvInput');
+  input.hidden = !needInput;
+  input.value = '';
+  input.placeholder = placeholder || '';
+  const err = document.getElementById('rcvErr');
+  err.classList.remove('show');
+  document.getElementById('rcvOk').onclick = () => onOk(input.value.trim(), msg => {
+    err.textContent = msg;
+    err.classList.add('show');
+  });
+  document.getElementById('rosterConfirmVeil').hidden = false;
+  if(needInput) input.focus();
+}
+
+async function rosterPost(path, payload, fail){
+  const r = await rosterFetch(path, {method: 'POST', body: JSON.stringify(payload)});
+  const d = await r.json();
+  if(!r.ok || d.success === false){
+    fail(d.error || ('操作失败 HTTP ' + r.status));
+    return null;
+  }
+  return d;
+}
+
+function rosterPause(i, active){
+  const s = ROSTER_ROWS[i];
+  rosterConfirm({
+    title: active ? '恢复用餐' : '暂停用餐',
+    text: `${rosterEsc(s.name)}（${rosterEsc(s.grade)}${rosterEsc(s.className)}）` +
+      (active ? '：恢复后家长账号立即可以登录选餐。' : '：暂停后家长账号无法登录，学生记录保留，随时可恢复。'),
+    onOk: async (_, fail) => {
+      const d = await rosterPost('/api/roster/pause', {studentUserId: s.studentUserId, active}, fail);
+      if(d){ rosterHideVeils(); rosterLoad(); }
+    }
+  });
+}
+
+function rosterReset(i){
+  const s = ROSTER_ROWS[i];
+  rosterConfirm({
+    title: '重置密码',
+    text: `${rosterEsc(s.name)} 的家长账号将重置为随机初始密码（旧密码作废、所有设备下线），新密码会立即显示，请抄给家长。`,
+    onOk: async (_, fail) => {
+      const d = await rosterPost('/api/roster/reset-password', {studentUserId: s.studentUserId}, fail);
+      if(d){
+        rosterHideVeils();
+        rosterShowCred('密码已重置', d.username, d.tempPassword);
+        rosterLoad();
+      }
+    }
+  });
+}
+
+function rosterOut(i){
+  const s = ROSTER_ROWS[i];
+  rosterConfirm({
+    title: '转出学生',
+    text: `将删除 <b>${rosterEsc(s.name)}</b>（${rosterEsc(s.grade)}${rosterEsc(s.className)}）的学生记录和家长选餐账号。` +
+          `此操作不可撤销，请输入学生姓名确认：`,
+    needInput: true,
+    placeholder: '输入「' + s.name + '」确认',
+    onOk: async (confirmName, fail) => {
+      if(!confirmName) return fail('请输入学生姓名确认');
+      const d = await rosterPost('/api/roster/transfer-out',
+        {studentUserId: s.studentUserId, confirmName}, fail);
+      if(d){ rosterHideVeils(); rosterLoad(); }
+    }
+  });
+}
+
+function rosterShowTransferIn(){
+  document.getElementById('rtName').value = '';
+  document.getElementById('rtUsername').value = '';
+  document.getElementById('rtGrade').value = document.getElementById('rosterGrade').value;
+  const klass = document.getElementById('rosterClass').value;
+  if(klass) document.getElementById('rtClass').value = klass;
+  document.getElementById('rtErr').classList.remove('show');
+  document.getElementById('rosterFormVeil').hidden = false;
+  document.getElementById('rtName').focus();
+}
+
+async function rosterSubmitTransferIn(){
+  const err = document.getElementById('rtErr');
+  err.classList.remove('show');
+  const fail = msg => { err.textContent = msg; err.classList.add('show'); };
+  const name = document.getElementById('rtName').value.trim();
+  const username = document.getElementById('rtUsername').value.trim().toLowerCase();
+  const grade = document.getElementById('rtGrade').value;
+  const klass = document.getElementById('rtClass').value;
+  if(!name || !username || !klass) return fail('姓名、班级、登录账号都要填写');
+  const btn = document.getElementById('rtSubmit');
+  btn.disabled = true;
+  const d = await rosterPost('/api/roster/transfer-in',
+    {name, grade, className: klass, username}, msg => {
+      fail(msg.includes('已被占用') ? msg + '，试试换一个（如加数字）' : msg);
+    });
+  btn.disabled = false;
+  if(!d) return;
+  rosterHideVeils();
+  rosterShowCred('账号已建立', d.username, d.tempPassword);
+  rosterLoad();
+}
+
+/* ── 未订餐概览与钉钉催单 ── */
+function _pendingWeeks(){
+  const gtOdd = document.getElementById('gradeStatsWeekOdd');
+  const ctOdd = document.getElementById('classWeekOdd');
+  const odd = Number((gtOdd && !document.getElementById('generalTeacherView').classList.contains('hidden'))
+    ? gtOdd.value : (ctOdd ? ctOdd.value : 1)) || 1;
+  return {week_odd: odd, week_even: odd + 1};
+}
+
+async function pendingLoad(){
+  const body = document.getElementById('pendingOverviewBody');
+  body.innerHTML = '<tr><td colspan="5" style="color:#6b7d72">统计中…</td></tr>';
+  const w = _pendingWeeks();
+  try {
+    const r = await rosterFetch('/api/meal-stats/pending-overview?week_odd=' + w.week_odd + '&week_even=' + w.week_even);
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    const rows = d.classes || [];
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="5" style="color:#6b7d72">没有学生数据</td></tr>';
+      return;
+    }
+    let gTotal = 0, gInc = 0, gUn = 0;
+    body.innerHTML = rows.map(c => {
+      gTotal += c.total; gInc += c.incomplete; gUn += c.unstarted;
+      const cls = c.incomplete ? ' style="color:#b3261e;font-weight:800"' : '';
+      return '<tr><td>' + rosterEsc(c.grade + c.className) + '</td><td>' + c.total + '</td>' +
+        '<td' + cls + '>' + c.incomplete + '</td><td>' + c.unstarted + '</td>' +
+        '<td>' + (c.incomplete
+          ? '<button class="r-btn warn" onclick="pendingRemind(\'' + rosterEsc(c.grade) + '\',\'' + rosterEsc(c.className) + '\')">📢 提醒</button>'
+          : '<span class="r-tag ok">全部完成</span>') + '</td></tr>';
+    }).join('') + '<tr style="font-weight:900;background:#f4f8f5"><td>合计</td><td>' + gTotal +
+      '</td><td>' + gInc + '</td><td>' + gUn + '</td><td></td></tr>';
+  } catch(e){
+    body.innerHTML = '<tr><td colspan="5" style="color:#b3261e">统计失败：' + rosterEsc(e.message) + '</td></tr>';
+  }
+}
+
+async function _remindPending(extra){
+  const w = _pendingWeeks();
+  const r = await rosterFetch('/api/meal-stats/remind-pending', {
+    method: 'POST',
+    body: JSON.stringify({...w, ...(extra || {})})
+  });
+  const d = await r.json();
+  if(!r.ok || d.success === false) throw new Error(d.error || ('HTTP ' + r.status));
+  const parts = ['已发送 ' + d.reminded + ' 条提醒'];
+  if(d.skippedToday) parts.push(d.skippedToday + ' 人今天已提醒过');
+  if(d.noBinding) parts.push(d.noBinding + ' 位家长未绑定钉钉（未用新版登录过），请人工通知');
+  return parts.join('；');
+}
+
+function pendingRemind(grade, className){
+  rosterConfirm({
+    title: '钉钉提醒未订餐家长',
+    text: rosterEsc(grade + className) + '：给未完成选餐且已绑定钉钉的家长各发一条工作通知（同一天不会重复发）。',
+    onOk: async (_, fail) => {
+      try {
+        const msg = await _remindPending({grade, className});
+        rosterHideVeils();
+        if(typeof showSuccess === 'function') showSuccess(msg); else alert(msg);
+        pendingLoad();
+      } catch(e){ fail(e.message); }
+    }
+  });
+}
+
+async function ctRemindPending(){
+  try {
+    const msg = await _remindPending();
+    if(typeof showSuccess === 'function') showSuccess(msg); else alert(msg);
+  } catch(e){
+    if(typeof showError === 'function') showError(e.message); else alert(e.message);
+  }
+}
+
+/** 账密卡统一展示：对 l/1、0/O 等易混字符自动加注，避免照抄出错（gy1≠gyl 事故） */
+function rosterShowCred(title, username, pwd){
+  const hint = s => {
+    const notes = [];
+    if(/l/.test(s)) notes.push('l 是小写字母 L');
+    if(/1/.test(s)) notes.push('1 是数字一');
+    if(/0/.test(s)) notes.push('0 是数字零');
+    if(/[oO]/.test(s)) notes.push('o 是字母 O');
+    return notes.join('；');
+  };
+  document.getElementById('credTitle').textContent = title;
+  document.getElementById('credUser').textContent = username;
+  document.getElementById('credPwd').textContent = pwd;
+  const uh = document.getElementById('credUserHint');
+  const ph = document.getElementById('credPwdHint');
+  const uNote = hint(username), pNote = hint(pwd);
+  uh.textContent = uNote ? '⚠ ' + uNote : '';
+  uh.hidden = !uNote;
+  ph.textContent = pNote ? '⚠ ' + pNote : '';
+  ph.hidden = !pNote;
+  document.getElementById('rosterCredVeil').hidden = false;
+}
+
+/* ── 总务：班主任账号重置 ── */
+async function rosterLoadTeachers(){
+  const wrap = document.getElementById('rosterTeacherWrap');
+  wrap.hidden = false;
+  const body = document.getElementById('rosterTeacherBody');
+  body.innerHTML = '<tr><td colspan="5" style="color:#6b7d72">加载中…</td></tr>';
+  try {
+    const r = await rosterFetch('/api/roster/teachers');
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    body.innerHTML = (d.teachers || []).map(tch =>
+      `<tr><td>${rosterEsc((tch.grade || '') + (tch.className || ''))}</td>` +
+      `<td>${rosterEsc(tch.displayName)}</td><td>${rosterEsc(tch.username)}</td>` +
+      `<td>${tch.lastLoginAt ? rosterEsc(tch.lastLoginAt).slice(0, 16) : '—'}</td>` +
+      `<td><button class="r-btn" onclick="rosterResetTeacher(${Number(tch.id)}, '${rosterEsc(tch.displayName)}')">重置密码</button></td></tr>`
+    ).join('') || '<tr><td colspan="5" style="color:#6b7d72">暂无班主任账号</td></tr>';
+  } catch(e){
+    body.innerHTML = '<tr><td colspan="5" style="color:#b3261e">加载失败：' + rosterEsc(e.message) + '</td></tr>';
+  }
+}
+
+function rosterResetTeacher(id, name){
+  rosterConfirm({
+    title: '重置班主任密码',
+    text: `${rosterEsc(name)} 老师的账号将重置为随机新密码（旧密码作废、所有设备下线），新密码立即显示，请转告本人。`,
+    onOk: async (_, fail) => {
+      const d = await rosterPost('/api/roster/reset-teacher-password', {accountId: id}, fail);
+      if(d){
+        rosterHideVeils();
+        rosterShowCred('班主任密码已重置', d.username, d.tempPassword);
+        rosterLoadTeachers();
+      }
+    }
+  });
+}
+
+/* ── 班主任：把学生账号面板搬进班主任视图并锁定本班（后端同样强制本班范围） ── */
+(function mountRosterForClassTeacher(){
+  if(!(typeof ROLE !== 'undefined' && ROLE === 'teacher' && SUB_ROLE === 'class')) return;
+  const panel = document.getElementById('rosterPanel');
+  const host = document.getElementById('classTeacherView');
+  if(!panel || !host) return;
+  host.appendChild(panel);
+  const tBlock = document.getElementById('rosterTeacherBlock');
+  if(tBlock) tBlock.remove();
+  const bg = sessionStorage.getItem('bs_bound_grade') || '';
+  const bc = sessionStorage.getItem('bs_bound_class') || '';
+  const gSel = document.getElementById('rosterGrade');
+  const cSel = document.getElementById('rosterClass');
+  if(bg) gSel.value = bg;
+  if(bc) cSel.value = bc;
+  gSel.disabled = true;
+  cSel.disabled = true;
+  rosterLoad();
+})();
 </script>
 </body>
 </html>

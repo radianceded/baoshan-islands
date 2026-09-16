@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   宝山学习群岛 · 前端身份/角色助手
+   宝小学生画像 · 前端身份/角色助手
    - 老师端：可看到全部学生 + 自定义学生切换
    - 家长端：只看到自己绑定的孩子；多孩家庭可在已绑定孩子间切换
 
@@ -35,6 +35,15 @@
   function _qs(name){
     const m = location.search.match(new RegExp('[?&]'+name+'=([^&]*)'));
     return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function _currentCampus(){
+    const campus = sessionStorage.getItem('bs_campus') || global.BS_CAMPUS_ID || _qs('campus') || 'benbu';
+    return ['benbu','baolin','luojing'].includes(campus) ? campus : 'benbu';
+  }
+
+  function _loginUrl(){
+    return 'login.html?campus=' + encodeURIComponent(_currentCampus());
   }
 
   function _rememberAvailableRoles(data){
@@ -114,6 +123,78 @@
     };
     select.onclick = event => event.stopPropagation();
     if(!old) pillEl.appendChild(select);
+  }
+
+  /* ── 账密体系的多孩切换：同一钉钉绑定的兄弟账号一键互切 ──
+     （旧钉钉 unionId 会话走 _renderKidSwitcher/kids；账号会话走这里） */
+  let _acctSiblings = null;
+  async function _renderAccountSwitcher(pillEl){
+    try {
+      if(STATE.role !== 'parent') return;
+      if(STATE.kids && STATE.kids.length >= 2) return;
+      if(document.getElementById('bsKidSwitcher')) return;
+      const token = sessionStorage.getItem('bs_session_token');
+      if(!token) return;
+      if(_acctSiblings === null){
+        try {
+          const r = await fetch('/api/auth/my-accounts', {headers: {Authorization: 'Bearer ' + token}});
+          const d = await r.json().catch(() => ({}));
+          _acctSiblings = (r.ok && Array.isArray(d.accounts)) ? d.accounts : [];
+        } catch(e){ _acctSiblings = []; }
+      }
+      if(_acctSiblings.length < 2 || document.getElementById('bsKidSwitcher')) return;
+      const select = document.createElement('select');
+      select.id = 'bsKidSwitcher';
+      select.setAttribute('aria-label', '切换孩子');
+      select.title = '切换孩子';
+      select.style.cssText = 'max-width:92px;padding:6px 8px;border:1px solid rgba(14,94,128,.22);border-radius:12px;background:#fff;color:#1F3A4D;font:700 11px/1.2 inherit;cursor:pointer';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '切换孩子';
+      placeholder.selected = true;
+      select.replaceChildren(placeholder, ..._acctSiblings.map(acc => {
+        const option = document.createElement('option');
+        option.value = String(acc.accountId);
+        const label = [acc.displayName, acc.grade, acc.className].filter(Boolean).join(' · ');
+        option.textContent = label + (acc.current ? '（当前）' : '');
+        option.disabled = !!acc.current;
+        return option;
+      }));
+      select.onchange = async () => {
+        const targetId = parseInt(select.value, 10);
+        if(!targetId) return;
+        select.disabled = true;
+        try {
+          const r = await fetch('/api/auth/switch-account', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token},
+            body: JSON.stringify({accountId: targetId})
+          });
+          const d = await r.json().catch(() => ({}));
+          if(!r.ok || !d.success) throw new Error(d.error || '切换失败');
+          const user = d.user || {};
+          const campus = user.campus || _currentCampus();
+          sessionStorage.clear();
+          sessionStorage.setItem('bs_session_token', d.sessionToken);
+          sessionStorage.setItem('bs_campus', campus);
+          sessionStorage.setItem('bs_role', user.role || 'parent');
+          if(user.sub_role) sessionStorage.setItem('bs_sub_role', user.sub_role);
+          if(user.bound_grade) sessionStorage.setItem('bs_bound_grade', user.bound_grade);
+          if(user.bound_class) sessionStorage.setItem('bs_bound_class', user.bound_class);
+          if(user.kid_name) sessionStorage.setItem('bs_kid_name', user.kid_name);
+          if(user.bound_id_card) sessionStorage.setItem('bs_bound_id_card', user.bound_id_card);
+          if(user.displayName) sessionStorage.setItem('bs_user_nick', user.displayName);
+          try { localStorage.setItem('bs_persistent_session_' + campus, d.sessionToken); } catch(e){ /* ignore */ }
+          location.reload();
+        } catch(err){
+          alert(err.message || '切换失败');
+          select.disabled = false;
+          select.value = '';
+        }
+      };
+      select.onclick = event => event.stopPropagation();
+      pillEl.appendChild(select);
+    } catch(e){ /* 切换器是增强功能，异常不影响页面 */ }
   }
 
   function _emitReady(){
@@ -275,7 +356,7 @@
     if(!sessionStorage.getItem('bs_role') && !_qs('role')){
       const path = location.pathname.split('/').pop();
       if(path && !PUBLIC_PAGES.includes(path) && path !== ''){
-        location.replace('login.html');
+        location.replace(_loginUrl());
         return;
       }
     }
@@ -367,6 +448,14 @@
       const r = await fetch('/api/auth/me', { headers });
       if(r.ok){
         const data = await r.json();
+        // 账号密码体系：首次登录未完成改密的，一律踢回登录页完成设置，防止直进岛屿页绕过
+        if(data.mustChangePassword && String(data.owner || '').startsWith('account:')){
+          const campus = data.campus || _currentCampus();
+          try { localStorage.removeItem('bs_persistent_session_' + campus); } catch(e){}
+          sessionStorage.clear();
+          location.href = 'login.html?campus=' + encodeURIComponent(campus);
+          return;
+        }
         STATE.role = data.role || 'none';
         STATE.subRole = data.subRole || null;
         STATE.boundGrade = data.boundGrade || null;
@@ -451,6 +540,7 @@
         const tag = (bs && [bs.grade, bs.class].filter(Boolean).join(' · ')) || '家长账号';
         metaEl.textContent = tag;
         _renderKidSwitcher(pillEl);
+        _renderAccountSwitcher(pillEl);
       } else if(STATE.subRole === 'general'){
         avatar.textContent = '总';
         avatar.style.background = 'linear-gradient(135deg,#FFD86A,#FF9F4A)';
@@ -472,12 +562,35 @@
         return;
       }
     },
-    /** 清掉所有 session 身份，跳回登录页 */
+    /** 清掉所有 session 身份，服务端作废令牌，跳回登录页 */
+    /** 退出入口（带确认）：钉钉 webview 会吞掉原生 confirm（点了毫无反应），容器内直接退出 */
+    logout(){
+      const inDingTalk = /DingTalk/i.test(navigator.userAgent);
+      if(!inDingTalk){
+        let ok = true;
+        try { ok = window.confirm('退出登录后需要重新输入账号密码，确认退出吗？'); } catch(e){ ok = true; }
+        if(!ok) return;
+      }
+      this.signOut();
+    },
     signOut(){
-      const campus = sessionStorage.getItem('bs_campus') || 'benbu';
+      const campus = _currentCampus();
+      const token = sessionStorage.getItem('bs_session_token');
+      if(token){
+        // 服务端 auth_version+1，作废该账户所有已签发令牌；keepalive 保证跳页后请求仍送达
+        try {
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {'Authorization': 'Bearer ' + token},
+            keepalive: true
+          }).catch(() => {});
+        } catch(e){}
+      }
+      // 清全部校区的持久令牌，避免校区错位导致退出后又被自动恢复登录
+      ['benbu','baolin','luojing'].forEach(c => localStorage.removeItem('bs_persistent_session_' + c));
       localStorage.removeItem('bs_persistent_session_' + campus);
       ['bs_role','bs_sub_role','bs_bound_idx','bs_bound_id_card','bs_bound_student_json','bs_bound_grade','bs_bound_class','bs_kid_name','bs_kids_json','bs_available_roles','bs_session_token','bs_user_nick','bs_user_avatar'].forEach(k => sessionStorage.removeItem(k));
-      location.href = 'login.html?campus=' + encodeURIComponent(campus);
+      location.href = 'login.html?campus=' + encodeURIComponent(campus) + '&manual=1';
     },
     /** 写入身份并就地刷新，让所有岛屿生效 */
     signIn(opts){

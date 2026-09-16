@@ -473,18 +473,22 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <script src="assets/student-roster.js"></script>
 </head>
 <body>
+<div style="padding:12px 24px;background:#fff;color:#13718E">
+  <a href="/meal-history.html" onclick="this.href='/meal-history.html?campus='+encodeURIComponent(window.BS_CAMPUS_ID||sessionStorage.getItem('bs_campus')||'benbu')">餐食历史记录 · 查看往周选餐与实拍</a>
+  <a data-show-for="teacher,admin" data-show-sub="general" href="/meal-history.html#uploadPanel" onclick="this.href='/meal-history.html?campus='+encodeURIComponent(window.BS_CAMPUS_ID||sessionStorage.getItem('bs_campus')||'benbu')+'#uploadPanel'" style="margin-left:16px;display:none">餐食实拍上传</a>
+</div>
 
 <!-- ───── 顶栏 ───── -->
 <div class="topbar">
   <button class="back-btn" onclick="goHome()"><i data-lucide="chevron-left"></i>回首页</button>
   <div class="crumbs">
-    <span>快乐学习群岛</span><span class="arrow">›</span><span><i data-lucide="apple"></i> 健康岛</span>
+    <span>宝小学生画像</span><span class="arrow">›</span><span><i data-lucide="apple"></i> 健康岛</span><a class="guide-link" href="guides/meal-parent-guide.html" target="_blank" onclick="try{if(window.UserAuth){if(UserAuth.isGeneralTeacher())this.href='guides/meal-general-teacher-guide.html';else if(UserAuth.isTeacher())this.href='guides/meal-class-teacher-guide.html'}}catch(e){}" style="margin-left:6px;font-size:12px;font-weight:800;color:#13718E;text-decoration:none;border:1.5px solid rgba(19,113,142,.35);border-radius:10px;padding:3px 9px;white-space:nowrap">📖 操作指南</a>
   </div>
   <div class="topbar-right">
     <button class="role-switch" id="healthRoleSwitch" type="button" onclick="switchIdentityRole()" hidden></button>
     <div class="student-pill">
       <div class="stu-avatar" id="stuAvatar">林</div>
-    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:7px 13px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+    <button onclick="window.UserAuth && UserAuth.logout()" style="padding:7px 13px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
       <div class="stu-info">
         <div class="name" id="stuName">林**</div>
         <div class="meta" id="stuMeta">小学 · 五年级 1 班</div>
@@ -1716,9 +1720,51 @@ function enterNutritionRecommendations(event){
   window.location.href = nutritionPath;
 }
 
+/** 家长选餐周对：优先取「选餐截止时间未过」的最早一期；全部截止则显示最新一期（回显）。
+    总务上传新一期菜单后家长端自动切换，不再固定显示第 1/2 周。 */
+function pickActiveMealWeek(menus, parity, fallback){
+  const now = Date.now();
+  const list = (menus || [])
+    .filter(m => m && m.parity === parity && m.week_number)
+    .sort((a, b) => a.week_number - b.week_number);
+  if(!list.length) return fallback;
+  const open = list.filter(m => {
+    if(!m.selection_deadline) return true;
+    const t = new Date(m.selection_deadline).getTime();
+    return isNaN(t) ? true : t >= now;
+  });
+  return (open.length ? open[0] : list[list.length - 1]).week_number;
+}
+
+/* 页面上多处兜底会重复调用选餐渲染（UserAuth.ready + 600/1200/2500ms 定时兜底），
+   并发交错会把结果写进被替换的旧 DOM（屏幕空白）。单飞锁串行化：
+   进行中再被调用则记账，跑完后补跑最后一次——收尾总落在最新 DOM 上。 */
+let _pmRenderBusy = false;
+let _pmRenderQueued = false;
 async function renderParentMealPicker(){
-  const wkOdd = 1;
-  const wkEven = 2;
+  if(_pmRenderBusy){ _pmRenderQueued = true; return; }
+  _pmRenderBusy = true;
+  try {
+    await _renderParentMealPickerOnce();
+  } catch(e){
+    console.warn('[renderParentMealPicker]', e);
+  } finally {
+    _pmRenderBusy = false;
+    if(_pmRenderQueued){
+      _pmRenderQueued = false;
+      renderParentMealPicker();
+    }
+  }
+}
+
+async function _renderParentMealPickerOnce(){
+  let wkOdd = 1, wkEven = 2;
+  try {
+    const r = await fetch('/api/menus', {headers: mealChoiceAuthHeaders()});
+    const data = await r.json();
+    wkOdd = pickActiveMealWeek(data.menus, 'odd', 1);
+    wkEven = pickActiveMealWeek(data.menus, 'even', 2);
+  } catch(e){ console.warn('[renderParentMealPicker] 菜单列表拉取失败，退回第 1/2 周', e); }
   document.getElementById('pmWeekOdd').value = wkOdd;
   document.getElementById('pmWeekEven').value = wkEven;
   document.getElementById('pmWeekLabel').textContent = `第 ${wkOdd} 周（奇数） + 第 ${wkEven} 周（偶数）`;
@@ -1822,7 +1868,7 @@ async function fetchMenuImages(wkOdd, wkEven){
   _pmRequiredDays = {odd:[1,2,3,4,5], even:[1,2,3,4,5]};
   for(const [parity, wk, bg] of [['odd',wkOdd,'#FFD86A'],['even',wkEven,'#7BC8E8']]){
     try {
-      const r = await fetch(`/api/menus?week=${wk}`);
+      const r = await fetch(`/api/menus?week=${wk}`, {headers: mealChoiceAuthHeaders()});
       const data = await r.json();
       const m = (data.menus || []).find(x => x.parity === parity);
       const hasPublishedDays = Boolean(m && Array.isArray(m.service_days) && m.service_days.length);
@@ -2170,6 +2216,7 @@ async function loadClassSummary(){
     const r = await fetch(url);
     const data = await r.json();
     const rows = data.rows || [];
+    const statDays = (data.weekdays && data.weekdays.length) ? data.weekdays : [1,2,3,4,5];
     // 渲染 tabs
     const grades = ['all','一年级','二年级','三年级','四年级','五年级','六年级'];
     document.getElementById('gtClassTabs').innerHTML = grades.map(g =>
@@ -2183,13 +2230,13 @@ async function loadClassSummary(){
       <th style="padding:8px 10px;text-align:left">周次奇数</th>
       <th style="padding:8px 10px">年级</th>
       <th style="padding:8px 10px">班级</th>
-      ${DAY_LABELS.map(d=>`<th style="padding:6px 8px;background:#FFE7B0;color:#7A4F1B">${d}A</th><th style="padding:6px 8px;background:#C9EBFB;color:#13718E">${d}B</th>`).join('')}
+      ${statDays.map(day=>`<th style="padding:6px 8px;background:#FFE7B0;color:#7A4F1B">${DAY_LABELS[day-1]}A</th><th style="padding:6px 8px;background:#C9EBFB;color:#13718E">${DAY_LABELS[day-1]}B</th>`).join('')}
     </tr></thead>`;
     const body = rows.map(r => `<tr style="border-top:1px solid #E0EBF0">
       <td style="padding:8px 10px;color:var(--ink-1)">${r.week}周</td>
       <td style="padding:8px 10px;font-weight:700">${r.grade}</td>
       <td style="padding:8px 10px;font-weight:700;color:#13718E">${r['class']}</td>
-      ${DAY_LABELS.map((_,di)=>`<td style="padding:6px 8px;text-align:center;color:#C2410C;font-weight:700">${r[(di+1)+'A']||0}</td><td style="padding:6px 8px;text-align:center;color:#13718E;font-weight:700">${r[(di+1)+'B']||0}</td>`).join('')}
+      ${statDays.map(day=>`<td style="padding:6px 8px;text-align:center;color:#C2410C;font-weight:700">${r[day+'A']||0}</td><td style="padding:6px 8px;text-align:center;color:#13718E;font-weight:700">${r[day+'B']||0}</td>`).join('')}
     </tr>`).join('');
     document.getElementById('gtClassTable').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px">${head}<tbody>${body}</tbody></table>`;
   } catch(e){
@@ -2204,6 +2251,7 @@ async function loadGradeStats(){
     const r = await fetch(`/api/meal-stats/grade?week=${week}`);
     const data = await r.json();
     const rows = data.rows || [];
+    const statDays = (data.weekdays && data.weekdays.length) ? data.weekdays : [1,2,3,4,5];
     if(!rows.length){
       document.getElementById('gtGradeStats').innerHTML = '<div style="padding:30px;text-align:center;color:#7BB8DA;font-weight:700">暂无该周选餐数据</div>';
       return;
@@ -2218,18 +2266,18 @@ async function loadGradeStats(){
           <thead style="background:#F4FAFD">
             <tr>
               <th style="padding:8px;text-align:left">年级</th>
-              ${DAY_LABELS.map(d=>`<th colspan="2" style="padding:8px">${d}</th>`).join('')}
+              ${statDays.map(day=>`<th colspan="2" style="padding:8px">${DAY_LABELS[day-1]}</th>`).join('')}
             </tr>
             <tr>
               <th></th>
-              ${DAY_LABELS.map(_=>`<th style="padding:6px;background:#FFE7B0;color:#7A4F1B">A</th><th style="padding:6px;background:#C9EBFB;color:#13718E">B</th>`).join('')}
+              ${statDays.map(_=>`<th style="padding:6px;background:#FFE7B0;color:#7A4F1B">A</th><th style="padding:6px;background:#C9EBFB;color:#13718E">B</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${rs.map(r=>`
               <tr style="border-top:1px solid #E0EBF0">
                 <td style="padding:8px;font-weight:800;color:#1F3A4D">${r.gradeName||'-'}</td>
-                ${DAY_LABELS.map((_,di)=>`<td style="padding:8px;text-align:center;font-weight:700;color:#C2410C">${r[(di+1)+'A']||0}</td><td style="padding:8px;text-align:center;font-weight:700;color:#13718E">${r[(di+1)+'B']||0}</td>`).join('')}
+                ${statDays.map(day=>`<td style="padding:8px;text-align:center;font-weight:700;color:#C2410C">${r[day+'A']||0}</td><td style="padding:8px;text-align:center;font-weight:700;color:#13718E">${r[day+'B']||0}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>

@@ -224,12 +224,12 @@
 <div class="topbar">
   <button class="back-btn" onclick="goHome()">⛵ 回首页</button>
   <div class="crumbs">
-    <span>快乐学习群岛</span><span class="arrow">›</span><span>📖 阅读岛</span>
+    <span>宝小学生画像</span><span class="arrow">›</span><span>📖 阅读岛</span>
   </div>
   <div class="topbar-right">
     <div class="student-pill">
       <div class="stu-avatar">林</div>
-    <button onclick="if(confirm('退出登录?')){window.UserAuth && UserAuth.signOut()}" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
+    <button onclick="window.UserAuth && UserAuth.logout()" style="padding:6px 12px;border-radius:14px;border:1.5px solid #DCEBF3;background:#fff;color:#5C7A8C;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit" title="退出登录">退出</button>
       <div class="stu-info">
         <div class="name">林**</div>
         <div class="meta">小学 · 五年级 1 班</div>

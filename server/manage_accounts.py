@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-宝山学习群岛 · 账号管理 CLI
+宝小学生画像 · 账号管理 CLI
 
 用法：
     # 初始化 demo 账户（首次部署运行）

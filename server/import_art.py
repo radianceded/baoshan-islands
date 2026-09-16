@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-宝山学习群岛 · 美育岛作品批量导入
+宝小学生画像 · 美育岛作品批量导入
 
 把 *奖项名*.zip 处理成 assets/art-works/<奖项名>/<学生名>_<作品名>.<ext>,
 并写入 student_data.db 的 art_works 表。

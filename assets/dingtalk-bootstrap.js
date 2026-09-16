@@ -71,7 +71,7 @@
   // ===== 3. 钉钉自定义顶栏:同步页面标题 =====
   function syncTitle(){
     try {
-      var title = document.title || '宝山学习群岛';
+      var title = document.title || '宝小学生画像';
       // 只取 · 前的核心标题,避免顶栏过长
       var core = title.split(/[·|]/)[0].trim();
       if(dd.biz && dd.biz.navigation && dd.biz.navigation.setTitle){
